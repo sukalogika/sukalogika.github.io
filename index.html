@@ -1,133 +1,885 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sukalogika</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sukalogika — programmer alkitab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111114;
+    --surface2: #18181d;
+    --border: #222228;
+    --text: #e8e6e0;
+    --muted: #6b6870;
+    --accent: #c8a96e;
+    --accent2: #8b7355;
+    --gold-dim: rgba(200, 169, 110, 0.12);
+    --mono: 'JetBrains Mono', monospace;
+    --serif: 'DM Serif Display', serif;
+    --body: 'Cormorant Garamond', serif;
+  }
 
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    <!-- Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  html { scroll-behavior: smooth; }
 
-    <style>
-        body {
-            background-color: #ffffff;
-            color: #111;
-            font-family: 'Poppins', sans-serif;
-        }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 18px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-        .container-box {
-            max-width: 480px;
-            margin: auto;
-            padding: 50px 20px;
-            text-align: center;
-        }
+  /* NOISE TEXTURE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
 
-        .title {
-            font-weight: 600;
-            font-size: 26px;
-            letter-spacing: 0.5px;
-        }
+  /* ====== HERO ====== */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+    text-align: center;
+  }
 
-        .subtitle {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 25px;
-        }
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(ellipse, rgba(200,169,110,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
 
-        .verse {
-            font-size: 14px;
-            font-style: italic;
-            color: #444;
-            margin-bottom: 35px;
-            line-height: 1.6;
-        }
+  .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 6px 16px;
+    border-radius: 2px;
+    margin-bottom: 40px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.2s forwards;
+  }
 
-        .btn-custom {
-            width: 100%;
-            margin-bottom: 14px;
-            border-radius: 12px;
-            padding: 12px;
-            font-weight: 500;
-            border: 1px solid #ddd;
-            background-color: #fff;
-            transition: all 0.2s ease;
-        }
+  .hero-name {
+    font-family: var(--serif);
+    font-size: clamp(56px, 10vw, 100px);
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.4s forwards;
+  }
 
-        .btn-custom:hover {
-            background-color: #111;
-            color: #fff;
-            border-color: #111;
-        }
+  .hero-name span {
+    color: var(--accent);
+    font-style: italic;
+  }
 
-        .footer {
-            margin-top: 40px;
-            font-size: 12px;
-            color: #888;
-        }
-    </style>
+  .hero-sub {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    margin-top: 20px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.6s forwards;
+  }
+
+  .verse-hero {
+    margin-top: 48px;
+    max-width: 520px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.8s forwards;
+  }
+
+  .verse-hero blockquote {
+    font-family: var(--body);
+    font-style: italic;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.5;
+    border-left: 2px solid var(--accent);
+    padding-left: 20px;
+    text-align: left;
+  }
+
+  .verse-hero cite {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    margin-top: 10px;
+    letter-spacing: 0.1em;
+    font-style: normal;
+    padding-left: 22px;
+  }
+
+  /* SOCIAL LINKS */
+  .socials {
+    display: flex;
+    gap: 16px;
+    margin-top: 56px;
+    flex-wrap: wrap;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 1s forwards;
+  }
+
+  .social-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-decoration: none;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 10px 20px;
+    border-radius: 2px;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .social-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--gold-dim);
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 1.4s forwards, pulse 2s ease 2s infinite;
+  }
+
+  /* ====== DIVIDER ====== */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 24px;
+    max-width: 900px;
+    margin: 0 auto 80px;
+  }
+
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* ====== BIBLE GENERATOR ====== */
+  .generator-section {
+    padding: 0 24px 120px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: var(--serif);
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 400;
+    line-height: 1.1;
+    margin-bottom: 48px;
+    color: var(--text);
+  }
+
+  /* CARD */
+  .verse-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .verse-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .card-inner {
+    padding: 48px 48px 40px;
+  }
+
+  .verse-reference-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .verse-reference-badge::before {
+    content: '';
+    width: 20px; height: 1px;
+    background: var(--accent);
+  }
+
+  .verse-text-display {
+    font-family: var(--body);
+    font-size: clamp(22px, 3.5vw, 34px);
+    font-style: italic;
+    font-weight: 300;
+    line-height: 1.4;
+    color: var(--text);
+    margin-bottom: 32px;
+    min-height: 120px;
+    transition: opacity 0.4s ease;
+  }
+
+  .verse-text-display.loading {
+    opacity: 0.3;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    flex-wrap: gap;
+    gap: 16px;
+  }
+
+  .verse-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+
+  .nav-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--gold-dim);
+  }
+
+  .verse-counter {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* SAVE BUTTON */
+  .save-btn {
+    background: var(--accent);
+    color: #0a0a0b;
+    border: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 12px 28px;
+    cursor: pointer;
+    border-radius: 2px;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .save-btn:hover {
+    background: #d4b97e;
+    transform: translateY(-1px);
+  }
+
+  .save-btn:active { transform: translateY(0); }
+
+  .save-btn.saving {
+    opacity: 0.7;
+    cursor: wait;
+  }
+
+  /* CUSTOMIZER */
+  .customizer {
+    margin-top: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+
+  .custom-group label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .custom-group select,
+  .custom-group input[type="color"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 2px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .custom-group select:hover,
+  .custom-group input[type="color"]:hover {
+    border-color: var(--accent);
+  }
+
+  .custom-group input[type="color"] {
+    height: 38px;
+    padding: 4px;
+  }
+
+  /* CANVAS PREVIEW */
+  #previewCanvas { display: none; }
+
+  /* ABOUT */
+  .about-section {
+    padding: 80px 24px 120px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 48px;
+  }
+
+  .about-cell {
+    background: var(--surface);
+    padding: 28px 32px;
+  }
+
+  .about-cell-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .about-cell-value {
+    font-family: var(--body);
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--text);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 24px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  footer span { color: var(--accent); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(10,10,11,0.3);
+    border-top-color: #0a0a0b;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: none;
+  }
+
+  .save-btn.saving .spinner { display: block; }
+  .save-btn.saving .save-icon { display: none; }
+
+  @media (max-width: 600px) {
+    .card-inner { padding: 28px 24px; }
+    .card-footer { flex-direction: column; align-items: flex-start; }
+    .about-grid { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
 
-<div class="container-box">
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="tag">programmer × alkitab</div>
 
-    <div class="title">sukalogika</div>
-    <div class="subtitle">Henky Adlin Shan</div>
+  <h1 class="hero-name">suka<span>logika</span></h1>
+  <p class="hero-sub">// Henky Adlin Shan &nbsp;·&nbsp; coding with scripture</p>
 
-    <div id="verse" class="verse"></div>
+  <div class="verse-hero">
+    <blockquote>Ujilah segala sesuatu dan peganglah yang baik.</blockquote>
+    <cite>1 Tesalonika 5:21</cite>
+  </div>
 
-    <!-- Links -->
-    <a href="https://youtube.com/@sukalogika/" target="_blank" class="btn btn-custom">YouTube</a>
-    <a href="https://www.tiktok.com/@sukalogika" target="_blank" class="btn btn-custom">TikTok</a>
-    <a href="https://www.instagram.com/sukalogika" target="_blank" class="btn btn-custom">Instagram</a>
+  <div class="socials">
+    <a class="social-link" href="https://youtube.com/@sukalogika/" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+      YouTube
+    </a>
+    <a class="social-link" href="https://www.instagram.com/sukalogika" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 3.3.2 4.8 1.7 5 5 .1 1.3.1 1.6.1 4.9s0 3.6-.1 4.9c-.2 3.3-1.7 4.8-5 5-1.3.1-1.6.1-4.9.1s-3.6 0-4.9-.1c-3.3-.2-4.8-1.7-5-5C2 16.6 2 16.3 2 13s0-3.6.1-4.9c.2-3.3 1.7-4.8 5-5C8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1.0 8.3 0 8.7 0 12s0 3.7.1 4.9C.3 21.3 2.7 23.7 7.1 23.9 8.3 24 8.7 24 12 24s3.7 0 4.9-.1c4.4-.2 6.8-2.6 7-7C24 15.7 24 15.3 24 12s0-3.7-.1-4.9C23.7 2.7 21.3.3 16.9.1 15.7 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 1 0 0 12.4A6.2 6.2 0 0 0 12 5.8zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-11.8a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8z"/></svg>
+      Instagram
+    </a>
+    <a class="social-link" href="https://www.tiktok.com/@sukalogika" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 3a3 3 0 0 1-.7-2H16v13a2.5 2.5 0 0 1-2.5 2.5A2.5 2.5 0 0 1 11 14a2.5 2.5 0 0 1 2.5-2.5c.3 0 .5 0 .7.1V9a6.2 6.2 0 0 0-.7 0A6.2 6.2 0 0 0 7.3 15 6.2 6.2 0 0 0 13.5 21 6.2 6.2 0 0 0 19.7 15V8.4A8.7 8.7 0 0 0 24 9V6a5 5 0 0 1-4.4-3z"/></svg>
+      TikTok
+    </a>
+  </div>
 
-    <div class="footer">
-        Ujilah segala sesuatu dan peganglah yang baik
-    </div>
+  <div class="scroll-hint">↓ &nbsp; scroll &nbsp; ↓</div>
+</section>
 
+<!-- ===== GENERATOR ===== -->
+<div class="divider">
+  <div class="divider-line"></div>
+  <div class="divider-text">Bible Verse Generator</div>
+  <div class="divider-line"></div>
 </div>
 
+<section class="generator-section">
+  <div class="section-label">// tools</div>
+  <h2 class="section-title">Ayat Harian<br>untuk Dibagikan</h2>
+
+  <div class="verse-card">
+    <div class="card-inner">
+      <div class="verse-reference-badge" id="verseRef">Memuat ayat...</div>
+      <div class="verse-text-display" id="verseText">—</div>
+
+      <div class="card-footer">
+        <div class="verse-nav">
+          <button class="nav-btn" onclick="prevVerse()">← Prev</button>
+          <span class="verse-counter" id="verseCounter">1 / 30</span>
+          <button class="nav-btn" onclick="nextVerse()">Next →</button>
+        </div>
+        <button class="save-btn" id="saveBtn" onclick="saveAsJPEG()">
+          <span class="save-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </span>
+          <div class="spinner"></div>
+          Save as JPEG
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMIZER -->
+  <div class="customizer">
+    <div class="custom-group">
+      <label>Tema Kartu</label>
+      <select id="themeSelect" onchange="updateTheme()">
+        <option value="dark">Gelap (Default)</option>
+        <option value="parchment">Perkamen</option>
+        <option value="midnight">Midnight Blue</option>
+        <option value="forest">Forest Deep</option>
+      </select>
+    </div>
+    <div class="custom-group">
+      <label>Terjemahan</label>
+      <select id="transSelect" onchange="reloadVerse()">
+        <option value="tb">TB (Terjemahan Baru)</option>
+        <option value="kjv">KJV (English)</option>
+      </select>
+    </div>
+    <div class="custom-group">
+      <label>Ukuran Font</label>
+      <select id="fontSizeSelect" onchange="updateFontSize()">
+        <option value="normal">Normal</option>
+        <option value="besar">Besar</option>
+        <option value="kecil">Kecil</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ABOUT ===== -->
+<div class="divider">
+  <div class="divider-line"></div>
+  <div class="divider-text">About</div>
+  <div class="divider-line"></div>
+</div>
+
+<section class="about-section">
+  <div class="section-label">// whoami</div>
+  <h2 class="section-title">Programmer<br><em style="color:var(--accent)">yang takut Tuhan.</em></h2>
+
+  <div class="about-grid">
+    <div class="about-cell">
+      <div class="about-cell-label">Display</div>
+      <div class="about-cell-value">sukalogika</div>
+    </div>
+    <div class="about-cell">
+      <div class="about-cell-label">Nama Lengkap</div>
+      <div class="about-cell-value">Henky Adlin Shan</div>
+    </div>
+    <div class="about-cell" style="grid-column: 1 / -1;">
+      <div class="about-cell-label">Pegangan Hidup</div>
+      <div class="about-cell-value" style="font-style:italic; font-size:18px; line-height:1.5">
+        "Ujilah segala sesuatu dan peganglah yang baik."
+        <span style="font-style:normal; font-size:14px; color:var(--muted); display:block; margin-top:4px; font-family:var(--mono)">— 1 Tesalonika 5:21</span>
+      </div>
+    </div>
+    <div class="about-cell" style="grid-column: 1 / -1;">
+      <div class="about-cell-label">Niche</div>
+      <div class="about-cell-value" style="font-family:var(--mono); font-size:14px; color:var(--accent)">programmer × alkitab · coding × scripture</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>sukalogika</span> · dibuat dengan iman & kode · © 2025
+</footer>
+
+<!-- CANVAS (hidden, for image generation) -->
+<canvas id="previewCanvas"></canvas>
+
 <script>
-    var verses = [
-        "Yeremia 29:11 - Rancangan-Ku adalah damai sejahtera.",
-        "Mazmur 23:1 - Tuhan adalah gembalaku.",
-        "Roma 8:28 - Allah turut bekerja dalam segala sesuatu.",
-        "Filipi 4:13 - Segala perkara dapat kutanggung.",
-        "Amsal 3:5 - Percayalah kepada Tuhan.",
-        "Yesaya 40:31 - Yang menanti Tuhan mendapat kekuatan.",
-        "Yohanes 16:33 - Aku telah mengalahkan dunia.",
-        "Mazmur 46:2 - Allah itu tempat perlindungan.",
-        "Ibrani 11:1 - Iman adalah dasar dari segala sesuatu.",
-        "Yakobus 1:5 - Mintalah hikmat.",
-        "Mazmur 34:19 - Tuhan melepaskan dari semuanya.",
-        "Yohanes 3:16 - Karena begitu besar kasih Allah.",
-        "Roma 12:2 - Berubahlah oleh pembaharuan budimu.",
-        "Kolose 3:23 - Lakukan seperti untuk Tuhan.",
-        "Galatia 6:9 - Jangan jemu berbuat baik.",
-        "Mazmur 37:5 - Serahkan hidupmu kepada Tuhan.",
-        "Yesaya 41:10 - Jangan takut, Aku menyertai.",
-        "2 Korintus 5:7 - Hidup oleh iman.",
-        "Efesus 2:8 - Diselamatkan oleh kasih karunia.",
-        "Mazmur 119:105 - Firman-Mu pelita bagi kakiku.",
-        "Amsal 16:3 - Serahkan perbuatanmu kepada Tuhan.",
-        "Filipi 4:6 - Jangan khawatir.",
-        "1 Petrus 5:7 - Serahkan kekhawatiranmu.",
-        "Yohanes 14:27 - Damai sejahtera-Ku kuberikan.",
-        "Roma 15:13 - Allah sumber pengharapan.",
-        "Mazmur 121:2 - Pertolonganku dari Tuhan.",
-        "2 Timotius 1:7 - Roh yang membangkitkan kekuatan.",
-        "Ibrani 13:5 - Aku tidak akan meninggalkan engkau.",
-        "Wahyu 21:4 - Tidak ada lagi air mata.",
-        "Matius 11:28 - Marilah kepada-Ku."
-    ];
+// ============================================================
+// VERSE DATA — 30 ayat alkitab pilihan
+// ============================================================
+const VERSES_TB = [
+  { ref: "Yohanes 3:16", text: "Karena begitu besar kasih Allah akan dunia ini, sehingga Ia telah mengaruniakan Anak-Nya yang tunggal, supaya setiap orang yang percaya kepada-Nya tidak binasa, melainkan beroleh hidup yang kekal." },
+  { ref: "1 Tesalonika 5:21", text: "Ujilah segala sesuatu dan peganglah yang baik." },
+  { ref: "Roma 8:28", text: "Kita tahu sekarang, bahwa Allah turut bekerja dalam segala sesuatu untuk mendatangkan kebaikan bagi mereka yang mengasihi Dia, yaitu bagi mereka yang terpanggil sesuai dengan rencana Allah." },
+  { ref: "Filipi 4:13", text: "Segala perkara dapat kutanggung di dalam Dia yang memberi kekuatan kepadaku." },
+  { ref: "Amsal 3:5-6", text: "Percayalah kepada TUHAN dengan segenap hatimu dan janganlah bersandar kepada pengertianmu sendiri. Akuilah Dia dalam segala lakumu, maka Ia akan meluruskan jalanmu." },
+  { ref: "Yeremia 29:11", text: "Sebab Aku ini mengetahui rancangan-rancangan apa yang ada pada-Ku mengenai kamu, demikianlah firman TUHAN, yaitu rancangan damai sejahtera dan bukan rancangan kecelakaan, untuk memberikan kepadamu hari depan yang penuh harapan." },
+  { ref: "Mazmur 23:1", text: "TUHAN adalah gembalaku, takkan kekurangan aku." },
+  { ref: "Amsal 16:3", text: "Serahkanlah perbuatanmu kepada TUHAN, maka terlaksanalah segala rencanamu." },
+  { ref: "Yosua 1:9", text: "Kuatkan dan teguhkanlah hatimu! Janganlah kecut dan tawar hati, sebab TUHAN, Allahmu, menyertai engkau ke mana pun engkau pergi." },
+  { ref: "Mazmur 46:2", text: "Allah itu bagi kita tempat perlindungan dan kekuatan, sebagai penolong dalam kesesakan sangat terbukti." },
+  { ref: "Yesaya 40:31", text: "Tetapi orang-orang yang menanti-nantikan TUHAN mendapat kekuatan baru: mereka seumpama rajawali yang naik terbang dengan kekuatan sayapnya; mereka berlari dan tidak menjadi lelah, mereka berjalan dan tidak menjadi lesu." },
+  { ref: "Matius 6:33", text: "Tetapi carilah dahulu Kerajaan Allah dan kebenarannya, maka semuanya itu akan ditambahkan kepadamu." },
+  { ref: "Mazmur 37:4", text: "Dan bergembiralah karena TUHAN; maka Ia akan memberikan kepadamu apa yang diinginkan hatimu." },
+  { ref: "2 Timotius 1:7", text: "Sebab Allah memberikan kepada kita bukan roh ketakutan, melainkan roh yang membangkitkan kekuatan, kasih dan ketertiban." },
+  { ref: "Roma 12:2", text: "Janganlah kamu menjadi serupa dengan dunia ini, tetapi berubahlah oleh pembaharuan budimu, sehingga kamu dapat membedakan manakah kehendak Allah: apa yang baik, yang berkenan kepada Allah dan yang sempurna." },
+  { ref: "Efesus 2:10", text: "Karena kita ini buatan Allah, diciptakan dalam Kristus Yesus untuk melakukan pekerjaan baik, yang dipersiapkan Allah sebelumnya. Ia mau, supaya kita hidup di dalamnya." },
+  { ref: "Yohanes 14:6", text: "Kata Yesus kepadanya: 'Akulah jalan dan kebenaran dan hidup. Tidak ada seorang pun yang datang kepada Bapa, kalau tidak melalui Aku.'" },
+  { ref: "Galatia 5:22-23", text: "Tetapi buah Roh ialah: kasih, sukacita, damai sejahtera, kesabaran, kemurahan, kebaikan, kesetiaan, kelemahlembutan, penguasaan diri." },
+  { ref: "Mazmur 119:105", text: "Firman-Mu itu pelita bagi kakiku dan terang bagi jalanku." },
+  { ref: "Kolose 3:23", text: "Apa pun juga yang kamu perbuat, perbuatlah dengan segenap hatimu seperti untuk Tuhan dan bukan untuk manusia." },
+  { ref: "Ibrani 11:1", text: "Iman adalah dasar dari segala sesuatu yang kita harapkan dan bukti dari segala sesuatu yang tidak kita lihat." },
+  { ref: "1 Korintus 10:31", text: "Apa pun yang kamu makan atau yang kamu minum, atau apa pun yang kamu perbuat, lakukanlah semuanya itu untuk kemuliaan Allah." },
+  { ref: "Yohanes 15:5", text: "Akulah pokok anggur dan kamulah ranting-rantingnya. Barangsiapa tinggal di dalam Aku dan Aku di dalam dia, ia berbuah banyak, sebab di luar Aku kamu tidak dapat berbuat apa-apa." },
+  { ref: "Amsal 4:23", text: "Jagalah hatimu dengan segala kewaspadaan, karena dari situlah terpancar kehidupan." },
+  { ref: "Yakobus 1:5", text: "Tetapi apabila di antara kamu ada yang kekurangan hikmat, hendaklah ia memintakannya kepada Allah, — yang memberikan kepada semua orang dengan murah hati dan dengan tidak membangkit-bangkit, — maka hal itu akan diberikan kepadanya." },
+  { ref: "Matius 5:16", text: "Demikianlah hendaknya terangmu bercahaya di depan orang, supaya mereka melihat perbuatanmu yang baik dan memuliakan Bapamu yang di surga." },
+  { ref: "Roma 5:8", text: "Akan tetapi Allah menunjukkan kasih-Nya kepada kita, oleh karena Kristus telah mati untuk kita, ketika kita masih berdosa." },
+  { ref: "Filipi 4:6-7", text: "Janganlah hendaknya kamu kuatir tentang apa pun juga, tetapi nyatakanlah dalam segala hal keinginanmu kepada Allah dalam doa dan permohonan dengan ucapan syukur. Damai sejahtera Allah, yang melampaui segala akal, akan memelihara hati dan pikiranmu dalam Kristus Yesus." },
+  { ref: "Mazmur 1:1-2", text: "Berbahagialah orang yang tidak berjalan menurut nasihat orang fasik, yang tidak berdiri di jalan orang berdosa, dan yang tidak duduk dalam kumpulan pencemooh, tetapi yang kesukaannya ialah Taurat TUHAN." },
+  { ref: "Wahyu 3:20", text: "Lihat, Aku berdiri di muka pintu dan mengetok; jikalau ada orang yang mendengar suara-Ku dan membukakan pintu, Aku akan masuk mendapatkannya dan Aku makan bersama-sama dengan dia, dan ia bersama-sama dengan Aku." }
+];
 
-    var today = new Date().getDate();
-    var index = (today - 1) % verses.length;
+const VERSES_KJV = [
+  { ref: "John 3:16", text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." },
+  { ref: "1 Thessalonians 5:21", text: "Prove all things; hold fast that which is good." },
+  { ref: "Romans 8:28", text: "And we know that all things work together for good to them that love God, to them who are the called according to his purpose." },
+  { ref: "Philippians 4:13", text: "I can do all things through Christ which strengtheneth me." },
+  { ref: "Proverbs 3:5-6", text: "Trust in the LORD with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths." },
+  { ref: "Jeremiah 29:11", text: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end." },
+  { ref: "Psalm 23:1", text: "The LORD is my shepherd; I shall not want." },
+  { ref: "Proverbs 16:3", text: "Commit thy works unto the LORD, and thy thoughts shall be established." },
+  { ref: "Joshua 1:9", text: "Have not I commanded thee? Be strong and courageous; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest." },
+  { ref: "Psalm 46:1", text: "God is our refuge and strength, a very present help in trouble." },
+  { ref: "Isaiah 40:31", text: "But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint." },
+  { ref: "Matthew 6:33", text: "But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you." },
+  { ref: "Psalm 37:4", text: "Delight thyself also in the LORD; and he shall give thee the desires of thine heart." },
+  { ref: "2 Timothy 1:7", text: "For God hath not given us the spirit of fear; but of power, and of love, and of a sound mind." },
+  { ref: "Romans 12:2", text: "And be not conformed to this world: but be ye transformed by the renewing of your mind, that ye may prove what is that good, and acceptable, and perfect, will of God." },
+  { ref: "Ephesians 2:10", text: "For we are his workmanship, created in Christ Jesus unto good works, which God hath before ordained that we should walk in them." },
+  { ref: "John 14:6", text: "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me." },
+  { ref: "Galatians 5:22-23", text: "But the fruit of the Spirit is love, joy, peace, longsuffering, gentleness, goodness, faith, meekness, temperance: against such there is no law." },
+  { ref: "Psalm 119:105", text: "Thy word is a lamp unto my feet, and a light unto my path." },
+  { ref: "Colossians 3:23", text: "And whatsoever ye do, do it heartily, as to the Lord, and not unto men." },
+  { ref: "Hebrews 11:1", text: "Now faith is the substance of things hoped for, the evidence of things not seen." },
+  { ref: "1 Corinthians 10:31", text: "Whether therefore ye eat, or drink, or whatsoever ye do, do all to the glory of God." },
+  { ref: "John 15:5", text: "I am the vine, ye are the branches: He that abideth in me, and I in him, the same bringeth forth much fruit: for without me ye can do nothing." },
+  { ref: "Proverbs 4:23", text: "Keep thy heart with all diligence; for out of it are the issues of life." },
+  { ref: "James 1:5", text: "If any of you lack wisdom, let him ask of God, that giveth to all men liberally, and upbraideth not; and it shall be given him." },
+  { ref: "Matthew 5:16", text: "Let your light so shine before men, that they may see your good works, and glorify your Father which is in heaven." },
+  { ref: "Romans 5:8", text: "But God commendeth his love toward us, in that, while we were yet sinners, Christ died for us." },
+  { ref: "Philippians 4:6-7", text: "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus." },
+  { ref: "Psalm 1:1-2", text: "Blessed is the man that walketh not in the counsel of the ungodly, nor standeth in the way of sinners, nor sitteth in the seat of the scornful. But his delight is in the law of the LORD." },
+  { ref: "Revelation 3:20", text: "Behold, I stand at the door, and knock: if any man hear my voice, and open the door, I will come in to him, and will sup with him, and he with me." }
+];
 
-    document.getElementById("verse").innerText = verses[index];
+// ============================================================
+// STATE
+// ============================================================
+const today = new Date();
+const dayOfMonth = today.getDate(); // 1-31
+let currentIndex = (dayOfMonth - 1) % 30; // tanggal → index array
+
+let currentVerse = null;
+let currentTheme = 'dark';
+
+const themes = {
+  dark:      { bg: '#0a0a0b', surface: '#111114', text: '#e8e6e0', accent: '#c8a96e', muted: '#6b6870', border: '#222228' },
+  parchment: { bg: '#f5f0e8', surface: '#ece6d9', text: '#2c2418', accent: '#7a5c2e', muted: '#8c7a5e', border: '#d4c8b0' },
+  midnight:  { bg: '#070d1a', surface: '#0d1426', text: '#c8d8f0', accent: '#5b8fd4', muted: '#4a6080', border: '#1a2540' },
+  forest:    { bg: '#060e08', surface: '#0c1a0e', text: '#c8e0cc', accent: '#5a9e60', muted: '#3a6040', border: '#162018' }
+};
+
+function getVerses() {
+  const t = document.getElementById('transSelect').value;
+  return t === 'kjv' ? VERSES_KJV : VERSES_TB;
+}
+
+function showVerse(index) {
+  const verses = getVerses();
+  currentIndex = ((index % 30) + 30) % 30;
+  currentVerse = verses[currentIndex];
+
+  const refEl = document.getElementById('verseRef');
+  const textEl = document.getElementById('verseText');
+  const counterEl = document.getElementById('verseCounter');
+
+  textEl.classList.add('loading');
+  setTimeout(() => {
+    refEl.textContent = currentVerse.ref;
+    textEl.textContent = '"' + currentVerse.text + '"';
+    counterEl.textContent = (currentIndex + 1) + ' / 30';
+    textEl.classList.remove('loading');
+  }, 200);
+}
+
+function prevVerse() { showVerse(currentIndex - 1); }
+function nextVerse() { showVerse(currentIndex + 1); }
+function reloadVerse() { showVerse(currentIndex); }
+
+function updateTheme() {
+  currentTheme = document.getElementById('themeSelect').value;
+}
+
+function updateFontSize() {
+  const s = document.getElementById('fontSizeSelect').value;
+  const el = document.getElementById('verseText');
+  el.style.fontSize = s === 'besar' ? '38px' : s === 'kecil' ? '18px' : '';
+}
+
+// ============================================================
+// SAVE AS JPEG — FHD (1920×1080)
+// ============================================================
+async function saveAsJPEG() {
+  const btn = document.getElementById('saveBtn');
+  btn.classList.add('saving');
+
+  const W = 1920, H = 1080;
+  const canvas = document.getElementById('previewCanvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const t = themes[currentTheme];
+
+  // — Background
+  ctx.fillStyle = t.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // — Subtle noise / grain effect
+  for (let i = 0; i < 25000; i++) {
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    const alpha = Math.random() * 0.04;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillRect(x, y, 1, 1);
+  }
+
+  // — Card background
+  const cardX = 100, cardY = 120, cardW = W - 200, cardH = H - 240;
+  ctx.fillStyle = t.surface;
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY, cardW, cardH, 8);
+  ctx.fill();
+
+  // — Card border
+  ctx.strokeStyle = t.border;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY, cardW, cardH, 8);
+  ctx.stroke();
+
+  // — Gold top accent line
+  const grad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY);
+  grad.addColorStop(0, 'transparent');
+  grad.addColorStop(0.3, t.accent);
+  grad.addColorStop(0.7, t.accent);
+  grad.addColorStop(1, 'transparent');
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cardX + 8, cardY + 1.5);
+  ctx.lineTo(cardX + cardW - 8, cardY + 1.5);
+  ctx.stroke();
+
+  // — Reference badge
+  ctx.font = '500 28px "JetBrains Mono", monospace';
+  ctx.fillStyle = t.accent;
+  ctx.letterSpacing = '3px';
+  ctx.fillText('— ' + currentVerse.ref, cardX + 80, cardY + 120);
+
+  // — Verse text (word-wrap)
+  const verse = '"' + currentVerse.text + '"';
+  const maxW = cardW - 160;
+  const fontSize = verse.length > 200 ? 42 : verse.length > 140 ? 48 : 56;
+  ctx.font = `300 italic ${fontSize}px "Cormorant Garamond", Georgia, serif`;
+  ctx.fillStyle = t.text;
+  ctx.letterSpacing = '0px';
+
+  const words = verse.split(' ');
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line + (line ? ' ' : '') + word;
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+
+  const lineH = fontSize * 1.45;
+  const totalH = lines.length * lineH;
+  const startY = cardY + (cardH / 2) - (totalH / 2) + fontSize / 2;
+
+  lines.forEach((l, i) => {
+    ctx.fillText(l, cardX + 80, startY + i * lineH);
+  });
+
+  // — Divider line
+  const divY = cardY + cardH - 120;
+  ctx.strokeStyle = t.border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cardX + 80, divY);
+  ctx.lineTo(cardX + cardW - 80, divY);
+  ctx.stroke();
+
+  // — Branding bottom
+  ctx.font = '400 24px "JetBrains Mono", monospace';
+  ctx.fillStyle = t.muted;
+  ctx.fillText('sukalogika  ·  programmer alkitab', cardX + 80, divY + 56);
+
+  ctx.font = 'italic 300 24px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = t.accent;
+  const brandR = 'Ujilah segala sesuatu — 1 Tes 5:21';
+  const bw = ctx.measureText(brandR).width;
+  ctx.fillText(brandR, cardX + cardW - 80 - bw, divY + 56);
+
+  // — Save
+  await new Promise(r => setTimeout(r, 100));
+  const link = document.createElement('a');
+  link.download = `sukalogika-${currentVerse.ref.replace(/[^a-zA-Z0-9]/g, '-')}.jpg`;
+  link.href = canvas.toDataURL('image/jpeg', 0.95);
+  link.click();
+
+  btn.classList.remove('saving');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  showVerse(currentIndex);
+});
 </script>
-
 </body>
 </html>
