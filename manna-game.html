@@ -1,9 +1,23 @@
 <!DOCTYPE html>
+<!--
+/**
+ * @author      Henky Adlin Shan (@sukalogika)
+ * @copyright   (c) 2026 Henky
+ * @license     MIT License
+ * @link        https://sukalogika.com/LICENSE
+ */
+-->
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Manna dari Surga 🌟</title>
+
+<!-- Google Fonts: Poppins (judul/UI) + Nunito (body/teks panjang) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -13,16 +27,14 @@
     justify-content: center;
     height: 100vh;
     overflow: hidden;
-    font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+    font-family: 'Poppins', sans-serif;
   }
-  /* Wadah utama game Phaser */
   #game-container {
     position: relative;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 12px 48px rgba(255, 180, 0, 0.3);
   }
-  /* Sembunyikan canvas default Phaser dan pakai styling kita */
   #game-container canvas {
     display: block;
     border-radius: 20px;
@@ -33,55 +45,13 @@
 
 <div id="game-container"></div>
 
-<!--
-  ============================================================
-  PHASER 3 — CDN (tidak perlu install npm)
-  Ganti versi jika perlu di sini:
-  ============================================================
--->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
 
 <script>
 // ============================================================
-//  PANDUAN MENGGANTI GAMBAR / ASET
-// ============================================================
-//
-//  Semua gambar dihasilkan secara prosedural (pakai Graphics)
-//  di fungsi preload() masing-masing Scene.
-//
-//  Untuk MENGGANTI dengan gambar PNG kamu sendiri:
-//  1. Letakkan file PNG di folder yang sama dengan index.html
-//  2. Di fungsi preload(), ubah baris:
-//       this.createXxxTexture(...)      ← hapus baris ini
-//     menjadi:
-//       this.load.image('KEY', 'namafile.png')
-//
-//  Daftar KEY gambar yang digunakan:
-//  ┌─────────────────┬────────────────────────────────────────┐
-//  │  KEY            │  Digunakan untuk                       │
-//  ├─────────────────┼────────────────────────────────────────┤
-//  │  'sky'          │  Background langit                     │
-//  │  'ground'       │  Tanah/pasir di bawah                  │
-//  │  'sun'          │  Matahari di pojok kanan atas           │
-//  │  'cloud'        │  Awan putih (dipakai berulang)         │
-//  │  'player'       │  Karakter pemain (orang)               │
-//  │  'manna'        │  Butiran manna yang jatuh              │
-//  └─────────────────┴────────────────────────────────────────┘
-//
-//  Contoh mengganti karakter:
-//    // Di preload():
-//    this.load.image('player', 'karakter_saya.png');
-//    // Hapus baris: this.createPlayerTexture();
-//
-//  Ukuran canvas: 480 x 700 px
-// ============================================================
-
-
-// ============================================================
 //  DATA PERMAINAN
 // ============================================================
 
-// Data 7 hari permainan (Senin–Minggu)
 const DAYS = [
   { name: 'Senin',   short: 'Sen', target: 10 },
   { name: 'Selasa',  short: 'Sel', target: 10 },
@@ -89,10 +59,9 @@ const DAYS = [
   { name: 'Kamis',   short: 'Kam', target: 10 },
   { name: "Jum'at",  short: 'Jum', target: 10 },
   { name: 'Sabtu',   short: 'Sab', target: 20, special: true },
-  { name: 'Minggu',  short: 'Min', rest: true },  // Hari istirahat
+  { name: 'Minggu',  short: 'Min', rest: true },
 ];
 
-// Ayat-ayat Alkitab yang tampil setelah setiap hari selesai
 const VERSES = [
   { text: 'Hebat! Kamu sudah dapat roti hari ini. Ingat ya: Tuhan itu baik. Dia dengar kalau kita lapar dan Dia pasti kasih kita makan. Tidur nyenyak ya, besok kita cari lagi!', ref: 'Salam Sayang,' },
   { text: 'Wah, dapat lagi! Ingat prinsipnya: Jangan Serakah. Ambil yang perlu saja untuk hari ini. Kita belajar berbagi dan percaya kalau besok Tuhan kasih lagi yang baru.', ref: 'Salam Sayang,' },
@@ -102,19 +71,16 @@ const VERSES = [
   { text: 'Keren! Hari ini kita ambil dua kali lipat ya? Kenapa? Karena besok hari istirahat. Kita belajar Berencana supaya besok kita bisa tenang main sama Tuhan tanpa harus capek cari roti lagi.', ref: 'Salam Sayang,' },
 ];
 
-// Variabel global state (berbagi antar Scene)
 const GameState = {
   dayIndex: 0,
   score: 0,
   usedVerseIdx: [],
 
-  // Ambil ayat acak yang belum dipakai
   getRandomVerse() {
     this.usedVerseIdx.push(this.dayIndex);
     return VERSES[this.dayIndex];
   },
 
-  // Reset untuk mulai ulang
   reset() {
     this.dayIndex = 0;
     this.score = 0;
@@ -122,266 +88,29 @@ const GameState = {
   }
 };
 
+// Font helper — semua teks pakai Poppins atau Nunito
+// Poppins: judul, tombol, label pendek
+// Nunito: teks paragraf / ayat panjang
+const FONT_TITLE  = '"Poppins", sans-serif';
+const FONT_BODY   = '"Nunito", sans-serif';
+
 
 // ============================================================
 //  SCENE 1: BootScene
-//  Tugasnya: generate semua texture prosedural lalu lanjut
-//  ke StartScene. Kalau kamu pakai file PNG, load di sini.
 // ============================================================
 class BootScene extends Phaser.Scene {
   constructor() { super({ key: 'BootScene' }); }
 
   preload() {
-    // ── CARA MENGGANTI DENGAN FILE GAMBAR KAMU ──────────────
-    // Hapus baris createXxxTexture() dan tulis:
-    //   this.load.image('sky',    'assets/sky.png');
-    //   this.load.image('ground', 'assets/ground.png');
-    //   this.load.image('sun',    'assets/sun.png');
-    //   this.load.image('cloud',  'assets/cloud.png');
-    //   this.load.image('player', 'assets/player.png');
-    //   this.load.image('manna',  'assets/manna.png');
-    // ────────────────────────────────────────────────────────
-
-    // Sekarang kita pakai gambar prosedural (Graphics)
-    //this.createSkyTexture();
-    //this.createGroundTexture();
-    //this.createSunTexture();
-    //this.createCloudTexture();
-   // this.createPlayerTexture();
-    //this.createMannaTexture();
-	
-	    this.load.image('sky', 'assets/desert.png');
-	    this.load.image('cloud', 'assets/cloud.png');
-	this.load.image('player', 'assets/boy.png');
-		this.load.image('manna',  'assets/manna2.png');
-		this.load.image('ground', 'assets/ground.png');
+    this.load.image('sky',    'assets/desert.png');
+    this.load.image('cloud',  'assets/cloud.png');
+    this.load.image('player', 'assets/boy.png');
+    this.load.image('manna',  'assets/manna2.png');
+    this.load.image('ground', 'assets/ground.png');
   }
 
   create() {
-    // Semua aset sudah siap → buka layar Start
     this.scene.start('StartScene');
-  }
-
-  // ── GENERATOR TEXTURE PROSEDURAL ────────────────────────
-  // Setiap fungsi di bawah menggambar ke Graphics lalu
-  // di-generate sebagai texture dengan key tertentu.
-  // Kamu bisa HAPUS fungsi ini jika sudah pakai file PNG.
-
-  // LANGIT — gradasi biru ke putih (480x580 px)
-  createSkyTexture() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    // Gradasi langit
-    const colors = [0x5ab0e8, 0x7ec8f0, 0xb8e4ff, 0xddf2ff];
-    const step = 580 / (colors.length - 1);
-    for (let i = 0; i < colors.length - 1; i++) {
-      for (let y = 0; y < step; y++) {
-        const t = y / step;
-        const c1 = Phaser.Display.Color.IntegerToColor(colors[i]);
-        const c2 = Phaser.Display.Color.IntegerToColor(colors[i + 1]);
-        const r = Math.round(Phaser.Math.Linear(c1.r, c2.r, t));
-        const grn = Math.round(Phaser.Math.Linear(c1.g, c2.g, t));
-        const b = Math.round(Phaser.Math.Linear(c1.b, c2.b, t));
-        g.fillStyle(Phaser.Display.Color.GetColor(r, grn, b), 1);
-        g.fillRect(0, i * step + y, 480, 1);
-      }
-    }
-    g.generateTexture('sky', 480, 580);
-    g.destroy();
-  }
-
-  // TANAH — gradasi pasir/kuning keemasan (480x120 px)
-  createGroundTexture() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    const colors = [0xfbe08a, 0xe8b84a, 0xd4a030, 0xb88020];
-    const step = 120 / (colors.length - 1);
-    for (let i = 0; i < colors.length - 1; i++) {
-      for (let y = 0; y < step; y++) {
-        const t = y / step;
-        const c1 = Phaser.Display.Color.IntegerToColor(colors[i]);
-        const c2 = Phaser.Display.Color.IntegerToColor(colors[i + 1]);
-        const r = Math.round(Phaser.Math.Linear(c1.r, c2.r, t));
-        const grn = Math.round(Phaser.Math.Linear(c1.g, c2.g, t));
-        const b = Math.round(Phaser.Math.Linear(c1.b, c2.b, t));
-        g.fillStyle(Phaser.Display.Color.GetColor(r, grn, b), 1);
-        g.fillRect(0, i * step + y, 480, 1);
-      }
-    }
-    // Garis tepi atas yang sedikit bergelombang
-    g.fillStyle(0xfff0b0, 0.6);
-    g.fillRect(0, 0, 480, 8);
-    g.generateTexture('ground', 480, 120);
-    g.destroy();
-  }
-
-  // MATAHARI — lingkaran kuning + sinar (96x96 px)
-  createSunTexture() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    const cx = 48, cy = 48, r = 26;
-    // Sinar-sinar
-    g.lineStyle(3, 0xffcd3c, 0.7);
-    for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
-      g.beginPath();
-      g.moveTo(cx + Math.cos(a) * (r + 8), cy + Math.sin(a) * (r + 8));
-      g.lineTo(cx + Math.cos(a) * (r + 18), cy + Math.sin(a) * (r + 18));
-      g.strokePath();
-    }
-    // Cahaya luar (glow)
-    g.fillStyle(0xffe066, 0.18);
-    g.fillCircle(cx, cy, r + 10);
-    // Badan matahari
-    g.fillStyle(0xffe838, 1);
-    g.fillCircle(cx, cy, r);
-    // Highlight
-    g.fillStyle(0xfffde0, 0.5);
-    g.fillCircle(cx - 8, cy - 8, 10);
-    g.generateTexture('sun', 96, 96);
-    g.destroy();
-  }
-
-  // AWAN — tiga lingkaran putih bertumpuk (120x60 px)
-  createCloudTexture() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    g.fillStyle(0xffffff, 0.95);
-    // Lingkaran tengah (lebih besar)
-    g.fillCircle(60, 36, 26);
-    // Lingkaran kiri
-    g.fillCircle(34, 42, 18);
-    // Lingkaran kanan
-    g.fillCircle(86, 42, 18);
-    // Bawah awan (datar)
-    g.fillRect(20, 42, 80, 18);
-    // Bayangan halus
-    g.fillStyle(0xc8e8ff, 0.25);
-    g.fillEllipse(60, 56, 90, 16);
-    g.generateTexture('cloud', 120, 60);
-    g.destroy();
-  }
-
-  // KARAKTER PEMAIN — orang sederhana dari atas ke bawah (56x80 px)
-  createPlayerTexture() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    const cx = 28;
-
-    // ── Bayangan di bawah kaki ──
-    g.fillStyle(0x000000, 0.12);
-    g.fillEllipse(cx, 76, 42, 10);
-
-    // ── Kaki kiri ──
-    g.fillStyle(0xc8953a, 1);
-    g.fillRoundedRect(14, 52, 10, 20, 4);
-    // Sepatu kiri
-    g.fillStyle(0x6b3a0e, 1);
-    g.fillEllipse(14, 73, 16, 7);
-
-    // ── Kaki kanan ──
-    g.fillStyle(0xc8953a, 1);
-    g.fillRoundedRect(28, 52, 10, 20, 4);
-    // Sepatu kanan
-    g.fillStyle(0x6b3a0e, 1);
-    g.fillEllipse(34, 73, 16, 7);
-
-    // ── Lengan kiri ──
-    g.fillStyle(0xd4a030, 1);
-    g.fillRoundedRect(6, 22, 9, 26, 4);
-
-    // ── Lengan kanan ──
-    g.fillStyle(0xd4a030, 1);
-    g.fillRoundedRect(37, 22, 9, 26, 4);
-
-    // ── Badan ──
-    g.fillStyle(0xe8c46a, 1);
-    g.fillRoundedRect(14, 20, 28, 36, { tl: 8, tr: 8, bl: 12, br: 12 });
-    // Lipatan baju
-    g.fillStyle(0xffffff, 0.2);
-    g.fillRoundedRect(16, 22, 8, 20, 4);
-    // Ikat pinggang
-    g.fillStyle(0x9a5a18, 0.5);
-    g.fillRect(14, 46, 28, 3);
-
-    // ── Keranjang / Wadah di tangan ──
-    g.fillStyle(0xc8853a, 1);
-    g.fillRect(36, 34, 14, 12);
-    g.fillStyle(0x9a5a18, 0.5);
-    g.fillRect(36, 34, 4, 12);
-    g.fillRect(43, 34, 4, 12);
-
-    // ── Kepala ──
-    g.fillStyle(0xf5c78a, 1);
-    g.fillCircle(cx, 14, 14);
-    g.lineStyle(1.5, 0xd49050, 1);
-    g.strokeCircle(cx, 14, 14);
-
-    // ── Rambut ──
-    g.fillStyle(0x7a3c00, 1);
-    g.fillArc(cx, 8, 15, 200, 340, false);
-    // Poni
-    g.fillRoundedRect(16, 3, 26, 8, 4);
-
-    // ── Mata kiri ──
-    g.fillStyle(0x3a2000, 1);
-    g.fillCircle(22, 13, 2.5);
-    // Kilat mata kiri
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(23, 12, 1);
-
-    // ── Mata kanan ──
-    g.fillStyle(0x3a2000, 1);
-    g.fillCircle(34, 13, 2.5);
-    // Kilat mata kanan
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(35, 12, 1);
-
-    // ── Senyum ──
-    g.lineStyle(2, 0xc8703a, 1);
-    g.beginPath();
-    g.arc(cx, 17, 7, 0.2, Math.PI - 0.2);
-    g.strokePath();
-
-    // ── Pipi merah muda ──
-    g.fillStyle(0xff8080, 0.3);
-    g.fillEllipse(18, 18, 10, 7);
-    g.fillEllipse(38, 18, 10, 7);
-
-    g.generateTexture('player', 56, 80);
-    g.destroy();
-  }
-
-  // MANNA — elips emas bercahaya dengan bintang-bintang kecil (48x48 px)
-  createMannaTexture() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    const cx = 24, cy = 24;
-
-    // Cahaya luar (aura)
-    g.fillStyle(0xffff80, 0.15);
-    g.fillCircle(cx, cy, 22);
-
-    // Badan manna — elips keemasan
-    g.fillStyle(0xfff8e0, 1);
-    g.fillEllipse(cx, cy, 36, 26);
-    g.lineStyle(1.5, 0xffe080, 1);
-    g.strokeEllipse(cx, cy, 36, 26);
-
-    // Tonjolan atas (seperti roti)
-    g.fillStyle(0xfffaee, 0.9);
-    g.fillEllipse(cx - 7, cy - 7, 14, 12);
-    g.fillEllipse(cx + 7, cy - 7, 14, 12);
-    g.fillEllipse(cx, cy - 10, 14, 12);
-
-    // Highlight cahaya
-    g.fillStyle(0xfffde0, 0.6);
-    g.fillEllipse(cx - 4, cy - 4, 16, 10);
-
-    // Bintang kecil di sekitar (sparkle)
-    g.fillStyle(0xffe838, 0.8);
-    // Bintang atas kanan
-    drawStar(g, cx + 14, cy - 8, 5, 2.5, 5);
-    // Bintang kiri
-    drawStar(g, cx - 15, cy + 4, 4, 2, 5);
-    // Bintang bawah
-    drawStar(g, cx + 4, cy + 14, 4, 2, 5);
-
-    g.generateTexture('manna', 48, 48);
-    g.destroy();
   }
 }
 
@@ -401,7 +130,6 @@ function drawStar(g, x, y, outerR, innerR, points) {
 
 // ============================================================
 //  SCENE 2: StartScene
-//  Layar pembuka / intro game
 // ============================================================
 class StartScene extends Phaser.Scene {
   constructor() { super({ key: 'StartScene' }); }
@@ -409,22 +137,13 @@ class StartScene extends Phaser.Scene {
   create() {
     const W = this.scale.width, H = this.scale.height;
 
-    // Background langit
     this.add.image(W / 2, 290, 'sky').setDisplaySize(W, 580);
-
-    // Tanah
     this.add.image(W / 2, H - 60, 'ground').setDisplaySize(W, 120);
 
-    // Matahari
-    //this.add.image(W - 60, 60, 'sun').setScale(0.9);
-
-    // Awan dekoratif
     this.add.image(80, 80, 'cloud').setScale(0.8).setAlpha(0.8);
     this.add.image(300, 50, 'cloud').setScale(1.1).setAlpha(0.7);
 
-    // Karakter besar di tengah sebagai dekorasi
     const hero = this.add.image(W / 2, H - 140, 'player').setScale(1.4);
-    // Animasi naik-turun (breathing)
     this.tweens.add({
       targets: hero,
       y: H - 150,
@@ -434,14 +153,12 @@ class StartScene extends Phaser.Scene {
       repeat: -1
     });
 
-    // Beberapa manna jatuh sebagai dekorasi
     for (let i = 0; i < 6; i++) {
       const m = this.add.image(
         Phaser.Math.Between(30, W - 30),
         Phaser.Math.Between(100, H - 200),
         'manna'
       ).setScale(0.7).setAlpha(0.8);
-      // Animasi mengambang
       this.tweens.add({
         targets: m,
         y: m.y - Phaser.Math.Between(15, 35),
@@ -455,109 +172,96 @@ class StartScene extends Phaser.Scene {
     }
 
     // ── Panel judul ──────────────────────────────────────────
-    // Kotak background judul
     const titleBg = this.add.graphics();
     titleBg.fillStyle(0xfff8d0, 0.95);
-    titleBg.fillRoundedRect(W / 2 - 190, 30, 380, 70, 20);
+    titleBg.fillRoundedRect(W / 2 - 195, 24, 390, 78, 20);
     titleBg.lineStyle(3, 0xf4a300, 1);
-    titleBg.strokeRoundedRect(W / 2 - 190, 30, 380, 70, 20);
+    titleBg.strokeRoundedRect(W / 2 - 195, 24, 390, 78, 20);
 
-    // Teks judul
-    this.add.text(W / 2, 66, '🌟 Manna dari Surga 🌟', {
-      fontSize: '24px',
-      fontFamily: '"Comic Sans MS", cursive',
-      color: '#b56a00',
+    this.add.text(W / 2, 63, '🌟 Manna dari Surga 🌟', {
+      fontSize: '22px',
+      fontFamily: FONT_TITLE,
       fontStyle: 'bold',
+      color: '#b56a00',
       stroke: '#fff8d0',
       strokeThickness: 2
     }).setOrigin(0.5);
 
     // ── Panel info cara main ──────────────────────────────────
     const infoBg = this.add.graphics();
-    infoBg.fillStyle(0xffffff, 0.8);
-    infoBg.fillRoundedRect(W / 2 - 155, 155, 310, 130, 16);
+    infoBg.fillStyle(0xffffff, 0.85);
+    infoBg.fillRoundedRect(W / 2 - 162, 150, 324, 152, 16);
     infoBg.lineStyle(3, 0xf4a300, 1);
-    infoBg.strokeRoundedRect(W / 2 - 155, 155, 310, 130, 16);
-    // Garis aksen kiri
+    infoBg.strokeRoundedRect(W / 2 - 162, 150, 324, 152, 16);
     infoBg.fillStyle(0xf4a300, 1);
-    infoBg.fillRoundedRect(W / 2 - 155, 155, 6, 130, { tl: 16, tr: 0, bl: 16, br: 0 });
+    infoBg.fillRoundedRect(W / 2 - 162, 150, 6, 152, { tl: 16, tr: 0, bl: 16, br: 0 });
 
+    // Judul info — Poppins bold
+    this.add.text(W / 2 - 138, 164, 'Halo Jagoan! 👋', {
+      fontSize: '17px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#b56a00',
+    });
+
+    // Body info — Nunito, 16px
     const infoLines = [
-      'Halo jagoan! ',
-      'Bangsa Israel lagi lapar di padang pasir nih.',
-      'Yuk, kita bantu kumpulkan roti Manna.',
-      'Ingat ya, ambil secukupnya saja!✨',
-      'Tekan ← → atau sentuh & geser layar'
+      'Bangsa Israel lagi lapar di padang pasir.',
+      'Yuk, bantu kumpulkan roti Manna! ✨',
+      'Ingat: ambil secukupnya saja ya.',
+      '',
+      'Tekan ← → atau sentuh & geser layar',
     ];
     infoLines.forEach((line, i) => {
-      this.add.text(W / 2 - 130, 170 + i * 23, line, {
-        fontSize: '13px',
-        fontFamily: '"Comic Sans MS", cursive',
+      this.add.text(W / 2 - 138, 190 + i * 22, line, {
+        fontSize: '14px',
+        fontFamily: FONT_BODY,
+        fontStyle: 'bold',
         color: '#7a4800',
-        lineSpacing: 4
       });
     });
 
     // ── Tombol Mulai ─────────────────────────────────────────
     const btnBg = this.add.graphics();
     btnBg.fillStyle(0xf4a300, 1);
-    btnBg.fillRoundedRect(W / 2 - 110, 310, 220, 56, 28);
+    btnBg.fillRoundedRect(W / 2 - 120, 324, 240, 60, 30);
     btnBg.lineStyle(3, 0xffd060, 1);
-    btnBg.strokeRoundedRect(W / 2 - 110, 310, 220, 56, 28);
+    btnBg.strokeRoundedRect(W / 2 - 120, 324, 240, 60, 30);
 
-    const btnText = this.add.text(W / 2, 338, 'Mulai! 🎉', {
+    const btnText = this.add.text(W / 2, 354, 'Mulai! 🎉', {
       fontSize: '24px',
-      fontFamily: '"Comic Sans MS", cursive',
-      color: '#ffffff',
+      fontFamily: FONT_TITLE,
       fontStyle: 'bold',
-      stroke: '#0003',
+      color: '#ffffff',
+      stroke: '#00000033',
       strokeThickness: 2
     }).setOrigin(0.5);
 
-    // Zona klik tombol (invisible rectangle)
-    const btnZone = this.add.zone(W / 2, 338, 220, 56)
+    const btnZone = this.add.zone(W / 2, 354, 240, 60)
       .setInteractive({ cursor: 'pointer' });
 
-    // Efek hover tombol
-    btnZone.on('pointerover', () => {
-      btnBg.setScale(1.06);
-      btnText.setScale(1.06);
-    });
-    btnZone.on('pointerout', () => {
-      btnBg.setScale(1);
-      btnText.setScale(1);
-    });
-
-    // Klik → mulai permainan
+    btnZone.on('pointerover', () => { btnBg.setScale(1.06); btnText.setScale(1.06); });
+    btnZone.on('pointerout',  () => { btnBg.setScale(1);    btnText.setScale(1);    });
     btnZone.on('pointerdown', () => {
       GameState.reset();
-      // Animasi tombol ditekan
       this.tweens.add({
         targets: [btnBg, btnText],
-        scaleX: 0.95,
-        scaleY: 0.95,
-        duration: 80,
-        yoyo: true,
+        scaleX: 0.95, scaleY: 0.95,
+        duration: 80, yoyo: true,
         onComplete: () => this.scene.start('GameScene')
       });
     });
 
-    // Animasi tombol berdenyut
     this.tweens.add({
       targets: [btnBg, btnText],
-      scaleX: 1.04,
-      scaleY: 1.04,
-      duration: 800,
-      ease: 'Sine.easeInOut',
-      yoyo: true,
-      repeat: -1
+      scaleX: 1.04, scaleY: 1.04,
+      duration: 800, ease: 'Sine.easeInOut',
+      yoyo: true, repeat: -1
     });
 
-    // ── Dots indikator hari di bawah ─────────────────────────
     this.createDayDots(W, H);
   }
 
-  // Menggambar dots 7 hari di bagian bawah layar
   createDayDots(W, H) {
     const dotSpacing = 44;
     const startX = W / 2 - ((DAYS.length - 1) / 2) * dotSpacing;
@@ -565,22 +269,18 @@ class StartScene extends Phaser.Scene {
 
     DAYS.forEach((day, i) => {
       const x = startX + i * dotSpacing;
-      const isSaturday = day.special;
-      const r = isSaturday ? 9 : 7;
-
-      // Lingkaran dot
+      const r = day.special ? 9 : 7;
       const dot = this.add.graphics();
       dot.lineStyle(2, 0xffffff, 0.7);
       dot.fillStyle(0xffffff, 0.25);
       dot.fillCircle(x, dotY, r);
       dot.strokeCircle(x, dotY, r);
 
-      // Label hari
-      this.add.text(x, dotY + r + 10, day.short, {
-        fontSize: '8px',
-        fontFamily: '"Comic Sans MS", cursive',
+      this.add.text(x, dotY + r + 4, day.short, {
+        fontSize: '10px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
         color: 'rgba(255,255,255,0.85)',
-        fontStyle: 'bold'
       }).setOrigin(0.5, 0);
     });
   }
@@ -589,7 +289,6 @@ class StartScene extends Phaser.Scene {
 
 // ============================================================
 //  SCENE 3: GameScene
-//  Inti permainan: pemain bergerak, manna jatuh, kumpulkan!
 // ============================================================
 class GameScene extends Phaser.Scene {
   constructor() { super({ key: 'GameScene' }); }
@@ -597,12 +296,9 @@ class GameScene extends Phaser.Scene {
   create() {
     const W = this.scale.width, H = this.scale.height;
 
-    // ── Background ───────────────────────────────────────────
     this.add.image(W / 2, 290, 'sky').setDisplaySize(W, 580);
     this.add.image(W / 2, H - 60, 'ground').setDisplaySize(W, 120);
-   // this.add.image(W - 58, 58, 'sun');
 
-    // ── Awan (bergerak pelan ke kanan) ────────────────────────
     this.clouds = [];
     const cloudData = [
       { x: 80,  y: 60,  scl: 0.8, spd: 22 },
@@ -612,23 +308,17 @@ class GameScene extends Phaser.Scene {
       { x: 340, y: 95,  scl: 0.9, spd: 35 },
     ];
     cloudData.forEach(d => {
-      // Setiap awan adalah image biasa
       const c = this.add.image(d.x, d.y, 'cloud').setScale(d.scl).setAlpha(0.88);
-      c.speed = d.spd; // kecepatan piksel/detik
+      c.speed = d.spd;
       this.clouds.push(c);
     });
 
-    // ── Pemain ────────────────────────────────────────────────
-    // Posisi awal di tengah, tepat di atas tanah
     this.player = this.physics.add.image(W / 2, H - 115, 'player');
-    this.player.setCollideWorldBounds(true); // tidak bisa keluar layar
-    this.player.setDepth(10);               // tampil di depan semua objek
+    this.player.setCollideWorldBounds(true);
+    this.player.setDepth(10);
 
-    // ── Grup manna (untuk manajemen efisien) ─────────────────
-    // Menggunakan Group dengan recycling (setMaxSize)
     this.mannaGroup = this.physics.add.group();
 
-    // Timer spawn manna setiap 0.9 detik
     this.spawnTimer = this.time.addEvent({
       delay: 900,
       callback: this.spawnManna,
@@ -636,44 +326,22 @@ class GameScene extends Phaser.Scene {
       loop: true
     });
 
-    // ── Kontrol keyboard ─────────────────────────────────────
-    // Phaser 3 menyediakan cursor keys bawaan
     this.cursors = this.input.keyboard.createCursorKeys();
-    // Tambahan WASD
     this.wasd = this.input.keyboard.addKeys({
       left: Phaser.Input.Keyboard.KeyCodes.A,
       right: Phaser.Input.Keyboard.KeyCodes.D
     });
 
-    // ── Kontrol sentuh / mouse ────────────────────────────────
     this.touchDeltaX = 0;
     this.touchActive = false;
     this.touchStartX = 0;
 
-    this.input.on('pointerdown', (p) => {
-      this.touchActive = true;
-      this.touchStartX = p.x;
-    });
-    this.input.on('pointermove', (p) => {
-      if (this.touchActive) this.touchDeltaX = p.x - this.touchStartX;
-    });
-    this.input.on('pointerup', () => {
-      this.touchActive = false;
-      this.touchDeltaX = 0;
-    });
+    this.input.on('pointerdown', (p) => { this.touchActive = true; this.touchStartX = p.x; });
+    this.input.on('pointermove', (p) => { if (this.touchActive) this.touchDeltaX = p.x - this.touchStartX; });
+    this.input.on('pointerup',   () =>  { this.touchActive = false; this.touchDeltaX = 0; });
 
-    // ── Overlap: saat manna menyentuh pemain ─────────────────
-    // Phaser mengurus deteksi tabrakan secara otomatis
-    this.physics.add.overlap(
-      this.player,
-      this.mannaGroup,
-      this.catchManna,   // callback
-      null,
-      this
-    );
+    this.physics.add.overlap(this.player, this.mannaGroup, this.catchManna, null, this);
 
-    // ── Partikel efek tangkap manna ───────────────────────────
-    // ParticleEmitter Phaser 3.60+
     this.particles = this.add.particles(0, 0, 'manna', {
       speed: { min: 80, max: 200 },
       angle: { min: 0, max: 360 },
@@ -681,72 +349,64 @@ class GameScene extends Phaser.Scene {
       alpha: { start: 1, end: 0 },
       lifespan: 500,
       quantity: 8,
-      emitting: false  // hanya memancar saat dipanggil explode()
+      emitting: false
     });
     this.particles.setDepth(20);
 
-    // ── HUD (Heads-Up Display) ────────────────────────────────
     this.createHUD();
-
-    // Refresh tampilan hari & skor
     this.updateHUD();
 
-    // Tampilkan pesan khusus Sabtu
     if (DAYS[GameState.dayIndex].special) {
-      this.add.text(W / 2, 118, '⭐ Hari Sabtu — Kumpulkan 20! ⭐', {
-        fontSize: '14px',
-        fontFamily: '"Comic Sans MS", cursive',
+      this.add.text(W / 2, 116, '⭐ Hari Sabtu — Kumpulkan 20! ⭐', {
+        fontSize: '16px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
         color: '#ff7a00',
-        fontStyle: 'bold'
-      }).setOrigin(0.5).setAlpha(0.8).setDepth(5);
+      }).setOrigin(0.5).setAlpha(0.9).setDepth(5);
     }
   }
 
-  // ── HUD: membuat elemen UI di atas layar ──────────────────
   createHUD() {
     const W = this.scale.width;
 
     // Panel hari (kiri)
     this.dayBg = this.add.graphics().setDepth(15);
-    this.dayBg.fillStyle(0xffffff, 0.9);
-    this.dayBg.fillRoundedRect(10, 10, 130, 32, 16);
+    this.dayBg.fillStyle(0xffffff, 0.92);
+    this.dayBg.fillRoundedRect(10, 10, 140, 36, 18);
 
-    this.dayText = this.add.text(75, 26, '📅 Senin', {
-      fontSize: '13px',
-      fontFamily: '"Comic Sans MS", cursive',
+    this.dayText = this.add.text(80, 28, '📅 Senin', {
+      fontSize: '16px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
       color: '#7a4000',
-      fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(16);
 
     // Panel skor (kanan)
     this.scoreBg = this.add.graphics().setDepth(15);
-    this.scoreBg.fillStyle(0xffffff, 0.9);
-    this.scoreBg.fillRoundedRect(W - 140, 10, 130, 32, 16);
+    this.scoreBg.fillStyle(0xffffff, 0.92);
+    this.scoreBg.fillRoundedRect(W - 150, 10, 140, 36, 18);
 
-    this.scoreText = this.add.text(W - 75, 26, '🌾 0 / 10', {
-      fontSize: '14px',
-      fontFamily: '"Comic Sans MS", cursive',
+    this.scoreText = this.add.text(W - 80, 28, '🌾 0 / 10', {
+      fontSize: '16px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
       color: '#b56a00',
-      fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(16);
 
-    // Progress bar background
-    const barW = W * 0.55, barH = 8;
-    const barX = (W - barW) / 2, barY = 14;
+    // Progress bar
+    const barW = W * 0.52, barH = 9;
+    const barX = (W - barW) / 2, barY = 16;
     this.add.graphics()
       .fillStyle(0x000000, 0.1)
       .fillRoundedRect(barX, barY, barW, barH, 4)
       .setDepth(15);
 
-    // Progress bar isi (akan diupdate)
     this.progressBar = this.add.graphics().setDepth(16);
     this.progressBarConfig = { x: barX, y: barY, w: barW, h: barH };
 
-    // Dots hari di bagian bawah
     this.createDayDots();
   }
 
-  // Dots indikator hari (bawah layar)
   createDayDots() {
     const W = this.scale.width, H = this.scale.height;
     const dotSpacing = 44;
@@ -758,17 +418,16 @@ class GameScene extends Phaser.Scene {
     DAYS.forEach((day, i) => {
       const x = startX + i * dotSpacing;
       this.add.text(x, dotY + 9, day.short, {
-        fontSize: '8px',
-        fontFamily: '"Comic Sans MS", cursive',
+        fontSize: '10px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
         color: 'rgba(255,255,255,0.85)',
-        fontStyle: 'bold'
       }).setOrigin(0.5, 0).setDepth(16);
     });
 
     this.updateDots();
   }
 
-  // Perbarui warna dots sesuai progress hari
   updateDots() {
     const W = this.scale.width, H = this.scale.height;
     const dotSpacing = 44;
@@ -782,15 +441,12 @@ class GameScene extends Phaser.Scene {
       const r = day.special ? 9 : 7;
 
       if (i < GameState.dayIndex) {
-        // Sudah selesai — kuning penuh
         this.dotGraphics.fillStyle(0xf4a300, 1);
         this.dotGraphics.lineStyle(2, 0xb57000, 1);
       } else if (i === GameState.dayIndex) {
-        // Aktif sekarang — putih dengan outline kuning
         this.dotGraphics.fillStyle(0xffffff, 1);
         this.dotGraphics.lineStyle(3, 0xf4a300, 1);
       } else {
-        // Belum — transparan
         this.dotGraphics.fillStyle(0xffffff, 0.25);
         this.dotGraphics.lineStyle(2, 0xffffff, 0.5);
       }
@@ -799,7 +455,6 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  // Perbarui teks HUD skor dan progress bar
   updateHUD() {
     const day = DAYS[GameState.dayIndex];
     const target = day.target || 10;
@@ -807,7 +462,6 @@ class GameScene extends Phaser.Scene {
     this.dayText.setText('📅 ' + day.name);
     this.scoreText.setText(`🌾 ${GameState.score} / ${target}`);
 
-    // Progress bar
     const bar = this.progressBarConfig;
     const prog = Math.min(GameState.score / target, 1);
     this.progressBar.clear();
@@ -817,60 +471,39 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  // ── Spawn manna baru dari atas ────────────────────────────
   spawnManna() {
     const day = DAYS[GameState.dayIndex];
-    if (GameState.score >= (day.target || 10)) return; // sudah cukup
+    if (GameState.score >= (day.target || 10)) return;
 
     const W = this.scale.width;
     const x = Phaser.Math.Between(30, W - 30);
-
-    // Ambil dari pool atau buat baru
     const manna = this.mannaGroup.create(x, -30, 'manna');
     manna.setScale(0.7);
     manna.setDepth(8);
 
-    // Kecepatan jatuh acak
     const speed = Phaser.Math.Between(120, 220);
     manna.setVelocityY(speed);
-
-    // Gerakan sedikit ke kiri-kanan (wobble)
-    const wobbleX = Phaser.Math.Between(-25, 25);
-    manna.setVelocityX(wobbleX);
-
-    // Rotasi saat jatuh
+    manna.setVelocityX(Phaser.Math.Between(-25, 25));
     manna.setAngularVelocity(Phaser.Math.Between(-80, 80));
-
-    // Buang jika sudah keluar dari bawah layar
     manna.checkWorldBounds = true;
     manna.outOfBoundsKill = true;
   }
 
-  // ── Callback saat pemain menangkap manna ─────────────────
   catchManna(player, manna) {
-    // Efek partikel meledak di posisi manna
     this.particles.explode(10, manna.x, manna.y);
-
-    // Hapus manna dari dunia
     manna.destroy();
 
-    // Tambah skor
     GameState.score++;
     this.updateHUD();
 
-    // Animasi "bounce" pada skor text
     this.tweens.add({
       targets: this.scoreText,
-      scaleX: 1.3,
-      scaleY: 1.3,
-      duration: 80,
-      yoyo: true
+      scaleX: 1.3, scaleY: 1.3,
+      duration: 80, yoyo: true
     });
 
-    // Cek apakah target hari ini sudah terpenuhi
     const day = DAYS[GameState.dayIndex];
     if (GameState.score >= (day.target || 10)) {
-      // Hentikan spawn dan pindah ke DayCompleteScene
       this.spawnTimer.remove();
       this.time.delayedCall(400, () => {
         this.scene.start('DayCompleteScene');
@@ -878,35 +511,27 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  // ── Update loop (dipanggil setiap frame ~60fps) ────────────
   update(time, delta) {
-    const SPEED = 300; // piksel per detik
+    const SPEED = 300;
     const player = this.player;
-
-    // Reset velocity setiap frame
     player.setVelocityX(0);
 
-    // Keyboard
     const goLeft  = this.cursors.left.isDown  || this.wasd.left.isDown;
     const goRight = this.cursors.right.isDown || this.wasd.right.isDown;
-
-    // Sentuh / mouse
     const touchLeft  = this.touchDeltaX < -8;
     const touchRight = this.touchDeltaX > 8;
 
     if (goLeft || touchLeft) {
       player.setVelocityX(-SPEED);
-      player.setFlipX(true);   // balik gambar ke kiri
+      player.setFlipX(true);
     } else if (goRight || touchRight) {
       player.setVelocityX(SPEED);
-      player.setFlipX(false);  // gambar ke kanan (normal)
+      player.setFlipX(false);
     }
 
-    // Gerakkan awan
     const W = this.scale.width;
     this.clouds.forEach(c => {
       c.x += c.speed * (delta / 1000);
-      // Jika awan sudah lewat kanan, muncul lagi dari kiri
       if (c.x - 80 > W) c.x = -80;
     });
   }
@@ -915,7 +540,6 @@ class GameScene extends Phaser.Scene {
 
 // ============================================================
 //  SCENE 4: DayCompleteScene
-//  Tampil setelah target hari terpenuhi — ayat + tombol lanjut
 // ============================================================
 class DayCompleteScene extends Phaser.Scene {
   constructor() { super({ key: 'DayCompleteScene' }); }
@@ -923,74 +547,69 @@ class DayCompleteScene extends Phaser.Scene {
   create() {
     const W = this.scale.width, H = this.scale.height;
 
-    // Background game masih ada di belakang (semi-transparent overlay)
     const overlay = this.add.graphics();
     overlay.fillStyle(0xfde896, 0.97);
     overlay.fillRoundedRect(0, 0, W, H, 0);
 
-    // Background langit tetap terlihat samar
     this.add.image(W / 2, 290, 'sky').setDisplaySize(W, 580).setAlpha(0.15);
 
     const day = DAYS[GameState.dayIndex];
     const isSaturday = day.special;
     const verse = GameState.getRandomVerse();
 
-    // ── Emoji besar ──────────────────────────────────────────
-    const emoji = this.add.text(W / 2, 90, isSaturday ? '⭐' : '😊', {
-      fontSize: '56px'
+    // Emoji besar
+    const emoji = this.add.text(W / 2, 92, isSaturday ? '⭐' : '😊', {
+      fontSize: '60px'
     }).setOrigin(0.5);
 
-    // Animasi emoji loncat
-    this.tweens.add({
-      targets: emoji,
-      y: 80,
-      duration: 600,
-      ease: 'Bounce.easeOut'
-    });
+    this.tweens.add({ targets: emoji, y: 82, duration: 600, ease: 'Bounce.easeOut' });
 
-    // ── Judul ────────────────────────────────────────────────
+    // Judul — Poppins bold
     const titleTxt = isSaturday
-      ? `Hebat! Bekal Besok Sudah Siap 🎉`
-      : `Hore, Kamu Berhasil!`;
+      ? 'Hebat! Bekal Besok Sudah Siap 🎉'
+      : 'Hore, Kamu Berhasil!';
 
-    this.add.text(W / 2, 165, titleTxt, {
+    this.add.text(W / 2, 168, titleTxt, {
       fontSize: '22px',
-      fontFamily: '"Comic Sans MS", cursive',
-      color: '#2a7a3a',
+      fontFamily: FONT_TITLE,
       fontStyle: 'bold',
+      color: '#2a7a3a',
       align: 'center',
-      lineSpacing: 6
+      wordWrap: { width: 360 },
     }).setOrigin(0.5);
 
     // ── Panel ayat ───────────────────────────────────────────
+    // Hitung tinggi panel secara dinamis berdasarkan teks
     const vPanel = this.add.graphics();
-    vPanel.fillStyle(0xffffff, 0.78);
-    vPanel.fillRoundedRect(W / 2 - 165, 220, 330, 140, 16);
+    vPanel.fillStyle(0xffffff, 0.82);
+    vPanel.fillRoundedRect(W / 2 - 170, 215, 340, 185, 16);
     vPanel.lineStyle(4, 0xf4a300, 1);
-    vPanel.fillRoundedRect(W / 2 - 165, 220, 6, 140, { tl: 16, tr: 0, bl: 16, br: 0 });
-    vPanel.strokeRoundedRect(W / 2 - 165, 220, 330, 140, 16);
+    vPanel.fillStyle(0xf4a300, 1);
+    vPanel.fillRoundedRect(W / 2 - 170, 215, 6, 185, { tl: 16, tr: 0, bl: 16, br: 0 });
+    vPanel.strokeRoundedRect(W / 2 - 170, 215, 340, 185, 16);
 
-    // Teks ayat (word-wrap agar tidak overflow)
-    this.add.text(W / 2 - 148, 232, `"${verse.text}"`, {
-      fontSize: '12.5px',
-      fontFamily: '"Comic Sans MS", cursive',
+    // Teks ayat — Nunito 16px agar lebih terbaca
+    this.add.text(W / 2 - 150, 228, `"${verse.text}"`, {
+      fontSize: '14px',
+      fontFamily: FONT_BODY,
+      fontStyle: 'bold',
       color: '#5a3800',
-      wordWrap: { width: 295 },
-      lineSpacing: 5
+      wordWrap: { width: 304 },
+      lineSpacing: 6
     });
 
-    this.add.text(W / 2 + 148, 348, `— ${verse.ref}`, {
-      fontSize: '11px',
-      fontFamily: '"Comic Sans MS", cursive',
+    this.add.text(W / 2 + 154, 390, `— ${verse.ref}`, {
+      fontSize: '14px',
+      fontFamily: FONT_BODY,
+      fontStyle: 'bold',
       color: '#b56a00',
-      fontStyle: 'italic'
     }).setOrigin(1, 1);
 
-    // ── Karakter pemain kecil di pojok ───────────────────────
-    const heroDecor = this.add.image(W - 50, H - 130, 'player').setScale(1.1).setAlpha(0.7);
+    // Karakter dekorasi
+    const heroDecor = this.add.image(W - 44, H - 128, 'player').setScale(1.1).setAlpha(0.7);
     this.tweens.add({
       targets: heroDecor,
-      y: H - 140,
+      y: H - 138,
       duration: 1000,
       ease: 'Sine.easeInOut',
       yoyo: true,
@@ -998,40 +617,36 @@ class DayCompleteScene extends Phaser.Scene {
     });
 
     // ── Tombol Lanjut ────────────────────────────────────────
-    const isLastPlayDay = GameState.dayIndex === 5; // Sabtu = hari terakhir aktif
+    const isLastPlayDay = GameState.dayIndex === 5;
     const btnLabel = isLastPlayDay ? 'Minggu ▶' : 'Lanjut ▶';
 
     const btnBg = this.add.graphics();
     btnBg.fillStyle(0xf4a300, 1);
-    btnBg.fillRoundedRect(W / 2 - 120, H - 160, 240, 58, 29);
+    btnBg.fillRoundedRect(W / 2 - 130, H - 156, 260, 62, 31);
     btnBg.lineStyle(3, 0xffd060, 1);
-    btnBg.strokeRoundedRect(W / 2 - 120, H - 160, 240, 58, 29);
+    btnBg.strokeRoundedRect(W / 2 - 130, H - 156, 260, 62, 31);
 
-    const btnText = this.add.text(W / 2, H - 131, btnLabel, {
-      fontSize: '22px',
-      fontFamily: '"Comic Sans MS", cursive',
-      color: '#ffffff',
+    const btnText = this.add.text(W / 2, H - 125, btnLabel, {
+      fontSize: '24px',
+      fontFamily: FONT_TITLE,
       fontStyle: 'bold',
-      stroke: '#0003',
+      color: '#ffffff',
+      stroke: '#00000033',
       strokeThickness: 2
     }).setOrigin(0.5);
 
-    const btnZone = this.add.zone(W / 2, H - 131, 240, 58).setInteractive({ cursor: 'pointer' });
+    const btnZone = this.add.zone(W / 2, H - 125, 260, 62).setInteractive({ cursor: 'pointer' });
     btnZone.on('pointerover', () => { btnBg.setScale(1.05); btnText.setScale(1.05); });
     btnZone.on('pointerout',  () => { btnBg.setScale(1);    btnText.setScale(1);    });
     btnZone.on('pointerdown', () => this.goNext());
 
-    // Dots progress
     this.createDayDots(W, H);
   }
 
-  // Tombol Lanjut ditekan → tentukan Scene berikutnya
   goNext() {
     if (GameState.dayIndex >= 5) {
-      // Sesudah Sabtu → tampilkan Hari Minggu (istirahat)
       this.scene.start('SundayScene');
     } else {
-      // Lanjut ke hari berikutnya
       GameState.dayIndex++;
       GameState.score = 0;
       this.scene.start('GameScene');
@@ -1056,8 +671,10 @@ class DayCompleteScene extends Phaser.Scene {
       g.strokeCircle(x, dotY, r);
 
       this.add.text(x, dotY + r + 2, day.short, {
-        fontSize: '8px', fontFamily: '"Comic Sans MS", cursive',
-        color: 'rgba(100,50,0,0.9)', fontStyle: 'bold'
+        fontSize: '10px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
+        color: 'rgba(100,50,0,0.9)',
       }).setOrigin(0.5, 0);
     });
   }
@@ -1066,7 +683,6 @@ class DayCompleteScene extends Phaser.Scene {
 
 // ============================================================
 //  SCENE 5: SundayScene
-//  Layar akhir — Hari Minggu, pesan moral, tombol main lagi
 // ============================================================
 class SundayScene extends Phaser.Scene {
   constructor() { super({ key: 'SundayScene' }); }
@@ -1074,18 +690,12 @@ class SundayScene extends Phaser.Scene {
   create() {
     const W = this.scale.width, H = this.scale.height;
 
-    // Background langit senja
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x7ec8f0, 0x7ec8f0, 0xfde8a0, 0xfde8a0, 1);
     bg.fillRect(0, 0, W, H);
 
-    // Tanah
     this.add.image(W / 2, H - 60, 'ground').setDisplaySize(W, 120);
 
-    // Matahari besar (senja)
-    const sun = this.add.image(W / 2, H - 100, 'sun').setScale(2.5).setAlpha(0.35);
-
-    // Karakter di tengah berdoa
     const hero = this.add.image(W / 2, H - 140, 'player').setScale(1.6);
     this.tweens.add({
       targets: hero,
@@ -1098,30 +708,40 @@ class SundayScene extends Phaser.Scene {
 
     // ── Panel pesan ──────────────────────────────────────────
     const panel = this.add.graphics();
-    panel.fillStyle(0xfff8d0, 0.95);
-    panel.fillRoundedRect(W / 2 - 175, 20, 350, 380, 20);
+    panel.fillStyle(0xfff8d0, 0.96);
+    panel.fillRoundedRect(W / 2 - 178, 18, 356, 400, 20);
     panel.lineStyle(3, 0xf4a300, 1);
-    panel.strokeRoundedRect(W / 2 - 175, 20, 350, 380, 20);
+    panel.strokeRoundedRect(W / 2 - 178, 18, 356, 400, 20);
 
     // Emoji
-    this.add.text(W / 2, 60, '🌈', { fontSize: '48px' }).setOrigin(0.5);
+    this.add.text(W / 2, 60, '🌈', { fontSize: '52px' }).setOrigin(0.5);
 
-    // Judul
-    this.add.text(W / 2, 122, 'Hari Minggu — Istirahat! 🙏', {
-      fontSize: '18px', fontFamily: '"Comic Sans MS", cursive',
-      color: '#2a7a3a', fontStyle: 'bold', align: 'center',
-      wordWrap: { width: 310 }
+    // Judul — Poppins bold 22px
+    this.add.text(W / 2, 126, 'Hari Minggu — Istirahat! 🙏', {
+      fontSize: '20px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#2a7a3a',
+      align: 'center',
+      wordWrap: { width: 320 }
     }).setOrigin(0.5);
 
     // Garis pemisah
     const line = this.add.graphics();
     line.lineStyle(2, 0xf4a300, 0.5);
-    line.lineBetween(W / 2 - 130, 148, W / 2 + 130, 148);
+    line.lineBetween(W / 2 - 130, 154, W / 2 + 130, 154);
 
-    // Pesan moral
+    // Label
+    this.add.text(W / 2, 168, '🌟 Pesan Tuhan untuk Kamu 🌟', {
+      fontSize: '16px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#b56a00',
+      align: 'center'
+    }).setOrigin(0.5, 0);
+
+    // Pesan moral — Nunito 16px
     const moralLines = [
-      '🌟 Pesan Tuhan untuk Kamu 🌟',
-      '',
       'Seperti manna yang turun setiap hari,',
       'Tuhan selalu mencukupi kebutuhan kita. 🍞',
       '',
@@ -1130,45 +750,41 @@ class SundayScene extends Phaser.Scene {
       'besok Tuhan akan mencukupkan lagi! 🙏',
     ];
     moralLines.forEach((line, i) => {
-      const isBold = i === 0;
-      this.add.text(W / 2, 162 + i * 24, line, {
-        fontSize: isBold ? '14px' : '13px',
-        fontFamily: '"Comic Sans MS", cursive',
+      this.add.text(W / 2, 202 + i * 26, line, {
+        fontSize: '15px',
+        fontFamily: FONT_BODY,
+        fontStyle: 'bold',
         color: '#5a3800',
-        fontStyle: isBold ? 'bold' : 'normal',
         align: 'center',
-        wordWrap: { width: 310 }
+        wordWrap: { width: 316 }
       }).setOrigin(0.5, 0);
     });
-
-
 
     // ── Tombol Main Lagi ─────────────────────────────────────
     const btnBg = this.add.graphics();
     btnBg.fillStyle(0xf4a300, 1);
-    btnBg.fillRoundedRect(W / 2 - 130, H - 160, 260, 60, 30);
+    btnBg.fillRoundedRect(W / 2 - 135, H - 156, 270, 62, 31);
     btnBg.lineStyle(3, 0xffd060, 1);
-    btnBg.strokeRoundedRect(W / 2 - 130, H - 160, 260, 60, 30);
+    btnBg.strokeRoundedRect(W / 2 - 135, H - 156, 270, 62, 31);
 
-    const btnText = this.add.text(W / 2, H - 130, 'Main Lagi 🔄', {
-      fontSize: '22px', fontFamily: '"Comic Sans MS", cursive',
-      color: '#ffffff', fontStyle: 'bold',
-      stroke: '#0003', strokeThickness: 2
+    const btnText = this.add.text(W / 2, H - 125, 'Main Lagi 🔄', {
+      fontSize: '24px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#ffffff',
+      stroke: '#00000033',
+      strokeThickness: 2
     }).setOrigin(0.5);
 
-    const btnZone = this.add.zone(W / 2, H - 130, 260, 60).setInteractive({ cursor: 'pointer' });
+    const btnZone = this.add.zone(W / 2, H - 125, 270, 62).setInteractive({ cursor: 'pointer' });
     btnZone.on('pointerover', () => { btnBg.setScale(1.05); btnText.setScale(1.05); });
     btnZone.on('pointerout',  () => { btnBg.setScale(1);    btnText.setScale(1);    });
     btnZone.on('pointerdown', () => {
-      // Reset total dan kembali ke layar Start
       GameState.reset();
       this.scene.start('StartScene');
     });
 
-    // Animasi bintang-bintang jatuh sebagai dekorasi
     this.spawnStars(W, H);
-
-    // Dots semua selesai
     this.createDayDots(W, H);
   }
 
@@ -1209,8 +825,10 @@ class SundayScene extends Phaser.Scene {
       g.fillCircle(x, dotY, r);
       g.strokeCircle(x, dotY, r);
       this.add.text(x, dotY + r + 2, day.short, {
-        fontSize: '8px', fontFamily: '"Comic Sans MS", cursive',
-        color: 'rgba(100,50,0,0.9)', fontStyle: 'bold'
+        fontSize: '10px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
+        color: 'rgba(100,50,0,0.9)',
       }).setOrigin(0.5, 0);
     });
   }
@@ -1219,51 +837,42 @@ class SundayScene extends Phaser.Scene {
 
 // ============================================================
 //  KONFIGURASI PHASER
-//  Di sinilah semua Scene didaftarkan dan ukuran canvas diatur
 // ============================================================
 const config = {
-  type: Phaser.AUTO,  // Otomatis pilih WebGL atau Canvas
-
-  // Ukuran canvas (piksel)
+  type: Phaser.AUTO,
   width: 480,
   height: 700,
 
-  // Responsif: skala agar muat di layar
   scale: {
-    mode: Phaser.Scale.FIT,          // Sesuaikan ke layar tanpa distorsi
-    autoCenter: Phaser.Scale.CENTER_BOTH,  // Tengahkan horizontal + vertikal
-    parent: 'game-container',        // ID elemen HTML wadah game
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    parent: 'game-container',
   },
 
-  // Physics: Arcade (ringan, cocok untuk game 2D sederhana)
   physics: {
     default: 'arcade',
     arcade: {
-      gravity: { y: 0 },  // Tidak ada gravitasi global; manna punya velocity sendiri
-      debug: false         // Ganti true untuk melihat hitbox saat debugging
+      gravity: { y: 0 },
+      debug: false
     }
   },
 
-  // Daftar Scene (urutan = urutan load; yang pertama dijalankan otomatis)
   scene: [
-    BootScene,         // 1. Generate semua texture
-    StartScene,        // 2. Layar pembuka
-    GameScene,         // 3. Permainan utama
-    DayCompleteScene,  // 4. Layar selesai per hari
-    SundayScene        // 5. Layar akhir Minggu
+    BootScene,
+    StartScene,
+    GameScene,
+    DayCompleteScene,
+    SundayScene
   ],
 
-  // Latar belakang canvas (di belakang semua Scene)
   backgroundColor: '#f5d98a',
 
-  // Render halus (antialiasing)
   render: {
     pixelArt: false,
     antialias: true
   }
 };
 
-// Mulai Phaser!
 const game = new Phaser.Game(config);
 </script>
 </body>
