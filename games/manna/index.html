@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<!--
+/**
+ * @author      Henky Adlin Shan (@sukalogika)
+ * @copyright   (c) 2026 Henky
+ * @license     MIT License
+ * @link        https://sukalogika.com/LICENSE
+ */
+-->
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Manna dari Surga 🌟</title>
+
+<!-- Google Fonts: Poppins (judul/UI) + Nunito (body/teks panjang) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a0a00;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+  }
+  #game-container {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(255, 180, 0, 0.3);
+  }
+  #game-container canvas {
+    display: block;
+    border-radius: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
+
+<script>
+// ============================================================
+//  DATA PERMAINAN
+// ============================================================
+
+const DAYS = [
+  { name: 'Senin',   short: 'Sen', target: 10 },
+  { name: 'Selasa',  short: 'Sel', target: 10 },
+  { name: 'Rabu',    short: 'Rab', target: 10 },
+  { name: 'Kamis',   short: 'Kam', target: 10 },
+  { name: "Jum'at",  short: 'Jum', target: 10 },
+  { name: 'Sabtu',   short: 'Sab', target: 20, special: true },
+  { name: 'Minggu',  short: 'Min', rest: true },
+];
+
+const VERSES = [
+  { text: 'Hebat! Kamu sudah dapat roti hari ini. Ingat ya: Tuhan itu baik. Dia dengar kalau kita lapar dan Dia pasti kasih kita makan. Tidur nyenyak ya, besok kita cari lagi!', ref: 'Salam Sayang,' },
+  { text: 'Wah, dapat lagi! Ingat prinsipnya: Jangan Serakah. Ambil yang perlu saja untuk hari ini. Kita belajar berbagi dan percaya kalau besok Tuhan kasih lagi yang baru.', ref: 'Salam Sayang,' },
+  { text: 'Hebat! Kamu sudah kumpulkan roti hari ini. Ingat ya: Jangan Khawatir. Tuhan itu kaya banget, besok pasti ada roti baru lagi yang turun dari langit buat kamu.', ref: 'Salam Sayang,' },
+  { text: 'Wah, rotinya tampak enak! Ayo Bersyukur. Karena Tuhan sudah kasih makanan yang sehat, kita harus habiskan dan tidak boleh buang-buang makanan ya!', ref: 'Salam Sayang,' },
+  { text: 'Jagoan, kamu hebat banget hari ini! Ingat ya: Anak Hebat Pasti Taat. Karena kamu pintar ikut aturan, hati jadi tenang dan senang. Ayo istirahat yang cukup, karena besok ada kejutan: kita bakal ambil roti dua kali lipat!', ref: 'Salam Sayang,' },
+  { text: 'Keren! Hari ini kita ambil dua kali lipat ya? Kenapa? Karena besok hari istirahat. Kita belajar Berencana supaya besok kita bisa tenang main sama Tuhan tanpa harus capek cari roti lagi.', ref: 'Salam Sayang,' },
+];
+
+const GameState = {
+  dayIndex: 0,
+  score: 0,
+  usedVerseIdx: [],
+
+  getRandomVerse() {
+    this.usedVerseIdx.push(this.dayIndex);
+    return VERSES[this.dayIndex];
+  },
+
+  reset() {
+    this.dayIndex = 0;
+    this.score = 0;
+    this.usedVerseIdx = [];
+  }
+};
+
+// Font helper — semua teks pakai Poppins atau Nunito
+// Poppins: judul, tombol, label pendek
+// Nunito: teks paragraf / ayat panjang
+const FONT_TITLE  = '"Poppins", sans-serif';
+const FONT_BODY   = '"Nunito", sans-serif';
+
+
+// ============================================================
+//  SCENE 1: BootScene
+// ============================================================
+class BootScene extends Phaser.Scene {
+  constructor() { super({ key: 'BootScene' }); }
+
+  preload() {
+    this.load.image('sky',    'assets/img/desert.png');
+    this.load.image('cloud',  'assets/img/cloud.png');
+    this.load.image('player', 'assets/img/boy.png');
+    this.load.image('manna',  'assets/img/manna.png');
+    this.load.image('ground', 'assets/img/ground.png');
+	this.load.audio('bubble_pop', 'assets/audio/bubble_pop.mp3');
+	this.load.audio('shine', 'assets/audio/shine.mp3');
+	this.load.audio('start', 'assets/audio/start.mp3');
+	this.load.audio('bg_music', 'assets/audio/egyptian-desert.mp3');
+	this.load.audio('win', 'assets/audio/win.mp3');
+  }
+  
+
+
+  create() {
+    this.scene.start('StartScene');
+  }
+}
+
+// Helper: gambar bintang ke Graphics
+function drawStar(g, x, y, outerR, innerR, points) {
+  g.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const angle = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+    const r = i % 2 === 0 ? outerR : innerR;
+    if (i === 0) g.moveTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+    else g.lineTo(x + Math.cos(angle) * r, y + Math.sin(angle) * r);
+  }
+  g.closePath();
+  g.fillPath();
+}
+
+
+// ============================================================
+//  SCENE 2: StartScene
+// ============================================================
+class StartScene extends Phaser.Scene {
+  constructor() { super({ key: 'StartScene' }); }
+
+  create() {
+    const W = this.scale.width, H = this.scale.height;
+
+    this.add.image(W / 2, 290, 'sky').setDisplaySize(W, 580);
+    this.add.image(W / 2, H - 60, 'ground').setDisplaySize(W, 120);
+
+    this.add.image(80, 80, 'cloud').setScale(0.8).setAlpha(0.8);
+    this.add.image(300, 50, 'cloud').setScale(1.1).setAlpha(0.7);
+
+    const hero = this.add.image(W / 2, H - 140, 'player').setScale(1.4);
+    this.tweens.add({
+      targets: hero,
+      y: H - 150,
+      duration: 1200,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1
+    });
+
+    for (let i = 0; i < 6; i++) {
+      const m = this.add.image(
+        Phaser.Math.Between(30, W - 30),
+        Phaser.Math.Between(100, H - 200),
+        'manna'
+      ).setScale(0.7).setAlpha(0.8);
+      this.tweens.add({
+        targets: m,
+        y: m.y - Phaser.Math.Between(15, 35),
+        alpha: { from: 0.4, to: 0.9 },
+        duration: Phaser.Math.Between(1000, 2000),
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1,
+        delay: Phaser.Math.Between(0, 800)
+      });
+    }
+
+    // ── Panel judul ──────────────────────────────────────────
+    const titleBg = this.add.graphics();
+    titleBg.fillStyle(0xfff8d0, 0.95);
+    titleBg.fillRoundedRect(W / 2 - 195, 24, 390, 78, 20);
+    titleBg.lineStyle(3, 0xf4a300, 1);
+    titleBg.strokeRoundedRect(W / 2 - 195, 24, 390, 78, 20);
+
+    this.add.text(W / 2, 63, '🌟 Manna dari Surga 🌟', {
+      fontSize: '22px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#b56a00',
+      stroke: '#fff8d0',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+
+    // ── Panel info cara main ──────────────────────────────────
+    const infoBg = this.add.graphics();
+    infoBg.fillStyle(0xffffff, 0.85);
+    infoBg.fillRoundedRect(W / 2 - 162, 150, 324, 152, 16);
+    infoBg.lineStyle(3, 0xf4a300, 1);
+    infoBg.strokeRoundedRect(W / 2 - 162, 150, 324, 152, 16);
+    infoBg.fillStyle(0xf4a300, 1);
+    infoBg.fillRoundedRect(W / 2 - 162, 150, 6, 152, { tl: 16, tr: 0, bl: 16, br: 0 });
+
+    // Judul info — Poppins bold
+    this.add.text(W / 2 - 138, 164, 'Halo Jagoan! 👋', {
+      fontSize: '17px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#b56a00',
+    });
+
+    // Body info — Nunito, 16px
+    const infoLines = [
+      'Bangsa Israel lagi lapar di padang pasir.',
+      'Yuk, bantu kumpulkan roti Manna! ✨',
+      'Ingat: ambil secukupnya saja ya.',
+      '',
+      'Tekan ← → atau sentuh & geser layar',
+    ];
+    infoLines.forEach((line, i) => {
+      this.add.text(W / 2 - 138, 190 + i * 22, line, {
+        fontSize: '14px',
+        fontFamily: FONT_BODY,
+        fontStyle: 'bold',
+        color: '#7a4800',
+      });
+    });
+
+    // ── Tombol Mulai ─────────────────────────────────────────
+    const btnBg = this.add.graphics();
+    btnBg.fillStyle(0xf4a300, 1);
+    btnBg.fillRoundedRect(W / 2 - 120, 324, 240, 60, 30);
+    btnBg.lineStyle(3, 0xffd060, 1);
+    btnBg.strokeRoundedRect(W / 2 - 120, 324, 240, 60, 30);
+
+    const btnText = this.add.text(W / 2, 354, 'Mulai! 🎉', {
+      fontSize: '24px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#ffffff',
+      stroke: '#00000033',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+
+    const btnZone = this.add.zone(W / 2, 354, 240, 60)
+      .setInteractive({ cursor: 'pointer' });
+
+    btnZone.on('pointerover', () => { btnBg.setScale(1.06); btnText.setScale(1.06); });
+    btnZone.on('pointerout',  () => { btnBg.setScale(1);    btnText.setScale(1);    });
+    btnZone.on('pointerdown', () => {
+	this.sound.play('start');
+	this.sound.play('bg_music', {
+  loop: true,
+  volume: 0.2
+});
+      GameState.reset();
+      this.tweens.add({
+        targets: [btnBg, btnText],
+        scaleX: 0.95, scaleY: 0.95,
+        duration: 80, yoyo: true,
+        onComplete: () => this.scene.start('GameScene')
+      });
+    });
+
+    this.tweens.add({
+      targets: [btnBg, btnText],
+      scaleX: 1.04, scaleY: 1.04,
+      duration: 800, ease: 'Sine.easeInOut',
+      yoyo: true, repeat: -1
+    });
+
+    this.createDayDots(W, H);
+  }
+
+  createDayDots(W, H) {
+    const dotSpacing = 44;
+    const startX = W / 2 - ((DAYS.length - 1) / 2) * dotSpacing;
+    const dotY = H - 28;
+
+    DAYS.forEach((day, i) => {
+      const x = startX + i * dotSpacing;
+      const r = day.special ? 9 : 7;
+      const dot = this.add.graphics();
+      dot.lineStyle(2, 0xffffff, 0.7);
+      dot.fillStyle(0xffffff, 0.25);
+      dot.fillCircle(x, dotY, r);
+      dot.strokeCircle(x, dotY, r);
+
+      this.add.text(x, dotY + r + 4, day.short, {
+        fontSize: '10px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
+        color: 'rgba(255,255,255,0.85)',
+      }).setOrigin(0.5, 0);
+    });
+  }
+}
+
+
+// ============================================================
+//  SCENE 3: GameScene
+// ============================================================
+class GameScene extends Phaser.Scene {
+  constructor() { super({ key: 'GameScene' }); }
+
+  create() {
+    const W = this.scale.width, H = this.scale.height;
+
+    this.add.image(W / 2, 290, 'sky').setDisplaySize(W, 580);
+    this.add.image(W / 2, H - 60, 'ground').setDisplaySize(W, 120);
+
+    this.clouds = [];
+    const cloudData = [
+      { x: 80,  y: 60,  scl: 0.8, spd: 22 },
+      { x: 240, y: 40,  scl: 1.0, spd: 30 },
+      { x: 390, y: 80,  scl: 0.7, spd: 18 },
+      { x: 140, y: 110, scl: 0.65,spd: 26 },
+      { x: 340, y: 95,  scl: 0.9, spd: 35 },
+    ];
+    cloudData.forEach(d => {
+      const c = this.add.image(d.x, d.y, 'cloud').setScale(d.scl).setAlpha(0.88);
+      c.speed = d.spd;
+      this.clouds.push(c);
+    });
+
+    this.player = this.physics.add.image(W / 2, H - 115, 'player');
+    this.player.setCollideWorldBounds(true);
+    this.player.setDepth(10);
+
+    this.mannaGroup = this.physics.add.group();
+
+    this.spawnTimer = this.time.addEvent({
+      delay: 900,
+      callback: this.spawnManna,
+      callbackScope: this,
+      loop: true
+    });
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.wasd = this.input.keyboard.addKeys({
+      left: Phaser.Input.Keyboard.KeyCodes.A,
+      right: Phaser.Input.Keyboard.KeyCodes.D
+    });
+
+    this.touchDeltaX = 0;
+    this.touchActive = false;
+    this.touchStartX = 0;
+
+    this.input.on('pointerdown', (p) => { this.touchActive = true; this.touchStartX = p.x; });
+    this.input.on('pointermove', (p) => { if (this.touchActive) this.touchDeltaX = p.x - this.touchStartX; });
+    this.input.on('pointerup',   () =>  { this.touchActive = false; this.touchDeltaX = 0; });
+
+    this.physics.add.overlap(this.player, this.mannaGroup, this.catchManna, null, this);
+
+    this.particles = this.add.particles(0, 0, 'manna', {
+      speed: { min: 80, max: 200 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 0.4, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 500,
+      quantity: 8,
+      emitting: false
+    });
+    this.particles.setDepth(20);
+
+    this.createHUD();
+    this.updateHUD();
+
+    if (DAYS[GameState.dayIndex].special) {
+      this.add.text(W / 2, 116, '⭐ Hari Sabtu — Kumpulkan 20! ⭐', {
+        fontSize: '16px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
+        color: '#ff7a00',
+      }).setOrigin(0.5).setAlpha(0.9).setDepth(5);
+    }
+  }
+
+  createHUD() {
+    const W = this.scale.width;
+
+    // Panel hari (kiri)
+    this.dayBg = this.add.graphics().setDepth(15);
+    this.dayBg.fillStyle(0xffffff, 0.92);
+    this.dayBg.fillRoundedRect(10, 10, 140, 36, 18);
+
+    this.dayText = this.add.text(80, 28, '📅 Senin', {
+      fontSize: '16px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#7a4000',
+    }).setOrigin(0.5).setDepth(16);
+
+    // Panel skor (kanan)
+    this.scoreBg = this.add.graphics().setDepth(15);
+    this.scoreBg.fillStyle(0xffffff, 0.92);
+    this.scoreBg.fillRoundedRect(W - 150, 10, 140, 36, 18);
+
+    this.scoreText = this.add.text(W - 80, 28, '🌾 0 / 10', {
+      fontSize: '16px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#b56a00',
+    }).setOrigin(0.5).setDepth(16);
+
+    // Progress bar
+    const barW = W * 0.52, barH = 9;
+    const barX = (W - barW) / 2, barY = 16;
+    this.add.graphics()
+      .fillStyle(0x000000, 0.1)
+      .fillRoundedRect(barX, barY, barW, barH, 4)
+      .setDepth(15);
+
+    this.progressBar = this.add.graphics().setDepth(16);
+    this.progressBarConfig = { x: barX, y: barY, w: barW, h: barH };
+
+    this.createDayDots();
+  }
+
+  createDayDots() {
+    const W = this.scale.width, H = this.scale.height;
+    const dotSpacing = 44;
+    const startX = W / 2 - ((DAYS.length - 1) / 2) * dotSpacing;
+    const dotY = H - 28;
+
+    this.dotGraphics = this.add.graphics().setDepth(15);
+
+    DAYS.forEach((day, i) => {
+      const x = startX + i * dotSpacing;
+      this.add.text(x, dotY + 9, day.short, {
+        fontSize: '10px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
+        color: 'rgba(255,255,255,0.85)',
+      }).setOrigin(0.5, 0).setDepth(16);
+    });
+
+    this.updateDots();
+  }
+
+  updateDots() {
+    const W = this.scale.width, H = this.scale.height;
+    const dotSpacing = 44;
+    const startX = W / 2 - ((DAYS.length - 1) / 2) * dotSpacing;
+    const dotY = H - 28;
+
+    this.dotGraphics.clear();
+
+    DAYS.forEach((day, i) => {
+      const x = startX + i * dotSpacing;
+      const r = day.special ? 9 : 7;
+
+      if (i < GameState.dayIndex) {
+        this.dotGraphics.fillStyle(0xf4a300, 1);
+        this.dotGraphics.lineStyle(2, 0xb57000, 1);
+      } else if (i === GameState.dayIndex) {
+        this.dotGraphics.fillStyle(0xffffff, 1);
+        this.dotGraphics.lineStyle(3, 0xf4a300, 1);
+      } else {
+        this.dotGraphics.fillStyle(0xffffff, 0.25);
+        this.dotGraphics.lineStyle(2, 0xffffff, 0.5);
+      }
+      this.dotGraphics.fillCircle(x, dotY, r);
+      this.dotGraphics.strokeCircle(x, dotY, r);
+    });
+  }
+
+  updateHUD() {
+    const day = DAYS[GameState.dayIndex];
+    const target = day.target || 10;
+
+    this.dayText.setText('📅 ' + day.name);
+    this.scoreText.setText(`🌾 ${GameState.score} / ${target}`);
+
+    const bar = this.progressBarConfig;
+    const prog = Math.min(GameState.score / target, 1);
+    this.progressBar.clear();
+    if (prog > 0) {
+      this.progressBar.fillStyle(0xf4a300, 1);
+      this.progressBar.fillRoundedRect(bar.x, bar.y, bar.w * prog, bar.h, 4);
+    }
+  }
+
+  spawnManna() {
+    const day = DAYS[GameState.dayIndex];
+    if (GameState.score >= (day.target || 10)) return;
+
+    const W = this.scale.width;
+    const x = Phaser.Math.Between(30, W - 30);
+    const manna = this.mannaGroup.create(x, -30, 'manna');
+    manna.setScale(0.7);
+    manna.setDepth(8);
+
+    const speed = Phaser.Math.Between(120, 220);
+    manna.setVelocityY(speed);
+    manna.setVelocityX(Phaser.Math.Between(-25, 25));
+    manna.setAngularVelocity(Phaser.Math.Between(-80, 80));
+    manna.checkWorldBounds = true;
+    manna.outOfBoundsKill = true;
+  }
+
+  catchManna(player, manna) {
+    this.particles.explode(10, manna.x, manna.y);
+    manna.destroy();
+	  this.sound.play('bubble_pop');	
+
+    GameState.score++;
+    this.updateHUD();
+
+    this.tweens.add({
+      targets: this.scoreText,
+      scaleX: 1.3, scaleY: 1.3,
+      duration: 80, yoyo: true
+    });
+
+    const day = DAYS[GameState.dayIndex];
+    if (GameState.score >= (day.target || 10)) {
+      this.spawnTimer.remove();
+      this.time.delayedCall(400, () => {
+        this.scene.start('DayCompleteScene');
+      });
+    }
+  }
+
+  update(time, delta) {
+    const SPEED = 300;
+    const player = this.player;
+    player.setVelocityX(0);
+
+    const goLeft  = this.cursors.left.isDown  || this.wasd.left.isDown;
+    const goRight = this.cursors.right.isDown || this.wasd.right.isDown;
+    const touchLeft  = this.touchDeltaX < -8;
+    const touchRight = this.touchDeltaX > 8;
+
+    if (goLeft || touchLeft) {
+      player.setVelocityX(-SPEED);
+      player.setFlipX(true);
+    } else if (goRight || touchRight) {
+      player.setVelocityX(SPEED);
+      player.setFlipX(false);
+    }
+
+    const W = this.scale.width;
+    this.clouds.forEach(c => {
+      c.x += c.speed * (delta / 1000);
+      if (c.x - 80 > W) c.x = -80;
+    });
+  }
+}
+
+
+// ============================================================
+//  SCENE 4: DayCompleteScene
+// ============================================================
+class DayCompleteScene extends Phaser.Scene {
+  constructor() { super({ key: 'DayCompleteScene' }); }
+
+  create() {
+  
+  this.sound.play('shine',{volume: 1});	
+  
+    const W = this.scale.width, H = this.scale.height;
+
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0xfde896, 0.97);
+    overlay.fillRoundedRect(0, 0, W, H, 0);
+
+    this.add.image(W / 2, 290, 'sky').setDisplaySize(W, 580).setAlpha(0.15);
+
+    const day = DAYS[GameState.dayIndex];
+    const isSaturday = day.special;
+    const verse = GameState.getRandomVerse();
+
+    // Emoji besar
+    const emoji = this.add.text(W / 2, 92, isSaturday ? '⭐' : '😊', {
+      fontSize: '60px'
+    }).setOrigin(0.5);
+
+    this.tweens.add({ targets: emoji, y: 82, duration: 600, ease: 'Bounce.easeOut' });
+
+    // Judul — Poppins bold
+    const titleTxt = isSaturday
+      ? 'Hebat! Bekal Besok Sudah Siap 🎉'
+      : 'Hore, Kamu Berhasil!';
+
+    this.add.text(W / 2, 168, titleTxt, {
+      fontSize: '22px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#2a7a3a',
+      align: 'center',
+      wordWrap: { width: 360 },
+    }).setOrigin(0.5);
+
+    // ── Panel ayat ───────────────────────────────────────────
+    // Hitung tinggi panel secara dinamis berdasarkan teks
+    const vPanel = this.add.graphics();
+    vPanel.fillStyle(0xffffff, 0.82);
+    vPanel.fillRoundedRect(W / 2 - 170, 215, 340, 185, 16);
+    vPanel.lineStyle(4, 0xf4a300, 1);
+    vPanel.fillStyle(0xf4a300, 1);
+    vPanel.fillRoundedRect(W / 2 - 170, 215, 6, 185, { tl: 16, tr: 0, bl: 16, br: 0 });
+    vPanel.strokeRoundedRect(W / 2 - 170, 215, 340, 185, 16);
+
+    // Teks ayat — Nunito 16px agar lebih terbaca
+    this.add.text(W / 2 - 150, 228, `"${verse.text}"`, {
+      fontSize: '14px',
+      fontFamily: FONT_BODY,
+      fontStyle: 'bold',
+      color: '#5a3800',
+      wordWrap: { width: 304 },
+      lineSpacing: 6
+    });
+
+    this.add.text(W / 2 + 154, 390, `— ${verse.ref}`, {
+      fontSize: '14px',
+      fontFamily: FONT_BODY,
+      fontStyle: 'bold',
+      color: '#b56a00',
+    }).setOrigin(1, 1);
+
+    // Karakter dekorasi
+    const heroDecor = this.add.image(W - 44, H - 128, 'player').setScale(1.1).setAlpha(0.7);
+    this.tweens.add({
+      targets: heroDecor,
+      y: H - 138,
+      duration: 1000,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1
+    });
+
+    // ── Tombol Lanjut ────────────────────────────────────────
+    const isLastPlayDay = GameState.dayIndex === 5;
+    const btnLabel = isLastPlayDay ? 'Minggu ▶' : 'Lanjut ▶';
+
+    const btnBg = this.add.graphics();
+    btnBg.fillStyle(0xf4a300, 1);
+    btnBg.fillRoundedRect(W / 2 - 130, H - 156, 260, 62, 31);
+    btnBg.lineStyle(3, 0xffd060, 1);
+    btnBg.strokeRoundedRect(W / 2 - 130, H - 156, 260, 62, 31);
+
+    const btnText = this.add.text(W / 2, H - 125, btnLabel, {
+      fontSize: '24px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#ffffff',
+      stroke: '#00000033',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+
+    const btnZone = this.add.zone(W / 2, H - 125, 260, 62).setInteractive({ cursor: 'pointer' });
+    btnZone.on('pointerover', () => { btnBg.setScale(1.05); btnText.setScale(1.05); });
+    btnZone.on('pointerout',  () => { btnBg.setScale(1);    btnText.setScale(1);    });
+    btnZone.on('pointerdown', () => {
+	this.sound.play('start');
+	this.goNext()
+	});
+
+    this.createDayDots(W, H);
+  }
+
+  goNext() {
+    if (GameState.dayIndex >= 5) {
+	this.sound.play('win');
+      this.scene.start('SundayScene');
+    } else {
+      GameState.dayIndex++;
+      GameState.score = 0;
+      this.scene.start('GameScene');
+    }
+  }
+
+  createDayDots(W, H) {
+    const dotSpacing = 44;
+    const startX = W / 2 - ((DAYS.length - 1) / 2) * dotSpacing;
+    const dotY = H - 28;
+    const g = this.add.graphics();
+
+    DAYS.forEach((day, i) => {
+      const x = startX + i * dotSpacing;
+      const r = day.special ? 9 : 7;
+      if (i <= GameState.dayIndex) {
+        g.fillStyle(0xf4a300, 1); g.lineStyle(2, 0xb57000, 1);
+      } else {
+        g.fillStyle(0xffffff, 0.25); g.lineStyle(2, 0xffffff, 0.5);
+      }
+      g.fillCircle(x, dotY, r);
+      g.strokeCircle(x, dotY, r);
+
+      this.add.text(x, dotY + r + 2, day.short, {
+        fontSize: '10px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
+        color: 'rgba(100,50,0,0.9)',
+      }).setOrigin(0.5, 0);
+    });
+  }
+}
+
+
+// ============================================================
+//  SCENE 5: SundayScene
+// ============================================================
+class SundayScene extends Phaser.Scene {
+  constructor() { super({ key: 'SundayScene' }); }
+
+  create() {
+    const W = this.scale.width, H = this.scale.height;
+
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(0x7ec8f0, 0x7ec8f0, 0xfde8a0, 0xfde8a0, 1);
+    bg.fillRect(0, 0, W, H);
+
+    this.add.image(W / 2, H - 60, 'ground').setDisplaySize(W, 120);
+
+    const hero = this.add.image(W / 2, H - 140, 'player').setScale(1.6);
+    this.tweens.add({
+      targets: hero,
+      y: H - 150,
+      duration: 1500,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1
+    });
+
+    // ── Panel pesan ──────────────────────────────────────────
+    const panel = this.add.graphics();
+    panel.fillStyle(0xfff8d0, 0.96);
+    panel.fillRoundedRect(W / 2 - 178, 18, 356, 400, 20);
+    panel.lineStyle(3, 0xf4a300, 1);
+    panel.strokeRoundedRect(W / 2 - 178, 18, 356, 400, 20);
+
+    // Emoji
+    this.add.text(W / 2, 60, '🌈', { fontSize: '52px' }).setOrigin(0.5);
+
+    // Judul — Poppins bold 22px
+    this.add.text(W / 2, 126, 'Hari Minggu — Istirahat! 🙏', {
+      fontSize: '20px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#2a7a3a',
+      align: 'center',
+      wordWrap: { width: 320 }
+    }).setOrigin(0.5);
+
+    // Garis pemisah
+    const line = this.add.graphics();
+    line.lineStyle(2, 0xf4a300, 0.5);
+    line.lineBetween(W / 2 - 130, 154, W / 2 + 130, 154);
+
+    // Label
+    this.add.text(W / 2, 168, '🌟 Pesan Tuhan untuk Kamu 🌟', {
+      fontSize: '16px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#b56a00',
+      align: 'center'
+    }).setOrigin(0.5, 0);
+
+    // Pesan moral — Nunito 16px
+    const moralLines = [
+      'Seperti manna yang turun setiap hari,',
+      'Tuhan selalu mencukupi kebutuhan kita. 🍞',
+      '',
+      'Kita tidak perlu khawatir atau serakah.',
+      'Cukuplah untuk hari ini —',
+      'besok Tuhan akan mencukupkan lagi! 🙏',
+    ];
+    moralLines.forEach((line, i) => {
+      this.add.text(W / 2, 202 + i * 26, line, {
+        fontSize: '15px',
+        fontFamily: FONT_BODY,
+        fontStyle: 'bold',
+        color: '#5a3800',
+        align: 'center',
+        wordWrap: { width: 316 }
+      }).setOrigin(0.5, 0);
+    });
+
+    // ── Tombol Main Lagi ─────────────────────────────────────
+    const btnBg = this.add.graphics();
+    btnBg.fillStyle(0xf4a300, 1);
+    btnBg.fillRoundedRect(W / 2 - 135, H - 156, 270, 62, 31);
+    btnBg.lineStyle(3, 0xffd060, 1);
+    btnBg.strokeRoundedRect(W / 2 - 135, H - 156, 270, 62, 31);
+
+    const btnText = this.add.text(W / 2, H - 125, 'Main Lagi 🔄', {
+      fontSize: '24px',
+      fontFamily: FONT_TITLE,
+      fontStyle: 'bold',
+      color: '#ffffff',
+      stroke: '#00000033',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+
+    const btnZone = this.add.zone(W / 2, H - 125, 270, 62).setInteractive({ cursor: 'pointer' });
+    btnZone.on('pointerover', () => { btnBg.setScale(1.05); btnText.setScale(1.05); });
+    btnZone.on('pointerout',  () => { btnBg.setScale(1);    btnText.setScale(1);    });
+    btnZone.on('pointerdown', () => {
+	this.sound.play('start');	
+      GameState.reset();
+      this.scene.start('StartScene');
+    });
+
+    this.spawnStars(W, H);
+    this.createDayDots(W, H);
+  }
+
+  spawnStars(W, H) {
+    for (let i = 0; i < 12; i++) {
+      const m = this.add.image(
+        Phaser.Math.Between(0, W),
+        Phaser.Math.Between(0, H),
+        'manna'
+      ).setScale(Phaser.Math.FloatBetween(0.2, 0.5)).setAlpha(0.5);
+
+      this.tweens.add({
+        targets: m,
+        y: m.y + Phaser.Math.Between(20, 60),
+        alpha: 0,
+        duration: Phaser.Math.Between(1500, 3000),
+        delay: Phaser.Math.Between(0, 1200),
+        repeat: -1,
+        repeatDelay: Phaser.Math.Between(500, 1500),
+        onRepeat: () => {
+          m.x = Phaser.Math.Between(0, W);
+          m.y = -20;
+          m.alpha = 0.5;
+        }
+      });
+    }
+  }
+
+  createDayDots(W, H) {
+    const dotSpacing = 44;
+    const startX = W / 2 - ((DAYS.length - 1) / 2) * dotSpacing;
+    const dotY = H - 28;
+    const g = this.add.graphics();
+    DAYS.forEach((day, i) => {
+      const x = startX + i * dotSpacing;
+      const r = day.special ? 9 : 7;
+      g.fillStyle(0xf4a300, 1); g.lineStyle(2, 0xb57000, 1);
+      g.fillCircle(x, dotY, r);
+      g.strokeCircle(x, dotY, r);
+      this.add.text(x, dotY + r + 2, day.short, {
+        fontSize: '10px',
+        fontFamily: FONT_TITLE,
+        fontStyle: 'bold',
+        color: 'rgba(100,50,0,0.9)',
+      }).setOrigin(0.5, 0);
+    });
+  }
+}
+
+
+// ============================================================
+//  KONFIGURASI PHASER
+// ============================================================
+const config = {
+  type: Phaser.AUTO,
+  width: 480,
+  height: 700,
+
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    parent: 'game-container',
+  },
+
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { y: 0 },
+      debug: false
+    }
+  },
+
+  scene: [
+    BootScene,
+    StartScene,
+    GameScene,
+    DayCompleteScene,
+    SundayScene
+  ],
+
+  backgroundColor: '#f5d98a',
+
+  render: {
+    pixelArt: false,
+    antialias: true
+  }
+};
+
+const game = new Phaser.Game(config);
+</script>
+</body>
+</html>
