@@ -253,7 +253,7 @@ class StartScene extends Phaser.Scene {
 	this.sound.play('start');
 	this.sound.play('bg_music', {
   loop: true,
-  volume: 0.2
+  volume: 0.5
 });
       GameState.reset();
       this.tweens.add({
@@ -558,7 +558,8 @@ class DayCompleteScene extends Phaser.Scene {
   constructor() { super({ key: 'DayCompleteScene' }); }
 
   create() {
-  
+// actually, i want make this shine sound more loud but it cant.
+// i keep the syntax here :)
   this.sound.play('shine',{volume: 1});	
   
     const W = this.scale.width, H = this.scale.height;
