@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🐑 Gembala yang Baik</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: linear-gradient(135deg,#87CEEB 0%,#98E4C8 50%,#d4f5a0 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; font-family:'Nunito',sans-serif; overflow:hidden;
+    touch-action: none;
+  }
+  .cloud { position:fixed; background:white; border-radius:50px; opacity:.7; animation:floatCloud linear infinite; z-index:0; }
+  .cloud::before,.cloud::after { content:''; position:absolute; background:white; border-radius:50%; }
+  .cloud-1{width:120px;height:40px;top:8%;left:-130px;animation-duration:28s;}
+  .cloud-1::before{width:60px;height:60px;top:-30px;left:15px;}
+  .cloud-1::after{width:40px;height:40px;top:-20px;left:60px;}
+  .cloud-2{width:80px;height:28px;top:30%;left:-90px;animation-duration:38s;animation-delay:-12s;}
+  .cloud-2::before{width:42px;height:42px;top:-20px;left:8px;}
+  .cloud-2::after{width:30px;height:30px;top:-14px;left:42px;}
+  .cloud-3{width:100px;height:34px;top:65%;left:-110px;animation-duration:32s;animation-delay:-6s;}
+  .cloud-3::before{width:50px;height:50px;top:-24px;left:12px;}
+  .cloud-3::after{width:36px;height:36px;top:-16px;left:52px;}
+  @keyframes floatCloud{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 140px))}}
+  #game-title {
+    font-family:'Fredoka One',cursive; font-size:2rem; color:#2D6A4F;
+    text-shadow:3px 3px 0 rgba(255,255,255,.8); margin-bottom:8px; position:relative; z-index:1;
+  }
+  #game-wrapper {
+    position:relative; z-index:1; border-radius:20px; overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.25), 0 0 0 4px rgba(255,255,255,.7), 0 0 0 8px rgba(45,106,79,.3);
+  }
+  #controls-hint {
+    margin-top:10px; font-size:.8rem; color:#2D6A4F; font-weight:800;
+    position:relative; z-index:1; background:rgba(255,255,255,.65);
+    padding:5px 16px; border-radius:20px; backdrop-filter:blur(4px);
+  }
+  #popup-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+    backdrop-filter:blur(5px); z-index:200; align-items:center; justify-content:center;
+  }
+  #popup-overlay.show{display:flex;}
+  #popup-box {
+    background:#fff; border-radius:24px; padding:32px 36px; text-align:center;
+    max-width:360px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,.3);
+    animation:popIn .4s cubic-bezier(.34,1.56,.64,1); border:4px solid #52B788;
+  }
+  @keyframes popIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+  #popup-emoji{font-size:3.5rem;margin-bottom:10px;}
+  #popup-title{font-family:'Fredoka One',cursive;font-size:1.7rem;color:#2D6A4F;margin-bottom:6px;}
+  #popup-message{font-size:.95rem;color:#555;margin-bottom:8px;line-height:1.5;}
+  #popup-moral{font-size:.82rem;color:#52B788;font-weight:800;margin-bottom:18px;
+    font-style:italic;padding:8px 12px;background:#f0fdf4;border-radius:10px;}
+  #popup-score-detail{font-size:.82rem;color:#888;margin-bottom:14px;}  
+  #popup-stars{font-size:2rem;margin-bottom:12px;letter-spacing:4px;}
+  #popup-btn {
+    background:linear-gradient(135deg,#52B788,#2D6A4F); color:#fff; border:none;
+    padding:11px 30px; border-radius:50px; font-family:'Fredoka One',cursive;
+    font-size:1.05rem; cursor:pointer; box-shadow:0 4px 15px rgba(45,106,79,.4);
+    transition:transform .1s,box-shadow .1s; margin-right:8px;
+  }
+  #popup-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(45,106,79,.5);}
+  #popup-btn2 {
+    background:linear-gradient(135deg,#F4A460,#D2691E); color:#fff; border:none;
+    padding:11px 22px; border-radius:50px; font-family:'Fredoka One',cursive;
+    font-size:.95rem; cursor:pointer; box-shadow:0 4px 15px rgba(210,105,30,.4);
+    transition:transform .1s,box-shadow .1s;
+  }
+  #popup-btn2:hover{transform:translateY(-2px);}
+  .btn-row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;}
+  #highscore-badge{
+    display:none; position:fixed; top:12px; right:12px; z-index:100;
+    background:rgba(255,255,255,.85); border-radius:16px; padding:6px 14px;
+    font-family:'Fredoka One',cursive; font-size:.85rem; color:#D4700A;
+    box-shadow:0 4px 12px rgba(0,0,0,.15); backdrop-filter:blur(4px);
+  }
+
+  /* ═══════════════════════════════════════════
+     VIRTUAL JOYSTICK
+  ═══════════════════════════════════════════ */
+  #joystick-container {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    display: none; /* shown via JS on touch device */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #joystick-zone {
+    position: relative;
+    width: 148px;
+    height: 148px;
+  }
+  /* outer ring */
+  #joystick-base {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 35%, rgba(255,255,255,.28), rgba(0,0,0,.18));
+    border: 3px solid rgba(255,255,255,.55);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 24px rgba(0,0,0,.3), inset 0 2px 6px rgba(255,255,255,.2);
+  }
+  /* direction arrows etched into base */
+  #joystick-base::before {
+    content: '▲';
+    position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+    font-size: 14px; color: rgba(255,255,255,.45); pointer-events: none;
+  }
+  #joystick-base::after {
+    content: '▼';
+    position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+    font-size: 14px; color: rgba(255,255,255,.45); pointer-events: none;
+  }
+  .joystick-lr {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 14px; color: rgba(255,255,255,.45); pointer-events: none;
+  }
+  #joystick-left  { left: 7px; }
+  #joystick-right { right: 7px; }
+  /* thumb knob */
+  #joystick-knob {
+    position: absolute;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 36% 32%, rgba(255,255,255,.85), rgba(120,200,140,.7) 60%, rgba(45,106,79,.85));
+    border: 3px solid rgba(255,255,255,.7);
+    box-shadow: 0 4px 16px rgba(0,0,0,.35), inset 0 2px 5px rgba(255,255,255,.5);
+    transition: box-shadow .08s;
+    pointer-events: none;
+  }
+  #joystick-knob.active {
+    box-shadow: 0 6px 22px rgba(0,0,0,.45), inset 0 2px 5px rgba(255,255,255,.5);
+    background: radial-gradient(circle at 36% 32%, rgba(255,255,255,.95), rgba(82,183,136,.85) 60%, rgba(25,80,50,.9));
+  }
+</style>
+</head>
+<body>
+<div class="cloud cloud-1"></div>
+<div class="cloud cloud-2"></div>
+<div class="cloud cloud-3"></div>
+
+<div id="highscore-badge">🏆 Skor Terbaik: <span id="hs-val">0</span></div>
+<div id="game-title">🐑 Gembala yang Baik</div>
+<div id="game-wrapper"><div id="game-container"></div></div>
+<div id="controls-hint" id="kb-hint">⬆️ ⬇️ ⬅️ ➡️ Tombol panah untuk bergerak</div>
+
+<!-- Virtual Joystick -->
+<div id="joystick-container">
+  <div id="joystick-zone">
+    <div id="joystick-base">
+      <span class="joystick-lr" id="joystick-left">◀</span>
+      <span class="joystick-lr" id="joystick-right">▶</span>
+    </div>
+    <div id="joystick-knob"></div>
+  </div>
+</div>
+
+<div id="popup-overlay">
+  <div id="popup-box">
+    <div id="popup-emoji">🎉</div>
+    <div id="popup-stars"></div>
+    <div id="popup-title">Hebat!</div>
+    <div id="popup-message">Kamu berhasil!</div>
+    <div id="popup-score-detail"></div>
+    <div id="popup-moral"></div>
+    <div class="btn-row">
+      <button id="popup-btn" onclick="onPopupBtn()">Lanjut!</button>
+      <button id="popup-btn2" onclick="onPopupBtn2()" style="display:none">🏠 Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+//  VIRTUAL JOYSTICK — touch input mapped to virtual key state
+// ═══════════════════════════════════════════════════════════════
+const vKeys = { left:false, right:false, up:false, down:false };
+
+// Joystick visibility & lock control — called by GameScene / IntroScene
+const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+let joystickEnabled = false;
+
+function showJoystick(){
+  if(!isTouchDevice) return;
+  document.getElementById('joystick-container').style.display = 'block';
+  document.getElementById('controls-hint').textContent = '🕹️ Gunakan joystick di bawah untuk bergerak';
+}
+function hideJoystick(){
+  document.getElementById('joystick-container').style.display = 'none';
+  document.getElementById('controls-hint').textContent = '⬆️ ⬇️ ⬅️ ➡️ Tombol panah untuk bergerak';
+  // reset vKeys when hidden
+  vKeys.left = vKeys.right = vKeys.up = vKeys.down = false;
+}
+function enableJoystick(v){ joystickEnabled = v; if(!v){ vKeys.left=vKeys.right=vKeys.up=vKeys.down=false; } }
+
+(function initJoystick(){
+
+  const zone  = document.getElementById('joystick-zone');
+  const knob  = document.getElementById('joystick-knob');
+  const RADIUS = 74;  // half of zone width
+  const DEAD   = 12;  // dead-zone px
+  let activeTouchId = null;
+  let zoneRect = null;
+
+  function getCenter(){
+    if(!zoneRect) zoneRect = zone.getBoundingClientRect();
+    return { cx: zoneRect.left + zoneRect.width/2, cy: zoneRect.top + zoneRect.height/2 };
+  }
+
+  function applyDelta(dx, dy){
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    // Clamp knob to radius
+    const clamp = Math.min(dist, RADIUS - 10);
+    const ratio = dist > 0 ? clamp/dist : 0;
+    const kx = dx * ratio;
+    const ky = dy * ratio;
+    knob.style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+    knob.classList.add('active');
+    // Direction states
+    vKeys.left  = dx < -DEAD;
+    vKeys.right = dx >  DEAD;
+    vKeys.up    = dy < -DEAD;
+    vKeys.down  = dy >  DEAD;
+  }
+
+  function reset(){
+    knob.style.transform = 'translate(-50%, -50%)';
+    knob.classList.remove('active');
+    vKeys.left = vKeys.right = vKeys.up = vKeys.down = false;
+    activeTouchId = null;
+  }
+
+  zone.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if(!joystickEnabled) return;
+    zoneRect = zone.getBoundingClientRect();
+    if(activeTouchId === null){
+      const t = e.changedTouches[0];
+      activeTouchId = t.identifier;
+      const {cx,cy} = getCenter();
+      applyDelta(t.clientX - cx, t.clientY - cy);
+    }
+  }, {passive:false});
+
+  window.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if(!joystickEnabled || activeTouchId === null) return;
+    for(const t of e.changedTouches){
+      if(t.identifier === activeTouchId){
+        const {cx,cy} = getCenter();
+        applyDelta(t.clientX - cx, t.clientY - cy);
+        break;
+      }
+    }
+  }, {passive:false});
+
+  window.addEventListener('touchend', e => {
+    for(const t of e.changedTouches){
+      if(t.identifier === activeTouchId){ reset(); break; }
+    }
+  });
+  window.addEventListener('touchcancel', reset);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  WEB AUDIO — suara prosedural
+// ═══════════════════════════════════════════════════════════════
+let _AC = null;
+const getAC = () => _AC || (_AC = new (window.AudioContext || window.webkitAudioContext)());
+
+function beep(freq, type='sine', dur=0.4, vol=0.25, freqRamps=[], startDelay=0) {
+  try {
+    const ctx = getAC();
+    const t0  = ctx.currentTime + startDelay;
+    const osc = ctx.createOscillator();
+    const gn  = ctx.createGain();
+    osc.connect(gn); gn.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    freqRamps.forEach(([dt,v]) => osc.frequency.linearRampToValueAtTime(v, t0+dt));
+    gn.gain.setValueAtTime(vol, t0);
+    gn.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+    osc.start(t0); osc.stop(t0+dur);
+  } catch(e) {}
+}
+
+const SFX = {
+  collect: () => { [523,659,784].forEach((f,i) => beep(f,'triangle',.35,.22,[],i*.11)); },
+  win:     () => { [523,659,784,1047].forEach((f,i) => beep(f,'sine',.45,.28,[],i*.16)); },
+  superWin:() => { [523,587,659,698,784,880,988,1047].forEach((f,i) => beep(f,'sine',.38,.3,[],i*.1)); },
+  wolfHit: () => beep(190,'sawtooth',.5,.24, [[.3,75]]),
+  lose:    () => { [400,300,200].forEach((f,i) => beep(f,'sine',.3,.22,[],i*.2)); },
+  tick:    () => beep(880,'square',.08,.12),
+  combo:   () => { [784,1047,1175].forEach((f,i) => beep(f,'sine',.25,.2,[],i*.08)); },
+  levelup: () => { [523,659,784,659,784,1047].forEach((f,i) => beep(f,'triangle',.3,.25,[],i*.12)); },
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  HIGH SCORE
+// ═══════════════════════════════════════════════════════════════
+let globalHighScore = 0;
+function updateHighScore(s){
+  if(s>globalHighScore){
+    globalHighScore=s;
+    document.getElementById('hs-val').textContent=s;
+    document.getElementById('highscore-badge').style.display='block';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  KONSTANTA LEVEL
+// ═══════════════════════════════════════════════════════════════
+const TILE=64, COLS=8, ROWS=10, W=COLS*TILE, H=ROWS*TILE;
+
+const MAZES = [
+  [[1,1,1,1,1,1,1,1],[1,0,0,0,0,1,0,1],[1,0,1,0,1,0,0,1],[1,1,0,0,0,0,0,1],[1,0,0,0,1,0,1,1],[1,1,0,0,0,0,0,1],[1,0,1,0,0,1,0,1],[1,0,0,1,1,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+  [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,1,1,0,1,0,1],[1,0,1,0,0,1,0,1],[1,0,0,0,1,1,0,1],[1,1,1,0,0,0,1,1],[1,0,0,0,1,0,1,1],[1,0,1,1,1,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+  [[1,1,1,1,1,1,1,1],[1,0,0,0,1,0,0,1],[1,0,1,0,1,0,1,1],[1,1,0,0,1,0,0,1],[1,0,0,1,0,1,0,1],[1,0,1,0,1,0,0,1],[1,0,1,0,0,0,1,1],[1,0,0,1,1,0,1,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+  [[1,1,1,1,1,1,1,1],[1,0,0,0,1,0,0,1],[1,0,1,0,0,0,1,1],[1,0,1,1,1,0,0,1],[1,0,0,0,0,0,1,1],[1,1,0,1,0,0,0,1],[1,0,0,1,0,1,0,1],[1,0,1,0,0,1,0,1],[1,0,0,0,1,0,0,1],[1,1,1,1,1,1,1,1]],
+  [[1,1,1,1,1,1,1,1],[1,0,0,1,0,0,0,1],[1,0,1,0,0,1,0,1],[1,0,0,0,1,0,0,1],[1,1,0,1,0,0,1,1],[1,0,0,0,0,1,0,1],[1,0,1,1,0,0,0,1],[1,0,0,1,0,1,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+];
+
+const SHEEP_POS = [
+  [[1,6]],
+  [[6,4],[1,7]],
+  [[6,1],[3,5],[1,8]],
+  [[6,1],[1,6],[5,8]],
+  [[6,1],[1,5],[6,5]],
+];
+
+const WOLF_PATHS = [
+  null,
+  [[[3,5],[3,6],[2,6],[2,5]]],
+  [[[6,5],[6,6],[5,6],[5,5]]],
+  [[[3,4],[3,5],[4,5],[4,4]], [[5,2],[5,3],[6,3],[6,2]]],
+  [[[2,2],[2,3],[3,3],[3,2]], [[5,5],[5,6],[6,6],[6,5]], [[2,6],[2,7],[3,7],[3,6]]],
+];
+
+const LEVEL_CFG = [
+  {time:40, moral:'"Tuhan sayang setiap orang" — Lukas 15',          stars:[30,20,10], bonus:200},
+  {time:50, moral:'"Setia dalam hal kecil" — Lukas 16:10',           stars:[40,28,15], bonus:180},
+  {time:60, moral:'"Menjaga yang dipercayakan" — Yohanes 10',        stars:[48,32,18], bonus:160},
+  {time:55, moral:'"Jangan takut, Aku selalu ada" — Yosua 1:9',      stars:[42,28,14], bonus:150},
+  {time:65, moral:'"Kasihilah sesamamu manusia" — Markus 12:31',     stars:[50,35,20], bonus:130},
+];
+
+const LEVEL_INFO = [
+  {label:'Level 1 🌱', sub:'1 Domba · 40 detik',              col:0x52B788, badge:''},
+  {label:'Level 2 🌿', sub:'2 Domba · 50 detik',              col:0xF4A460, badge:''},
+  {label:'Level 3 🌳', sub:'3 Domba + 🐺 · 60 detik',         col:0xFF6B6B, badge:''},
+  {label:'Level 4 ⚡',  sub:'3 Domba + 2 Serigala · 55 detik', col:0xAA44CC, badge:'BARU!'},
+  {label:'Level 5 🔥',  sub:'3 Domba + 3 Serigala · 65 detik', col:0xCC2244, badge:'BOSS!'},
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  POPUP
+// ═══════════════════════════════════════════════════════════════
+let currentLevel=0, _popupCB=null, _popupCB2=null;
+
+function calcStars(lvl, timeLeft){
+  const [s3,s2,s1] = LEVEL_CFG[lvl].stars;
+  if(timeLeft>=s3) return 3;
+  if(timeLeft>=s2) return 2;
+  if(timeLeft>=s1) return 1;
+  return 0;
+}
+
+function showPopup(emoji,title,msg,moral,btnTxt,cb,scoreDetail='',stars=0,showMenu=false,cb2=null){
+  document.getElementById('popup-emoji').textContent      = emoji;
+  document.getElementById('popup-title').textContent      = title;
+  document.getElementById('popup-message').textContent    = msg;
+  document.getElementById('popup-moral').textContent      = moral;
+  document.getElementById('popup-btn').textContent        = btnTxt;
+  document.getElementById('popup-score-detail').textContent = scoreDetail;
+  const starDiv = document.getElementById('popup-stars');
+  starDiv.textContent = stars>0 ? ('⭐'.repeat(stars)+'☆'.repeat(3-stars)) : '';
+  const btn2 = document.getElementById('popup-btn2');
+  btn2.style.display = showMenu ? 'inline-block' : 'none';
+  document.getElementById('popup-overlay').classList.add('show');
+  _popupCB  = cb;
+  _popupCB2 = cb2;
+}
+function onPopupBtn(){
+  document.getElementById('popup-overlay').classList.remove('show');
+  if(_popupCB) _popupCB();
+}
+function onPopupBtn2(){
+  document.getElementById('popup-overlay').classList.remove('show');
+  if(_popupCB2) _popupCB2();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INTRO SCENE
+// ═══════════════════════════════════════════════════════════════
+class IntroScene extends Phaser.Scene {
+  constructor(){ super({key:'IntroScene'}); }
+
+  preload(){
+    this.load.image('ground', 'assets/img/ground.png');
+    this.load.image('wall',   'assets/img/wall.png');
+    this.load.image('player', 'assets/img/player.png');
+    this.load.image('sheep',  'assets/img/sheep.png');
+    this.load.image('wolf',   'assets/img/wolf.png');
+    this.load.audio('bgm', 'assets/audio/tilixia-summer-david-and-his-sheep-235258.mp3');
+	this.load.audio('sfx_baa', 'assets/audio/stu9-sheep-352668.mp3');
+
+  }
+
+  create(){
+    hideJoystick();
+    this.bgm = this.sound.add('bgm', { loop:true, volume:0.25 });
+    this.bgm.play();
+	
+	this.sfx = {
+    baa: this.sound.add('sfx_baa')
+};
+
+
+    const g = this.add.graphics();
+    g.fillGradientStyle(0x87CEEB,0x87CEEB,0x98E4C8,0x98E4C8,1);
+    g.fillRect(0,0,W,H);
+
+    this.add.image(W/2-70,68,'sheep').setDisplaySize(52,52).setAlpha(.85);
+    this.add.image(W/2+70,68,'sheep').setDisplaySize(52,52).setAlpha(.85);
+
+    this.add.text(W/2,112,'Gembala yang Baik',{
+      fontFamily:'Fredoka One,cursive', fontSize:'28px',
+      color:'#2D6A4F', stroke:'#fff', strokeThickness:5
+    }).setOrigin(.5);
+    this.add.text(W/2,146,'Cari semua domba yang hilang! 🐑',{
+      fontFamily:'Nunito,sans-serif', fontSize:'13px', fontStyle:'bold', color:'#52B788'
+    }).setOrigin(.5);
+
+    if(globalHighScore>0){
+      this.add.text(W/2,170,`🏆 Skor Terbaik: ${globalHighScore}`,{
+        fontFamily:'Fredoka One,cursive', fontSize:'14px', color:'#D4700A'
+      }).setOrigin(.5);
+    }
+
+    this.add.text(W/2,194,'— Pilih Level —',{
+      fontFamily:'Fredoka One,cursive', fontSize:'16px', color:'#2D6A4F'
+    }).setOrigin(.5);
+
+    LEVEL_INFO.forEach((d,i)=>{
+      const cy=234+i*62, bx=W/2-124, bw=248, bh=50;
+      const btn=this.add.graphics();
+      const draw=(a=1)=>{ btn.clear(); btn.fillStyle(d.col,a); btn.fillRoundedRect(bx,cy-bh/2,bw,bh,14); };
+      draw();
+      btn.setInteractive(new Phaser.Geom.Rectangle(bx,cy-bh/2,bw,bh), Phaser.Geom.Rectangle.Contains);
+      btn.on('pointerover',()=>draw(.72)).on('pointerout',()=>draw());
+      btn.on('pointerdown',()=>{ currentLevel=i; this.scene.start('GameScene'); });
+      this.add.text(W/2,cy-10,d.label,{fontFamily:'Fredoka One,cursive',fontSize:'17px',color:'#fff'}).setOrigin(.5);
+      this.add.text(W/2,cy+12,d.sub,{fontFamily:'Nunito,sans-serif',fontSize:'11.5px',color:'rgba(255,255,255,.93)'}).setOrigin(.5);
+      if(d.badge){
+        const bx2=W/2+102, by2=cy-bh/2-6;
+        const bg=this.add.graphics();
+        bg.fillStyle(0xFFD700,1).fillRoundedRect(bx2,by2,42,18,8);
+        this.add.text(bx2+21,by2+9,d.badge,{fontFamily:'Fredoka One,cursive',fontSize:'10px',color:'#7B3F00'}).setOrigin(.5);
+      }
+    });
+
+    this.add.text(W/2,H-14,'⬆️⬇️⬅️➡️ Tombol panah / joystick untuk bergerak',{
+      fontFamily:'Nunito,sans-serif', fontSize:'11px', color:'#2D6A4F'
+    }).setOrigin(.5,1);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GAME SCENE
+// ═══════════════════════════════════════════════════════════════
+class GameScene extends Phaser.Scene {
+  constructor(){ super({key:'GameScene'}); }
+
+  create(){
+    showJoystick();
+    enableJoystick(false); // disabled until countdown finishes
+    this.lvl          = currentLevel;
+    this.timeLeft     = LEVEL_CFG[this.lvl].time;
+    this.totalSheep   = SHEEP_POS[this.lvl].length;
+    this.collected    = 0;
+    this.score        = 0;
+    this.combo        = 0;
+    this.over         = false;
+    this.wolfCooldowns= [];
+    this.wolfIdxs     = [];
+    this.wolves       = [];
+
+    const maze = MAZES[this.lvl];
+
+    // ── TILES ──────────────────────────────────────────────────
+    this.walls = this.physics.add.staticGroup();
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      const cx=c*TILE+TILE/2, cy=r*TILE+TILE/2;
+      if(maze[r][c]===1){
+        const w=this.walls.create(cx,cy,'wall');
+        w.setDisplaySize(TILE,TILE).refreshBody();
+      } else {
+        this.add.image(cx,cy,'ground').setDisplaySize(TILE,TILE);
+      }
+    }
+
+    // ── PLAYER ─────────────────────────────────────────────────
+    let sc=1,sr=1;
+    outer: for(let r=1;r<ROWS-1;r++) for(let c=1;c<COLS-1;c++){
+      if(maze[r][c]===0){sc=c;sr=r;break outer;}
+    }
+    this.player = this.physics.add.sprite(sc*TILE+TILE/2, sr*TILE+TILE/2,'player');
+    const pw=TILE*0.4, ph=pw/(87/171);
+    this.player.setDisplaySize(pw,ph).setCollideWorldBounds(true);
+
+    // ── SHEEP ──────────────────────────────────────────────────
+    const sw=TILE*0.4, sh=sw/(83/86);
+    this.sheepGrp = this.physics.add.staticGroup();
+    SHEEP_POS[this.lvl].forEach(([c,r])=>{
+      const sp=this.sheepGrp.create(c*TILE+TILE/2,r*TILE+TILE/2,'sheep');
+      sp.setDisplaySize(sw,sh).refreshBody();
+      this.tweens.add({targets:sp,y:sp.y-7,duration:700+Math.random()*300,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    });
+
+    // ── WOLVES ─────────────────────────────────────────────────
+    const wolfPaths = WOLF_PATHS[this.lvl];
+    if(wolfPaths){
+      wolfPaths.forEach((path,wi)=>{
+        const [wc,wr]=path[0];
+        const ww=TILE*0.5, wh=ww/(81/100);
+        const wolf=this.physics.add.sprite(wc*TILE+TILE/2,wr*TILE+TILE/2,'wolf');
+        wolf.setDisplaySize(ww,wh);
+        if(wi%2===1) wolf.setFlipX(true);
+        this.wolves.push(wolf);
+        this.wolfCooldowns.push(0);
+        this.wolfIdxs.push(0);
+        this.physics.add.collider(wolf,this.walls);
+        this.physics.add.overlap(this.player,wolf,()=>this._wolfHit(wi),null,this);
+      });
+      wolfPaths.forEach((_,wi)=>{
+        this.time.addEvent({delay:900+wi*300,loop:true,callback:()=>this._moveWolf(wi),callbackScope:this});
+      });
+    }
+
+    // ── PHYSICS ────────────────────────────────────────────────
+    this.physics.add.collider(this.player,this.walls);
+    this.physics.add.overlap(this.player,this.sheepGrp,this._grabSheep,null,this);
+
+    // ── CONTROLS ───────────────────────────────────────────────
+    this.cursors = this.input.keyboard.createCursorKeys();
+
+    // ── UI ─────────────────────────────────────────────────────
+    this._buildUI();
+
+    // ── TIMER ──────────────────────────────────────────────────
+    this.time.addEvent({delay:1000,loop:true,callback:this._tick,callbackScope:this});
+
+    // ── BAA OTOMATIS ───────────────────────────────────────────
+// ── BAA OTOMATIS ───────────────────────────────────────────
+this.time.addEvent({
+    delay: 3800,
+    loop: true,
+    callback: () => {
+        if (!this.over && this.sheepGrp.countActive() > 0)
+        {
+            this.sound.play('sfx_baa');
+
+        }
+    }
+});
+
+
+    // ── FEEDBACK TEXT ──────────────────────────────────────────
+    this.fbTxt = this.add.text(W/2,H/2-70,'',{
+      fontFamily:'Fredoka One,cursive', fontSize:'17px',
+      color:'#1B5E20', stroke:'#fff', strokeThickness:4, align:'center'
+    }).setOrigin(.5).setDepth(10);
+
+    // ── COMBO TEXT ─────────────────────────────────────────────
+    this.comboTxt = this.add.text(W/2,H/2-100,'',{
+      fontFamily:'Fredoka One,cursive', fontSize:'22px',
+      color:'#FF6B00', stroke:'#fff', strokeThickness:5, align:'center'
+    }).setOrigin(.5).setDepth(11);
+
+    if(this.lvl>=3){
+      this.add.text(W/2,56,'🐺 Hindari Serigala!',{
+        fontFamily:'Fredoka One,cursive',fontSize:'13px',color:'#FF4444',stroke:'#fff',strokeThickness:3
+      }).setOrigin(.5).setDepth(6);
+    }
+
+    this._showCountdown();
+  }
+
+  _showCountdown(){
+    this.countingDown = true;
+    this.player.setVelocity(0,0);
+    const overlay=this.add.graphics().setDepth(20);
+    overlay.fillStyle(0x000000,.45).fillRect(0,0,W,H);
+    const txt=this.add.text(W/2,H/2,'3',{
+      fontFamily:'Fredoka One,cursive',fontSize:'90px',color:'#FFD700',stroke:'#000',strokeThickness:8
+    }).setOrigin(.5).setDepth(21);
+    let count=3;
+    const doCount=()=>{
+      if(count>0){ txt.setText(String(count)); SFX.tick(); count--; this.time.delayedCall(700,doCount); }
+      else if(count===0){ txt.setText('Mulai!'); SFX.levelup(); count--; this.time.delayedCall(700,()=>{ overlay.destroy(); txt.destroy(); enableJoystick(true); this.countingDown=false; }); }
+    };
+    doCount();
+  }
+
+  _buildUI(){
+    this.add.graphics().setDepth(5)
+      .fillStyle(0x1B5E20,.88)
+      .fillRoundedRect(4,4,W-8,50,12);
+    this.add.text(W/2,15,`Level ${this.lvl+1}`,{
+      fontFamily:'Fredoka One,cursive',fontSize:'18px',color:'#fff'
+    }).setOrigin(.5,0).setDepth(6);
+    this.timerTxt = this.add.text(W-14,16,`⏱ ${this.timeLeft}s`,{
+      fontFamily:'Nunito,sans-serif',fontSize:'15px',fontStyle:'bold',color:'#FFF9C4'
+    }).setOrigin(1,0).setDepth(6);
+    this.sheepTxt = this.add.text(14,16,`🐑 0/${this.totalSheep}`,{
+      fontFamily:'Nunito,sans-serif',fontSize:'15px',fontStyle:'bold',color:'#FFF9C4'
+    }).setOrigin(0,0).setDepth(6);
+    this.scoreTxt = this.add.text(W/2,36,`Skor: 0`,{
+      fontFamily:'Fredoka One,cursive',fontSize:'13px',color:'#FFD700'
+    }).setOrigin(.5,0).setDepth(6);
+  }
+
+  _tick(){
+    if(this.over) return;
+    this.timeLeft--;
+    this.timerTxt.setText(`⏱ ${this.timeLeft}s`);
+    if(this.timeLeft<=10){
+      this.timerTxt.setColor('#FF5252');
+      SFX.tick();
+      this.tweens.add({targets:this.timerTxt,x:this.timerTxt.x-3,duration:50,yoyo:true,repeat:2,
+        onComplete:()=>this.timerTxt.setX(W-14)});
+    }
+    if(this.timeLeft<=0) this._end(false);
+  }
+
+  _grabSheep(_p, sheep){
+    if(!sheep.active) return;
+    sheep.destroy();
+    this.collected++;
+    this.combo++;
+    const comboBonus = this.combo>1 ? this.combo*30 : 0;
+    const basePoints = 100 + comboBonus;
+    this.score += basePoints;
+    this.sheepTxt.setText(`🐑 ${this.collected}/${this.totalSheep}`);
+    this.scoreTxt.setText(`Skor: ${this.score}`);
+    SFX.collect();
+    if(this.combo>=2){
+      SFX.combo();
+      this._fbCombo(`COMBO x${this.combo}! +${basePoints}✨`);
+    } else {
+      this._fb('🐑 Domba ditemukan! +100 ✨');
+    }
+    if(this.collected>=this.totalSheep) this._end(true);
+  }
+
+  _wolfHit(wi){
+    if(this.over||this.wolfCooldowns[wi]>0) return;
+    this.wolfCooldowns[wi]=3000;
+    SFX.wolfHit();
+    this.combo=0;
+    if(this.collected>0){
+      this.collected--;
+      this.score=Math.max(0,this.score-50);
+      this.sheepTxt.setText(`🐑 ${this.collected}/${this.totalSheep}`);
+      this.scoreTxt.setText(`Skor: ${this.score}`);
+      this._respawnSheep();
+      this._fb('🐺 Aduh! Serigala nakal!\nDomba kabur lagi... 😅');
+    } else {
+      this._fb('🐺 Serigala menyerang!\nHati-hati! 😰');
+    }
+    this.cameras.main.shake(200,0.012);
+    this.tweens.add({targets:this.player,alpha:.3,duration:90,yoyo:true,repeat:5,
+      onComplete:()=>this.player.setAlpha(1)});
+    this.time.delayedCall(3000,()=>{ this.wolfCooldowns[wi]=0; });
+  }
+
+  _respawnSheep(){
+    const maze=MAZES[this.lvl], open=[];
+    for(let r=1;r<ROWS-1;r++) for(let c=1;c<COLS-1;c++)
+      if(maze[r][c]===0) open.push([c,r]);
+    const px=Math.floor(this.player.x/TILE), py=Math.floor(this.player.y/TILE);
+    open.sort((a,b)=>(Math.abs(b[0]-px)+Math.abs(b[1]-py))-(Math.abs(a[0]-px)+Math.abs(a[1]-py)));
+    const [rc,rr]=open[0];
+    const sw=TILE*0.4, sh=sw/(83/86);
+    const ns=this.sheepGrp.create(rc*TILE+TILE/2,rr*TILE+TILE/2,'sheep');
+    ns.setDisplaySize(sw,sh).refreshBody();
+    this.tweens.add({targets:ns,y:ns.y-7,duration:750,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+  }
+
+  _moveWolf(wi){
+    if(!this.wolves[wi]||this.over) return;
+    const path=WOLF_PATHS[this.lvl][wi];
+    this.wolfIdxs[wi]=(this.wolfIdxs[wi]+1)%path.length;
+    const [c,r]=path[this.wolfIdxs[wi]];
+    const speed = this.lvl>=4 ? 700 : 850;
+    this.tweens.add({targets:this.wolves[wi],x:c*TILE+TILE/2,y:r*TILE+TILE/2,duration:speed,ease:'Linear'});
+  }
+
+  _fb(txt){
+    this.fbTxt.setText(txt).setAlpha(1).setY(H/2-70);
+    this.tweens.add({targets:this.fbTxt,y:H/2-115,alpha:0,duration:2500,ease:'Cubic.easeOut'});
+  }
+
+  _fbCombo(txt){
+    this.comboTxt.setText(txt).setAlpha(1).setY(H/2-100).setScale(1.4);
+    this.tweens.add({targets:this.comboTxt,y:H/2-150,alpha:0,scaleX:1,scaleY:1,duration:1800,ease:'Cubic.easeOut'});
+  }
+
+  _end(win){
+    if(this.over) return;
+    this.over=true;
+    enableJoystick(false);
+    hideJoystick();
+    this.player.setVelocity(0,0);
+    const moral=LEVEL_CFG[this.lvl].moral;
+    const last=this.lvl>=4;
+
+    if(win){
+      const bonus    = LEVEL_CFG[this.lvl].bonus;
+      const timePts  = this.timeLeft*5;
+      const finalScore = this.score + timePts + bonus;
+      const stars    = calcStars(this.lvl, this.timeLeft);
+      updateHighScore(finalScore);
+
+      if(stars===3) SFX.superWin(); else SFX.win();
+
+      const scoreDetail=`⏱ Bonus waktu: +${timePts} | 🎁 Bonus level: +${bonus}\n💯 Total: ${finalScore}`;
+      const msg = last
+        ? `Semua level selesai! Kamu Gembala Terbaik! 🏆`
+        : `Semua domba aman! Lanjut Level ${this.lvl+2}! 🎊`;
+
+      showPopup(
+        stars===3?'🌟':stars===2?'🎉':'✨',
+        last?'JUARA!':stars===3?'Sempurna!':'Hebat!',
+        msg, moral,
+        last?'🎊 Main Lagi':'Level Berikutnya →',
+        ()=>{ currentLevel=last?0:this.lvl+1; this.scene.restart(); },
+        scoreDetail, stars, true,
+        ()=>{ this.scene.start('IntroScene'); }
+      );
+    } else {
+      SFX.lose();
+      updateHighScore(this.score);
+      showPopup('🌟','Waktu Habis!',
+        `Tidak apa-apa! Latihan lagi ya! Skor: ${this.score}`,
+        moral,'🔄 Coba Lagi',
+        ()=>this.scene.restart(),
+        '','',0,false, true,
+        ()=>{ this.scene.start('IntroScene'); }
+      );
+    }
+  }
+
+  update(_t,delta){
+    if(this.over || this.countingDown) return;
+    this.wolfCooldowns=this.wolfCooldowns.map(c=>Math.max(0,c-delta));
+    this.player.setVelocity(0,0);
+    const spd=150;
+
+    // Keyboard OR virtual joystick
+    if(this.cursors.left.isDown  || vKeys.left)  { this.player.setVelocityX(-spd); this.player.setFlipX(true);  }
+    if(this.cursors.right.isDown || vKeys.right)  { this.player.setVelocityX( spd); this.player.setFlipX(false); }
+    if(this.cursors.up.isDown    || vKeys.up)     this.player.setVelocityY(-spd);
+    if(this.cursors.down.isDown  || vKeys.down)   this.player.setVelocityY( spd);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PHASER INIT
+// ═══════════════════════════════════════════════════════════════
+new Phaser.Game({
+  type: Phaser.AUTO,
+  width: W, height: H,
+  parent: 'game-container',
+  backgroundColor: '#7CCC6C',
+  physics:{ default:'arcade', arcade:{gravity:{y:0},debug:false} },
+  scene:[IntroScene, GameScene],
+});
+</script>
+</body>
+</html>
