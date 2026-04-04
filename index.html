@@ -2,11 +2,12 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>sukalogika — programmer alkitab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>sukalogika — game portfolio / developer arkade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
+/* ===== REUSED CORE STYLE (SAME DNA) ===== */
 :root {
   --bg:#020408;
   --bg2:#040810;
@@ -55,7 +56,6 @@ body::before{
     rgba(0,0,0,0.08) 4px
   );
 }
-
 /* CRT VIGNETTE */
 body::after{
   content:'';
@@ -100,7 +100,7 @@ body::after{
     radial-gradient(1px 1px at 5% 90%, rgba(255,214,0,0.4) 0%, transparent 100%);
 }
 
-/* ─ PIXEL BORDER MIXIN ─ */
+/* PIXEL BOX (border & corner decor) */
 .pixel-box{
   position:relative;
   background:var(--panel);
@@ -121,8 +121,6 @@ body::after{
   mask-composite:exclude;
   pointer-events:none;
 }
-
-/* ─ CORNER DECORATIONS ─ */
 .pixel-box::after{
   content:'';
   position:absolute;
@@ -139,7 +137,7 @@ body::after{
     linear-gradient(var(--neon),var(--neon)) bottom right / 2px 12px no-repeat;
 }
 
-/* ─ HUD BAR TOP ─ */
+/* HUD BAR */
 .hud-bar{
   position:fixed;
   top:0;left:0;right:0;
@@ -189,7 +187,7 @@ body::after{
 }
 @keyframes ping{0%,100%{opacity:0.4}50%{opacity:1}}
 
-/* ─ HERO ─ */
+/* HERO */
 .hero{
   min-height:100vh;
   display:flex;
@@ -201,8 +199,6 @@ body::after{
   position:relative;
   z-index:1;
 }
-
-/* Phaser sprite character */
 .sprite-wrap{
   margin-bottom:40px;
   position:relative;
@@ -237,7 +233,6 @@ body::after{
 }
 .hero-title .line1{color:var(--txt);display:block}
 .hero-title .line2{color:var(--neon);text-shadow:0 0 20px var(--neon),0 0 40px rgba(0,229,255,0.3);display:block;margin-top:8px}
-
 .hero-sub{
   font-family:var(--hud);
   font-size:11px;
@@ -247,52 +242,6 @@ body::after{
   animation:fadeUp .6s ease .45s both;
 }
 .hero-sub::before{content:'// ';color:var(--gold)}
-
-/* VERSE PANEL */
-.verse-hud{
-  max-width:560px;
-  width:100%;
-  margin:40px auto 0;
-  animation:fadeUp .6s ease .6s both;
-}
-.verse-hud-label{
-  font-family:var(--pixel);
-  font-size:7px;
-  color:var(--neon);
-  letter-spacing:2px;
-  background:var(--neon);
-  color:var(--bg);
-  display:inline-block;
-  padding:4px 10px;
-  margin-bottom:0;
-}
-.verse-hud-body{
-  padding:20px 24px;
-  border:2px solid var(--border2);
-  border-top:none;
-  background:var(--panel);
-  box-shadow:0 0 20px rgba(0,229,255,0.05);
-}
-.verse-hud-body blockquote{
-  font-family:var(--mono);
-  font-size:14px;
-  color:var(--txt);
-  line-height:1.7;
-  font-style:italic;
-  border-left:3px solid var(--gold);
-  padding-left:14px;
-}
-.verse-hud-body cite{
-  display:block;
-  font-family:var(--pixel);
-  font-size:7px;
-  color:var(--gold);
-  text-shadow:0 0 8px var(--gold);
-  margin-top:10px;
-  font-style:normal;
-  letter-spacing:1px;
-  padding-left:17px;
-}
 
 /* SOCIAL BUTTONS */
 .socials{
@@ -332,7 +281,6 @@ body::after{
 .slink:hover::before{transform:scaleX(1)}
 .slink:hover{color:var(--bg)}
 .slink svg,.slink span{position:relative;z-index:1}
-
 .scroll-hint{
   position:absolute;
   bottom:32px;
@@ -347,7 +295,7 @@ body::after{
 .scroll-hint::before{content:'▼ ';color:var(--neon)}
 @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
 
-/* ─ SECTION DIVIDER ─ */
+/* SECTION DIVIDER */
 .sec-div{
   display:flex;
   align-items:center;
@@ -370,7 +318,7 @@ body::after{
   box-shadow:0 0 12px rgba(0,229,255,0.4);
 }
 
-/* ─ LAYOUT ─ */
+/* LAYOUT WRAP */
 .wrap{max-width:960px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
 
 .sec-label{
@@ -394,344 +342,106 @@ body::after{
 }
 .sec-title em{color:var(--neon);font-style:normal;text-shadow:0 0 16px var(--neon)}
 
-/* ─ DAILY VERSE CARD ─ */
-.dvc{
-  position:relative;
-  overflow:hidden;
-  margin-bottom:20px;
+/* GAME GRID (CUSTOM) */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  margin: 20px 0 60px;
 }
-.dvc-panel-label{
-  background:var(--neon);
-  color:var(--bg);
-  font-family:var(--pixel);
-  font-size:7px;
-  letter-spacing:2px;
-  padding:6px 16px;
-  display:flex;
-  align-items:center;
-  gap:10px;
+@media (max-width: 680px) {
+  .game-grid { grid-template-columns: 1fr; gap: 28px; }
 }
-.dvc-inner{
-  padding:36px 40px 28px;
-  background:var(--panel);
-  border:2px solid var(--border2);
-  border-top:none;
-  box-shadow:0 0 30px rgba(0,229,255,0.04);
-  position:relative;
+.game-card {
+  background: var(--panel);
+  border: 2px solid var(--border2);
+  transition: transform 0.2s ease, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.dvc-inner::after{
-  content:'';
-  position:absolute;
-  top:0;left:0;
-  width:2px;height:100%;
-  background:linear-gradient(180deg, var(--neon), transparent);
-  animation:lineSlide 3s ease-in-out infinite;
+.game-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 28px -8px rgba(0,0,0,0.6), 0 0 0 1px var(--neon2);
 }
-@keyframes lineSlide{0%,100%{opacity:0.2}50%{opacity:0.7}}
-
-.dvc-ref{
-  font-family:var(--pixel);
-  font-size:8px;
-  color:var(--gold);
-  letter-spacing:1px;
-  margin-bottom:16px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  text-shadow:0 0 8px var(--gold);
+.game-img {
+  width: 100%;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  position: relative;
 }
-.dvc-ref::before{content:'📖';font-size:12px;text-shadow:none}
-.dvc-txt{
-  font-family:var(--mono);
-  font-size:clamp(16px,2.2vw,22px);
-  line-height:1.65;
-  color:var(--txt);
-  min-height:80px;
-  transition:opacity .3s;
-  border-left:2px solid var(--gold);
-  padding-left:16px;
+.game-img img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  image-rendering: crisp-edges;
+  transition: opacity 0.2s;
 }
-.dvc-txt.fade{opacity:.1}
-
-.dvc-footer{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding-top:20px;
-  margin-top:20px;
-  border-top:1px solid var(--border2);
-  flex-wrap:wrap;
-  gap:12px;
+.game-card:hover .game-img img {
+  opacity: 0.92;
 }
-.nav-row{display:flex;align-items:center;gap:8px}
-
-/* ─ BUTTONS ─ */
-.btn{
-  font-family:var(--pixel);
-  font-size:7px;
-  letter-spacing:1px;
-  padding:10px 16px;
-  cursor:pointer;
-  border:none;
-  transition:all .12s;
-  display:flex;
-  align-items:center;
-  gap:6px;
-  white-space:nowrap;
-  text-transform:uppercase;
-  position:relative;
-  overflow:hidden;
+.game-info {
+  padding: 24px 22px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.btn::after{
-  content:'';
-  position:absolute;
-  inset:0;
-  background:rgba(255,255,255,0.08);
-  opacity:0;
-  transition:opacity .12s;
+.game-title {
+  font-family: var(--pixel);
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: var(--neon);
+  text-shadow: 0 0 6px var(--neon);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
-.btn:hover::after{opacity:1}
-.btn:active{transform:scale(0.97)}
-
-.btn-ghost{
-  background:rgba(0,229,255,0.04);
-  border:1px solid var(--neon);
-  color:var(--neon);
+.game-title::before {
+  content: '🎮';
+  font-size: 12px;
+  filter: drop-shadow(0 0 4px var(--neon));
 }
-.btn-ghost:hover{background:rgba(0,229,255,0.12);box-shadow:0 0 12px rgba(0,229,255,0.2)}
-
-.btn-primary{
-  background:var(--neon);
-  color:var(--bg);
-  font-weight:700;
+.game-desc {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--txt);
+  opacity: 0.9;
+  margin: 6px 0 8px;
 }
-.btn-primary:hover{background:#33ecff;box-shadow:0 0 20px rgba(0,229,255,0.4)}
-.btn-primary.busy{opacity:.5;pointer-events:none}
-
-.btn-gold{
-  background:var(--gold);
-  color:var(--bg);
+.btn-game {
+  font-family: var(--pixel);
+  font-size: 8px;
+  letter-spacing: 1px;
+  background: rgba(0,229,255,0.08);
+  border: 1px solid var(--neon);
+  color: var(--neon);
+  padding: 10px 12px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  margin-top: 6px;
+  width: fit-content;
 }
-.btn-gold:hover{background:#ffe033;box-shadow:0 0 14px rgba(255,214,0,0.4)}
-
-.btn-green{
-  background:transparent;
-  border:1px solid var(--green);
-  color:var(--green);
+.btn-game:hover {
+  background: var(--neon);
+  color: var(--bg);
+  box-shadow: 0 0 14px rgba(0,229,255,0.5);
+  border-color: var(--neon2);
 }
-.btn-green:hover{background:rgba(0,255,127,0.1);box-shadow:0 0 12px rgba(0,255,127,0.2)}
-.btn-green.copied{background:rgba(0,255,127,0.2)}
-
-.vctr{font-family:var(--hud);font-size:10px;color:var(--txt2);letter-spacing:1px}
-
-.api-label{font-family:var(--hud);font-size:9px;color:var(--txt2);letter-spacing:1px;display:flex;align-items:center;gap:6px}
-.api-dot{width:7px;height:7px;border-radius:50%;background:var(--txt2)}
-.api-dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:ping 1.5s infinite}
-.action-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.size-badge{
-  font-family:var(--hud);font-size:9px;color:var(--txt2);
-  border:1px solid var(--border2);padding:4px 10px;
-  letter-spacing:1px;
+.btn-game svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
 }
 
-/* ─ CUSTOMIZER ─ */
-.customizer{
-  background:var(--panel2);
-  border:1px solid var(--border2);
-  padding:16px 20px;
-  margin-top:12px;
-  display:flex;
-  gap:20px;
-  flex-wrap:wrap;
-  align-items:flex-end;
-}
-.cg label{
-  display:block;
-  font-family:var(--pixel);
-  font-size:7px;
-  color:var(--txt2);
-  letter-spacing:1px;
-  margin-bottom:6px;
-}
-.cg label::before{content:'■ ';color:var(--neon);font-size:6px}
-.cg select{
-  background:var(--panel);
-  border:1px solid var(--neon);
-  color:var(--neon);
-  font-family:var(--hud);
-  font-size:11px;
-  padding:8px 12px;
-  cursor:pointer;
-  outline:none;
-  transition:box-shadow .15s;
-  letter-spacing:1px;
-  appearance:none;
-}
-.cg select:hover{box-shadow:0 0 12px rgba(0,229,255,0.2)}
-
-/* ─ BROWSE ─ */
-.browse-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-@media(max-width:600px){.browse-grid{grid-template-columns:1fr}}
-
-.testament-panel{
-  background:var(--panel);
-  border:1px solid var(--border2);
-  overflow:hidden;
-}
-.tp-header{
-  padding:12px 16px;
-  border-bottom:1px solid var(--border);
-  font-family:var(--pixel);
-  font-size:7px;
-  color:var(--neon);
-  letter-spacing:2px;
-  cursor:pointer;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  transition:background .15s;
-  user-select:none;
-  text-transform:uppercase;
-}
-.tp-header:hover{background:rgba(0,229,255,0.06)}
-.tp-header.open{background:rgba(0,229,255,0.06)}
-.tp-chevron{transition:transform .2s;color:var(--neon);font-size:10px}
-.tp-header.open .tp-chevron{transform:rotate(180deg)}
-.book-list{display:none;padding:10px;max-height:220px;overflow-y:auto;gap:4px;flex-wrap:wrap}
-.book-list.open{display:flex}
-.book-list::-webkit-scrollbar{width:4px}
-.book-list::-webkit-scrollbar-thumb{background:var(--neon);opacity:0.3}
-.bbtn{
-  background:none;
-  border:1px solid var(--border2);
-  color:var(--txt2);
-  font-family:var(--pixel);
-  font-size:6px;
-  letter-spacing:1px;
-  padding:5px 8px;
-  cursor:pointer;
-  transition:all .12s;
-  white-space:nowrap;
-}
-.bbtn:hover,.bbtn.active{border-color:var(--neon);color:var(--neon);background:rgba(0,229,255,0.06);box-shadow:0 0 8px rgba(0,229,255,0.1)}
-
-/* ─ REF INPUT ─ */
-.ref-row{
-  background:var(--panel);
-  border:1px solid var(--border2);
-  padding:16px 20px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-  position:relative;
-}
-.ref-row::before{
-  content:'INPUT_';
-  position:absolute;
-  top:-8px;left:16px;
-  font-family:var(--pixel);
-  font-size:6px;
-  background:var(--gold);
-  color:var(--bg);
-  padding:2px 8px;
-  letter-spacing:1px;
-}
-.ref-label{font-family:var(--pixel);font-size:7px;color:var(--neon);letter-spacing:1px;white-space:nowrap}
-.ref-input{
-  flex:1;
-  min-width:180px;
-  background:var(--bg2);
-  border:1px solid var(--neon);
-  color:var(--neon);
-  font-family:var(--mono);
-  font-size:13px;
-  padding:9px 14px;
-  outline:none;
-  transition:box-shadow .15s;
-  letter-spacing:1px;
-}
-.ref-input:focus{box-shadow:0 0 16px rgba(0,229,255,0.3)}
-.ref-input::placeholder{color:var(--txt2)}
-.trans-select{
-  background:var(--bg2);
-  border:1px solid var(--border2);
-  color:var(--txt);
-  font-family:var(--hud);
-  font-size:11px;
-  padding:9px 12px;
-  cursor:pointer;
-  outline:none;
-  letter-spacing:1px;
-}
-.fetchbtn{
-  background:var(--neon);
-  color:var(--bg);
-  border:none;
-  font-family:var(--pixel);
-  font-size:7px;
-  letter-spacing:1px;
-  padding:10px 20px;
-  cursor:pointer;
-  transition:all .15s;
-  white-space:nowrap;
-  font-weight:700;
-  text-transform:uppercase;
-}
-.fetchbtn:hover{background:#33ecff;box-shadow:0 0 20px rgba(0,229,255,0.4)}
-
-/* ─ RESULT ─ */
-.result-card{
-  background:var(--panel);
-  border:2px solid var(--border2);
-  padding:28px 36px;
-  margin-top:16px;
-  display:none;
-  position:relative;
-}
-.result-card::before{
-  content:'LOADED';
-  position:absolute;
-  top:-8px;left:16px;
-  font-family:var(--pixel);
-  font-size:6px;
-  background:var(--green);
-  color:var(--bg);
-  padding:2px 8px;
-  letter-spacing:1px;
-}
-.result-card.show{display:block}
-.result-ref{font-family:var(--pixel);font-size:8px;color:var(--gold);letter-spacing:1px;margin-bottom:14px;text-shadow:0 0 8px var(--gold)}
-.result-txt{font-family:var(--mono);font-size:clamp(16px,2.2vw,22px);line-height:1.65;color:var(--txt);border-left:2px solid var(--gold);padding-left:16px}
-.result-actions{display:flex;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
-
-/* ─ LOADING ─ */
-.loading-bar{position:absolute;top:0;left:0;right:0;height:2px;overflow:hidden;display:none;z-index:2}
-.loading-bar.show{display:block}
-.loading-bar::after{
-  content:'';
-  position:absolute;
-  top:0;left:-40%;width:40%;height:100%;
-  background:linear-gradient(90deg,transparent,var(--neon),transparent);
-  animation:slide 1s ease-in-out infinite;
-  box-shadow:0 0 8px var(--neon);
-}
-@keyframes slide{0%{left:-40%}100%{left:110%}}
-.err-msg{
-  background:rgba(255,64,96,0.08);
-  border:1px solid var(--red);
-  color:var(--red);
-  font-family:var(--pixel);
-  font-size:8px;
-  padding:12px 16px;
-  margin-top:12px;
-  display:none;
-  letter-spacing:1px;
-}
-.err-msg::before{content:'ERROR: '}
-.err-msg.show{display:block}
-
-/* ─ ABOUT ─ */
+/* ABOUT GRID (original style) */
 .about-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -758,11 +468,10 @@ body::after{
 .ac-v{font-family:var(--hud);font-size:15px;font-weight:600;color:var(--txt);letter-spacing:1px}
 @media(max-width:600px){
   .about-grid{grid-template-columns:1fr}
-  .dvc-inner,.result-card{padding:20px 16px}
-  .ref-row{flex-direction:column;align-items:stretch}
+  .game-info{padding: 18px 18px 22px;}
 }
 
-/* ─ FOOTER ─ */
+/* FOOTER */
 footer{
   border-top:2px solid var(--border2);
   padding:24px;
@@ -783,7 +492,7 @@ footer::before{
 }
 footer .fg{color:var(--neon);text-shadow:0 0 8px var(--neon)}
 
-/* ─ TOAST ─ */
+/* TOAST (minimal) */
 .toast{
   position:fixed;bottom:28px;left:50%;
   transform:translateX(-50%) translateY(20px);
@@ -800,55 +509,39 @@ footer .fg{color:var(--neon);text-shadow:0 0 8px var(--neon)}
   box-shadow:0 0 20px rgba(0,229,255,0.3);
   text-shadow:0 0 8px var(--neon);
 }
-.toast::before{content:'[ ';color:var(--gold)}
-.toast::after{content:' ]';color:var(--gold)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* ─ PIXEL SPRITE ─ */
 #spriteCanvas{width:64px;height:64px;image-rendering:pixelated}
-
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-canvas#cvs{display:none}
-
-/* section spacing */
 section{padding-bottom:80px}
 </style>
 </head>
 <body>
-
 <div class="grid-bg"></div>
 <div class="stars"></div>
 
-<!-- HUD BAR -->
+<!-- HUD BAR (retro feel) -->
 <div class="hud-bar">
   <div class="hud-logo">SUKA<span>LOGIKA</span></div>
   <div class="hud-right">
     <div class="hud-stat"><span>HP</span><span class="hud-stat-val">100</span></div>
     <div class="hud-stat"><span>XP</span><span class="hud-stat-val" id="xpVal">0</span></div>
-    <div class="hud-stat"><span>LEVEL</span><span class="hud-stat-val">∞</span></div>
+    <div class="hud-stat"><span>LEVEL</span><span class="hud-stat-val">DEV</span></div>
     <div class="hud-bar-ping"></div>
-    <span style="font-size:9px">LIVE</span>
+    <span style="font-size:9px">ARCADE</span>
   </div>
 </div>
 
-<!-- HERO -->
+<!-- HERO SECTION -->
 <section class="hero">
   <div class="sprite-wrap">
     <canvas id="spriteCanvas" width="64" height="64"></canvas>
   </div>
-  <div class="hero-badge">PROGRAMMER × ALKITAB</div>
+  <div class="hero-badge">✧ GAME CREATOR ✧</div>
   <h1 class="hero-title">
     <span class="line1">HENKY ADLIN SHAN</span>
-    <span class="line2">SUKALOGIKA</span>
+    <span class="line2">GAME LIBRARY</span>
   </h1>
-  <p class="hero-sub">coding with scripture &nbsp;·&nbsp; powered by faith</p>
-  <div class="verse-hud">
-    <div class="verse-hud-label">⚔ DAILY QUEST VERSE ⚔</div>
-    <div class="verse-hud-body">
-      <blockquote>Ujilah segala sesuatu dan peganglah yang baik.</blockquote>
-      <cite>1 TESALONIKA 5:21</cite>
-    </div>
-  </div>
+  <p class="hero-sub">faith-driven interactive · build & play</p>
   <div class="socials">
     <a class="slink" href="https://youtube.com/@sukalogika/" target="_blank">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
@@ -862,150 +555,76 @@ section{padding-bottom:80px}
       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 3a3 3 0 0 1-.7-2H16v13a2.5 2.5 0 0 1-2.5 2.5A2.5 2.5 0 0 1 11 14a2.5 2.5 0 0 1 2.5-2.5c.3 0 .5 0 .7.1V9a6.2 6.2 0 0 0-.7 0A6.2 6.2 0 0 0 7.3 15 6.2 6.2 0 0 0 13.5 21 6.2 6.2 0 0 0 19.7 15V8.4A8.7 8.7 0 0 0 24 9V6a5 5 0 0 1-4.4-3z"/></svg>
       <span>TIKTOK</span>
     </a>
-	    <a class="slink" href="games" target="_blank">
-<svg width="12" height="12"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M448 128C554 128 640 214 640 320C640 426 554 512 448 512L192 512C86 512 0 426 0 320C0 214 86 128 192 128L448 128zM192 240C178.7 240 168 250.7 168 264L168 296L136 296C122.7 296 112 306.7 112 320C112 333.3 122.7 344 136 344L168 344L168 376C168 389.3 178.7 400 192 400C205.3 400 216 389.3 216 376L216 344L248 344C261.3 344 272 333.3 272 320C272 306.7 261.3 296 248 296L216 296L216 264C216 250.7 205.3 240 192 240zM432 336C414.3 336 400 350.3 400 368C400 385.7 414.3 400 432 400C449.7 400 464 385.7 464 368C464 350.3 449.7 336 432 336zM496 240C478.3 240 464 254.3 464 272C464 289.7 478.3 304 496 304C513.7 304 528 289.7 528 272C528 254.3 513.7 240 496 240z"/></svg>
+    <a class="slink" href="#" style="cursor:default;opacity:0.7">
+      <svg width="12" height="12" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M448 128C554 128 640 214 640 320C640 426 554 512 448 512L192 512C86 512 0 426 0 320C0 214 86 128 192 128L448 128zM192 240C178.7 240 168 250.7 168 264L168 296L136 296C122.7 296 112 306.7 112 320C112 333.3 122.7 344 136 344L168 344L168 376C168 389.3 178.7 400 192 400C205.3 400 216 389.3 216 376L216 344L248 344C261.3 344 272 333.3 272 320C272 306.7 261.3 296 248 296L216 296L216 264C216 250.7 205.3 240 192 240zM432 336C414.3 336 400 350.3 400 368C400 385.7 414.3 400 432 400C449.7 400 464 385.7 464 368C464 350.3 449.7 336 432 336zM496 240C478.3 240 464 254.3 464 272C464 289.7 478.3 304 496 304C513.7 304 528 289.7 528 272C528 254.3 513.7 240 496 240z"/></svg>
       <span>GAMES</span>
     </a>
   </div>
-  <div class="scroll-hint">SCROLL DOWN</div>
+  <div class="scroll-hint">EXPLORE GAMES</div>
 </section>
 
-<!-- DAILY VERSE -->
+<!-- GAME LIBRARY SECTION (daftar game) -->
 <div class="sec-div">
   <div class="sec-div-line"></div>
-  <div class="sec-div-txt">★ DAILY VERSE ★</div>
+  <div class="sec-div-txt">★ GAME PORTFOLIO ★</div>
   <div class="sec-div-line"></div>
 </div>
 
 <section class="wrap">
-  <div class="sec-label">daily.verse()</div>
-  <h2 class="sec-title">FIRMAN UNTUK<br><em>HARI INI</em></h2>
-
-  <div class="dvc">
-    <div class="dvc-panel-label">
-      <span>⚡ LIVE SCRIPTURE FEED</span>
-      <span id="apiDot" class="api-dot" style="margin-left:auto"></span>
-      <span style="font-size:6px">bible-api.com</span>
+  <div class="sec-label">games.list()</div>
+  <h2 class="sec-title">BUILD & PLAY<br><em>CREATIONS</em></h2>
+  
+  <div class="game-grid">
+    <!-- GAME 1: MANNA -->
+    <div class="game-card pixel-box">
+      <div class="game-img">
+        <img src="manna/assets/img/cover-manna.jpg" 
+             alt="Manna game screenshot - pixel art biblical adventure"
+             loading="lazy">
+      </div>
+      <div class="game-info">
+        <div class="game-title">MANNA — DAILY BREAD</div>
+        <div class="game-desc">
+Kumpulkan manna setiap hari dan belajar merasa cukup!
+Ambil sesuai kebutuhanmu dan hargai setiap pemberian.
+Terinspirasi dari Keluaran 16, game ini mengajarkan percaya pada Tuhan dan hidup dengan rasa syukur.
+        </div>
+        <a href="manna/" class="btn-game" target="_blank" rel="noopener noreferrer">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          PLAY MANNA →
+        </a>
+      </div>
     </div>
-    <div class="dvc-inner">
-      <div class="loading-bar" id="dailyLoader"></div>
-      <div class="dvc-ref" id="dailyRef">LOADING FROM SERVER…</div>
-      <div class="dvc-txt" id="dailyTxt">—</div>
-      <div class="dvc-footer">
-        <div class="nav-row">
-          <button class="btn btn-ghost" onclick="shiftGold(-1)">◀ PREV</button>
-          <span class="vctr" id="goldCtr">1 / 30</span>
-          <button class="btn btn-ghost" onclick="shiftGold(1)">NEXT ▶</button>
+
+    <!-- GAME 2: THE GOOD SHEPHERD -->
+    <div class="game-card pixel-box">
+      <div class="game-img">
+        <img src="the-good-shepherd/assets/img/cover-shepherd.jpg" 
+             alt="The Good Shepherd game screenshot - guiding flock"
+             loading="lazy">
+      </div>
+      <div class="game-info">
+        <div class="game-title">THE GOOD SHEPHERD</div>
+        <div class="game-desc">
+          Kumpulkan domba yang tercerai dan jaga kawanan tetap bersama!
+Terinspirasi dari Yohanes 10:11, “Akulah gembala yang baik.”
+Cari domba yang hilang dan hindari serigala yang bisa mencerai-beraikan kawananmu.
+Setiap permainan mengajarkan kasih, kepedulian, dan tanggung jawab terhadap sesama.
         </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <div class="action-row">
-            <span class="size-badge">1080×1920 · TIKTOK</span>
-            <button class="btn btn-green" id="copyDailyBtn" onclick="copyVerse('daily')">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              COPY
-            </button>
-            <button class="btn btn-ghost" id="shareDailyBtn" onclick="shareVerse('daily')">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-              SHARE
-            </button>
-            <button class="btn btn-primary" id="saveDailyBtn" onclick="saveJPEG('daily')">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              SAVE JPEG
-            </button>
-          </div>
-        </div>
+        <a href="the-good-shepherd/" class="btn-game" target="_blank" rel="noopener noreferrer">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          PLAY SHEPHERD →
+        </a>
       </div>
     </div>
   </div>
-
-  <div class="customizer">
-    <div class="cg">
-      <label>CARD THEME</label>
-      <select id="themeSelect">
-        <option value="dark">DARK</option>
-        <option value="parchment">PARCHMENT</option>
-        <option value="midnight">MIDNIGHT</option>
-        <option value="forest">FOREST</option>
-      </select>
-    </div>
-    <div class="cg">
-      <label>TRANSLATION</label>
-      <select id="transSelect" onchange="reloadGold()">
-        <option value="kjv">KJV ENGLISH</option>
-        <option value="bbe">BBE ENGLISH</option>
-        <option value="web">WEB ENGLISH</option>
-        <option value="asv">ASV ENGLISH</option>
-      </select>
-    </div>
+  <!-- additional note: creative hint -->
+  <div style="text-align:center; margin: 16px 0 20px; font-family: var(--pixel); font-size: 7px; color: var(--txt2);">
+    <span>✨ setiap game dibangun dengan doa & kode · klik untuk bermain ✨</span>
   </div>
 </section>
 
-<!-- BIBLE SEARCH -->
-<div class="sec-div">
-  <div class="sec-div-line"></div>
-  <div class="sec-div-txt">★ BIBLE SEARCH ★</div>
-  <div class="sec-div-line"></div>
-</div>
-
-<section class="wrap">
-  <div class="sec-label">bible.fetch(ref)</div>
-  <h2 class="sec-title">CARI AYAT<br><em>ALKITAB</em></h2>
-
-  <div class="browse-grid">
-    <div class="testament-panel">
-      <div class="tp-header" onclick="toggleTP(this)">
-        <span>PERJANJIAN LAMA</span>
-        <span class="tp-chevron">▼</span>
-      </div>
-      <div class="book-list" id="plList"></div>
-    </div>
-    <div class="testament-panel">
-      <div class="tp-header" onclick="toggleTP(this)">
-        <span>PERJANJIAN BARU</span>
-        <span class="tp-chevron">▼</span>
-      </div>
-      <div class="book-list" id="pbList"></div>
-    </div>
-  </div>
-
-  <div class="ref-row">
-    <span class="ref-label">REF:</span>
-    <input class="ref-input" id="refInput" type="text" placeholder="john 3:16  ·  genesis 1:1  ·  psalms 23:1-6" />
-    <select class="trans-select" id="searchTrans">
-      <option value="kjv">KJV</option>
-      <option value="bbe">BBE</option>
-      <option value="web">WEB</option>
-      <option value="asv">ASV</option>
-    </select>
-    <button class="fetchbtn" onclick="fetchVerse()">FETCH →</button>
-  </div>
-  <div class="err-msg" id="errMsg">Ayat tidak ditemukan. Coba: "john 3:16" · "genesis 1:1" · "psalms 23"</div>
-
-  <div class="result-card" id="resultCard">
-    <div class="loading-bar" id="searchLoader"></div>
-    <div class="result-ref" id="resultRef">—</div>
-    <div class="result-txt" id="resultTxt">—</div>
-    <div class="result-actions">
-      <div class="action-row">
-        <span class="size-badge">1080×1920 · TIKTOK</span>
-        <button class="btn btn-green" id="copySearchBtn" onclick="copyVerse('search')">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          COPY
-        </button>
-        <button class="btn btn-ghost" id="shareSearchBtn" onclick="shareVerse('search')">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          SHARE
-        </button>
-        <button class="btn btn-primary" id="saveSearchBtn" onclick="saveJPEG('search')">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          SAVE JPEG
-        </button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ABOUT -->
+<!-- ABOUT SECTION (sama seperti template asli) -->
 <div class="sec-div">
   <div class="sec-div-line"></div>
   <div class="sec-div-txt">★ PLAYER INFO ★</div>
@@ -1027,7 +646,7 @@ section{padding-bottom:80px}
     </div>
     <div class="ac" style="grid-column:1/-1">
       <div class="ac-l">Stack &amp; Tools</div>
-      <div class="ac-v" style="font-family:var(--mono);font-size:13px;color:var(--neon);line-height:1.8">programmer × alkitab · bible-api.com · canvas API · JPEG TikTok FHD 1080×1920</div>
+      <div class="ac-v" style="font-family:var(--mono);font-size:13px;color:var(--neon);line-height:1.8">game developer · javascript · phaser · alkitab & interactive media</div>
     </div>
   </div>
 </section>
@@ -1035,391 +654,83 @@ section{padding-bottom:80px}
 <footer>
   <span class="fg">★ SUKALOGIKA ★</span> &nbsp;·&nbsp; DIBUAT DENGAN IMAN &amp; KODE &nbsp;·&nbsp; © 2025
 </footer>
-
-<canvas id="cvs"></canvas>
 <div class="toast" id="toast"></div>
 
 <script>
-/* ─── PIXEL SPRITE ─── */
-(function() {
-  const cvs = document.getElementById('spriteCanvas');
-  const c = cvs.getContext('2d');
-  const S = 4;
-  const frames = [
-    [
-      "0001111000",
-      "0011111100",
-      "0101001010",
-      "0111111110",
-      "0011111100",
-      "0001111000",
-      "0010000100",
-      "0011111100",
-      "0001001000",
-      "0001001000",
-      "0001001000",
-      "0000110000",
-      "0000110000",
-      "0000110000",
-      "0001001000",
-      "0001001000",
-    ],
-    [
-      "0001111000",
-      "0011111100",
-      "0101001010",
-      "0111111110",
-      "0011111100",
-      "0001111000",
-      "0010000100",
-      "0011111100",
-      "0001001000",
-      "0001001000",
-      "0001001000",
-      "0000110000",
-      "0000110000",
-      "0001001000",
-      "0010000100",
-      "0100000010",
-    ]
-  ];
-  const colors = ['transparent','#00e5ff'];
-  let frame = 0;
-  function drawSprite() {
-    c.clearRect(0,0,64,64);
-    const f = frames[frame];
-    for (let y = 0; y < f.length; y++) {
-      for (let x = 0; x < f[y].length; x++) {
-        const v = parseInt(f[y][x]);
-        if (v) {
-          c.fillStyle = colors[v];
-          c.shadowColor = '#00e5ff';
-          c.shadowBlur = 4;
-          c.fillRect(x*S + 2, y*S, S, S);
+  // ========== PIXEL SPRITE (sama seperti template) ==========
+  (function() {
+    const cvs = document.getElementById('spriteCanvas');
+    if(!cvs) return;
+    const c = cvs.getContext('2d');
+    const S = 4;
+    const frames = [
+      [
+        "0001111000","0011111100","0101001010","0111111110","0011111100",
+        "0001111000","0010000100","0011111100","0001001000","0001001000",
+        "0001001000","0000110000","0000110000","0000110000","0001001000","0001001000"
+      ],
+      [
+        "0001111000","0011111100","0101001010","0111111110","0011111100",
+        "0001111000","0010000100","0011111100","0001001000","0001001000",
+        "0001001000","0000110000","0000110000","0001001000","0010000100","0100000010"
+      ]
+    ];
+    const colors = ['transparent','#00e5ff'];
+    let frameIdx = 0;
+    function drawSprite() {
+      c.clearRect(0,0,64,64);
+      const f = frames[frameIdx];
+      for (let y = 0; y < f.length; y++) {
+        for (let x = 0; x < f[y].length; x++) {
+          const v = parseInt(f[y][x]);
+          if (v) {
+            c.fillStyle = colors[v];
+            c.shadowColor = '#00e5ff';
+            c.shadowBlur = 4;
+            c.fillRect(x*S + 2, y*S, S, S);
+          }
         }
       }
     }
+    drawSprite();
+    setInterval(() => { frameIdx = 1 - frameIdx; drawSprite(); }, 620);
+  })();
+
+  // XP COUNTER (nostalgia)
+  let xp = 0;
+  const xpSpan = document.getElementById('xpVal');
+  if(xpSpan) {
+    setInterval(() => {
+      xp = (xp + Math.floor(Math.random() * 4)) % 9999;
+      xpSpan.textContent = xp;
+    }, 2100);
   }
-  drawSprite();
-  setInterval(() => { frame = 1 - frame; drawSprite(); }, 600);
-})();
 
-/* ─── XP COUNTER ─── */
-let xp = 0;
-setInterval(() => {
-  xp = (xp + Math.floor(Math.random()*3)) % 9999;
-  document.getElementById('xpVal').textContent = xp;
-}, 2000);
-
-/* ─── GOLD VERSES ─── */
-const GOLD = [
-  "john 3:16","1 thessalonians 5:21","romans 8:28","philippians 4:13",
-  "proverbs 3:5","jeremiah 29:11","psalm 23:1","proverbs 16:3",
-  "joshua 1:9","psalm 46:1","isaiah 40:31","matthew 6:33",
-  "psalm 37:4","2 timothy 1:7","romans 12:2","ephesians 2:10",
-  "john 14:6","galatians 5:22","psalm 119:105","colossians 3:23",
-  "hebrews 11:1","1 corinthians 10:31","john 15:5","proverbs 4:23",
-  "james 1:5","matthew 5:16","romans 5:8","philippians 4:6",
-  "psalm 1:1","revelation 3:20"
-];
-
-/* ─── KITAB ─── */
-const PL = [
-  ["Genesis","genesis"],["Exodus","exodus"],["Leviticus","leviticus"],
-  ["Numbers","numbers"],["Deuteronomy","deuteronomy"],["Joshua","joshua"],
-  ["Judges","judges"],["Ruth","ruth"],["1 Samuel","1 samuel"],
-  ["2 Samuel","2 samuel"],["1 Kings","1 kings"],["2 Kings","2 kings"],
-  ["1 Chronicles","1 chronicles"],["2 Chronicles","2 chronicles"],
-  ["Ezra","ezra"],["Nehemiah","nehemiah"],["Esther","esther"],
-  ["Job","job"],["Psalms","psalms"],["Proverbs","proverbs"],
-  ["Ecclesiastes","ecclesiastes"],["Song of Solomon","song of solomon"],
-  ["Isaiah","isaiah"],["Jeremiah","jeremiah"],["Lamentations","lamentations"],
-  ["Ezekiel","ezekiel"],["Daniel","daniel"],["Hosea","hosea"],
-  ["Joel","joel"],["Amos","amos"],["Obadiah","obadiah"],["Jonah","jonah"],
-  ["Micah","micah"],["Nahum","nahum"],["Habakkuk","habakkuk"],
-  ["Zephaniah","zephaniah"],["Haggai","haggai"],["Zechariah","zechariah"],
-  ["Malachi","malachi"]
-];
-const PB = [
-  ["Matthew","matthew"],["Mark","mark"],["Luke","luke"],["John","john"],
-  ["Acts","acts"],["Romans","romans"],["1 Corinthians","1 corinthians"],
-  ["2 Corinthians","2 corinthians"],["Galatians","galatians"],
-  ["Ephesians","ephesians"],["Philippians","philippians"],["Colossians","colossians"],
-  ["1 Thessalonians","1 thessalonians"],["2 Thessalonians","2 thessalonians"],
-  ["1 Timothy","1 timothy"],["2 Timothy","2 timothy"],["Titus","titus"],
-  ["Philemon","philemon"],["Hebrews","hebrews"],["James","james"],
-  ["1 Peter","1 peter"],["2 Peter","2 peter"],["1 John","1 john"],
-  ["2 John","2 john"],["3 John","3 john"],["Jude","jude"],["Revelation","revelation"]
-];
-
-const THEMES = {
-  dark:      {bg:'#080809',surface:'#0f0f12',text:'#e4e2dc',accent:'#c9aa6f',muted:'#72706e',border:'#252529'},
-  parchment: {bg:'#f3ede1',surface:'#ece3d4',text:'#2a2015',accent:'#7a5c2e',muted:'#9c8a6a',border:'#d6c9ae'},
-  midnight:  {bg:'#070c1a',surface:'#0c1428',text:'#c5d6ee',accent:'#5b8fd4',muted:'#405870',border:'#182240'},
-  forest:    {bg:'#060d08',surface:'#0b1a0d',text:'#c5dfca',accent:'#5a9e60',muted:'#3a5e40',border:'#142018'}
-};
-
-const today = new Date();
-let goldIdx = (today.getDate()-1) % 30;
-let currentDaily = {ref:'',text:''};
-let currentSearch = {ref:'',text:''};
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-async function apiFetch(ref, trans) {
-  const url = `https://bible-api.com/${encodeURIComponent(ref)}?translation=${trans}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('not found');
-  return res.json();
-}
-function extractText(data) {
-  if (data.verses && data.verses.length)
-    return data.verses.map(v => v.text).join(' ').replace(/\n/g,' ').trim();
-  if (data.text) return data.text.replace(/\n/g,' ').trim();
-  return null;
-}
-
-async function loadGold(idx) {
-  const loader = document.getElementById('dailyLoader');
-  const refEl  = document.getElementById('dailyRef');
-  const txtEl  = document.getElementById('dailyTxt');
-  const dot    = document.getElementById('apiDot');
-  const ctr    = document.getElementById('goldCtr');
-  loader.classList.add('show');
-  dot.classList.remove('live');
-  txtEl.classList.add('fade');
-  try {
-    const trans = document.getElementById('transSelect').value;
-    const data  = await apiFetch(GOLD[idx], trans);
-    const ref   = data.reference || GOLD[idx];
-    const txt   = extractText(data) || '—';
-    refEl.textContent = ref.toUpperCase();
-    txtEl.textContent = '\u201C' + txt + '\u201D';
-    ctr.textContent   = (idx+1) + ' / 30';
-    dot.classList.add('live');
-    currentDaily = { ref, text: txt };
-  } catch(e) {
-    refEl.textContent = GOLD[idx].toUpperCase();
-    txtEl.textContent = '[ ERROR ] Gagal memuat. Periksa koneksi internet.';
+  // optional toast helper (simple)
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    if(!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
   }
-  txtEl.classList.remove('fade');
-  loader.classList.remove('show');
-}
 
-function shiftGold(d) { goldIdx = ((goldIdx+d)+30)%30; loadGold(goldIdx); }
-function reloadGold() { loadGold(goldIdx); }
-
-function buildBookList(arr, id) {
-  const el = document.getElementById(id);
-  arr.forEach(([label, api]) => {
-    const b = document.createElement('button');
-    b.className = 'bbtn'; b.textContent = label.toUpperCase();
-    b.onclick = () => {
-      document.querySelectorAll('.bbtn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      document.getElementById('refInput').value = api + ' 1:1';
-      document.getElementById('refInput').focus();
-      document.getElementById('refInput').scrollIntoView({behavior:'smooth',block:'nearest'});
-    };
-    el.appendChild(b);
-  });
-}
-
-function toggleTP(header) {
-  header.classList.toggle('open');
-  header.nextElementSibling.classList.toggle('open');
-}
-
-async function fetchVerse() {
-  const ref    = document.getElementById('refInput').value.trim();
-  const trans  = document.getElementById('searchTrans').value;
-  const card   = document.getElementById('resultCard');
-  const refEl  = document.getElementById('resultRef');
-  const txtEl  = document.getElementById('resultTxt');
-  const err    = document.getElementById('errMsg');
-  const loader = document.getElementById('searchLoader');
-  if (!ref) return;
-  err.classList.remove('show');
-  card.classList.add('show');
-  loader.classList.add('show');
-  refEl.textContent = 'FETCHING…';
-  txtEl.textContent = '—';
-  try {
-    const data = await apiFetch(ref, trans);
-    const r    = data.reference || ref;
-    const t    = extractText(data) || '—';
-    refEl.textContent = r.toUpperCase();
-    txtEl.textContent = '\u201C' + t + '\u201D';
-    currentSearch = { ref: r, text: t };
-    card.scrollIntoView({behavior:'smooth',block:'nearest'});
-  } catch(e) {
-    card.classList.remove('show');
-    err.classList.add('show');
-  }
-  loader.classList.remove('show');
-}
-
-function copyVerse(source) {
-  const verse = source === 'daily' ? currentDaily : currentSearch;
-  if (!verse.text) return;
-  const btnId = source === 'daily' ? 'copyDailyBtn' : 'copySearchBtn';
-  const btn = document.getElementById(btnId);
-  const text = `\u201C${verse.text}\u201D\n\u2014 ${verse.ref}\n\nvia sukalogika | programmer alkitab`;
-  navigator.clipboard.writeText(text).then(() => {
-    btn.classList.add('copied');
-    btn.textContent = '✓ COPIED!';
-    showToast('AYAT BERHASIL DISALIN ✓');
-    setTimeout(() => {
-      btn.classList.remove('copied');
-      btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> COPY`;
-    }, 2000);
-  }).catch(() => showToast('GAGAL MENYALIN. COBA LAGI.'));
-}
-
-async function shareVerse(source) {
-  const verse = source === 'daily' ? currentDaily : currentSearch;
-  if (!verse.text) return;
-  const shareText = `\u201C${verse.text}\u201D\n\u2014 ${verse.ref}\n\nvia sukalogika | programmer alkitab`;
-  if (navigator.share) {
-    try { await navigator.share({ text: shareText, title: `Firman Tuhan – ${verse.ref}` }); } catch(e) {}
-  } else {
-    navigator.clipboard.writeText(shareText).then(() => {
-      showToast('DISALIN KE CLIPBOARD');
+  // small effect: ketika tombol game diklik -> toast notifikasi
+  document.querySelectorAll('.btn-game').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      // hanya efek tambahan, navigasi tetap berjalan
+      const gameName = btn.closest('.game-card')?.querySelector('.game-title')?.innerText || 'game';
+      showToast(`⟫ memuat ${gameName} ... selamat bermain!`);
     });
-  }
-}
-
-/* ─── CANVAS UTILS ─── */
-function roundRect(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x+r,y); c.lineTo(x+w-r,y);
-  c.quadraticCurveTo(x+w,y,x+w,y+r);
-  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
-  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y);
-  c.closePath();
-}
-function wrapText(c, text, maxWidth) {
-  const words = text.split(' ');
-  const lines = [];
-  let line = '';
-  for (const w of words) {
-    const test = line + (line ? ' ' : '') + w;
-    if (c.measureText(test).width > maxWidth && line) { lines.push(line); line = w; }
-    else line = test;
-  }
-  if (line) lines.push(line);
-  return lines;
-}
-
-async function saveJPEG(source) {
-  const btnId = source === 'daily' ? 'saveDailyBtn' : 'saveSearchBtn';
-  const btn   = document.getElementById(btnId);
-  const verse = source === 'daily' ? currentDaily : currentSearch;
-  if (!verse.text) return;
-  btn.classList.add('busy');
-  const W = 1080, H = 1920, PAD = 64;
-  const cvs = document.getElementById('cvs');
-  cvs.width = W; cvs.height = H;
-  const c = cvs.getContext('2d');
-  const T = THEMES[document.getElementById('themeSelect').value];
-  c.fillStyle = T.bg;
-  c.fillRect(0, 0, W, H);
-  for (let i = 0; i < 40000; i++) {
-    c.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`;
-    c.fillRect(Math.random() * W, Math.random() * H, 1, 1);
-  }
-  const glow = c.createRadialGradient(W/2, H/2, 0, W/2, H/2, 700);
-  glow.addColorStop(0, `${T.accent}12`);
-  glow.addColorStop(1, 'transparent');
-  c.fillStyle = glow;
-  c.fillRect(0, 0, W, H);
-  c.textAlign = 'center';
-  c.textBaseline = 'alphabetic';
-  c.font = '500 52px "JetBrains Mono",monospace';
-  c.fillStyle = T.accent;
-  c.fillText('@sukalogika', W/2, 238);
-  const brandLineY = 255;
-  const brandLineHalf = 180;
-  c.strokeStyle = T.accent + '55'; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(W/2 - brandLineHalf - 60, brandLineY); c.lineTo(W/2 - brandLineHalf, brandLineY); c.stroke();
-  c.beginPath(); c.moveTo(W/2 + brandLineHalf, brandLineY); c.lineTo(W/2 + brandLineHalf + 60, brandLineY); c.stroke();
-  const CX = PAD, CY = 290, CW = W - PAD*2, CH = H - 290 - 220;
-  c.fillStyle = T.surface;
-  roundRect(c, CX, CY, CW, CH, 16); c.fill();
-  c.strokeStyle = T.border; c.lineWidth = 1.5;
-  roundRect(c, CX, CY, CW, CH, 16); c.stroke();
-  const gl = c.createLinearGradient(CX, CY, CX + CW, CY);
-  gl.addColorStop(0, 'transparent'); gl.addColorStop(0.15, T.accent);
-  gl.addColorStop(0.85, T.accent); gl.addColorStop(1, 'transparent');
-  c.strokeStyle = gl; c.lineWidth = 4;
-  c.beginPath(); c.moveTo(CX + 20, CY + 2); c.lineTo(CX + CW - 20, CY + 2); c.stroke();
-  const labelY = CY + 72;
-  c.font = '400 24px "JetBrains Mono",monospace';
-  c.fillStyle = T.muted;
-  c.fillText('✦  DAILY BREAD  ✦', W/2, labelY);
-  const refY = labelY + 60;
-  c.font = '400 36px "JetBrains Mono",monospace';
-  c.fillStyle = T.accent;
-  c.fillText(verse.ref, W/2, refY);
-  const sepY = refY + 28;
-  c.strokeStyle = T.accent + '60'; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(W/2 - 80, sepY); c.lineTo(W/2 + 80, sepY); c.stroke();
-  const verseText = '\u201C' + verse.text + '\u201D';
-  const maxTextW  = CW - 120;
-  const verseAreaTop = sepY + 30;
-  const bottomDivY = CY + CH - 130;
-  const verseAreaH = bottomDivY - 60 - verseAreaTop;
-  let fs = verse.text.length > 280 ? 52 : verse.text.length > 180 ? 60 : verse.text.length > 100 ? 70 : 82;
-  let lines;
-  while (true) {
-    c.font = `300 italic ${fs}px "Cormorant Garamond",Georgia,serif`;
-    lines = wrapText(c, verseText, maxTextW);
-    const totalH = lines.length * fs * 1.5;
-    if (totalH <= verseAreaH || fs <= 40) break;
-    fs -= 2;
-  }
-  const lineH = fs * 1.5;
-  const textBlockH = lines.length * lineH;
-  const textStartY = verseAreaTop + (verseAreaH - textBlockH) / 2 + fs;
-  c.fillStyle = T.text;
-  c.font = `300 italic ${fs}px "Cormorant Garamond",Georgia,serif`;
-  lines.forEach((ln, i) => c.fillText(ln, W/2, textStartY + i * lineH));
-  c.strokeStyle = T.border; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(CX + 80, bottomDivY); c.lineTo(CX + CW - 80, bottomDivY); c.stroke();
-  c.font = 'italic 300 28px "Cormorant Garamond",Georgia,serif';
-  c.fillStyle = T.accent;
-  c.fillText('Ujilah segala sesuatu \u2014 1 Tes 5:21', W/2, bottomDivY + 58);
-  c.font = '300 24px "JetBrains Mono",monospace';
-  c.fillStyle = T.muted;
-  c.fillText('@sukalogika · firman hari ini', W/2, H - 148);
-  await new Promise(r => setTimeout(r, 80));
-  const a = document.createElement('a');
-  a.download = `sukalogika-${verse.ref.replace(/[^a-zA-Z0-9]/g,'-')}-tiktok.jpg`;
-  a.href = cvs.toDataURL('image/jpeg', 0.95);
-  a.click();
-  showToast('JPEG 1080×1920 BERHASIL DIUNDUH ✓');
-  btn.classList.remove('busy');
-}
-
-/* ─── INIT ─── */
-document.addEventListener('DOMContentLoaded', () => {
-  buildBookList(PL, 'plList');
-  buildBookList(PB, 'pbList');
-  loadGold(goldIdx);
-  // hide share buttons if no Web Share API
-  if (!navigator.share) {
-    document.querySelectorAll('#shareDailyBtn,#shareSearchBtn').forEach(b => b.style.display='none');
-  }
-  document.getElementById('refInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') fetchVerse();
   });
-});
+
+  // tambahan efek hover game card
+  const cards = document.querySelectorAll('.game-card');
+  cards.forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      // atmosfer
+    });
+  });
 </script>
 </body>
 </html>
