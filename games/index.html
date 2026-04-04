@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>sukalogika — game portfolio / developer arkade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ===== REUSED CORE STYLE (SAME DNA) ===== */
+:root {
+  --bg:#020408;
+  --bg2:#040810;
+  --panel:#060d18;
+  --panel2:#081428;
+  --border:#0f2a4a;
+  --border2:#163d6a;
+  --neon:#00e5ff;
+  --neon2:#00b4cc;
+  --neon3:rgba(0,229,255,0.08);
+  --gold:#ffd600;
+  --gold2:#ff9800;
+  --green:#00ff7f;
+  --red:#ff4060;
+  --txt:#c8e8ff;
+  --txt2:#5a8faa;
+  --pixel:'Press Start 2P',monospace;
+  --mono:'Share Tech Mono',monospace;
+  --hud:'Orbitron',sans-serif;
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--txt);
+  font-family:var(--mono);
+  font-size:16px;
+  line-height:1.6;
+  overflow-x:hidden;
+  cursor:crosshair;
+}
+
+/* SCANLINES OVERLAY */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+}
+/* CRT VIGNETTE */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:9998;
+  pointer-events:none;
+  background:radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
+}
+
+/* ANIMATED GRID BG */
+.grid-bg{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size:40px 40px;
+  animation:gridMove 20s linear infinite;
+}
+@keyframes gridMove{
+  0%{background-position:0 0}
+  100%{background-position:40px 40px}
+}
+
+/* STARS BG */
+.stars{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background:
+    radial-gradient(1px 1px at 10% 15%, rgba(0,229,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 5%, rgba(255,214,0,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 25%, rgba(0,229,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 10%, rgba(0,255,127,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 30%, rgba(0,229,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 20% 50%, rgba(255,214,0,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 55%, rgba(0,229,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 70%, rgba(0,255,127,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 80%, rgba(0,229,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5% 90%, rgba(255,214,0,0.4) 0%, transparent 100%);
+}
+
+/* PIXEL BOX (border & corner decor) */
+.pixel-box{
+  position:relative;
+  background:var(--panel);
+  border:2px solid var(--border2);
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 0 20px rgba(0,229,255,0.05),
+    inset 0 0 40px rgba(0,229,255,0.02);
+}
+.pixel-box::before{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border:1px solid transparent;
+  background:linear-gradient(135deg, var(--neon)33, transparent 50%, var(--neon)22) border-box;
+  -webkit-mask:linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:destination-out;
+  mask-composite:exclude;
+  pointer-events:none;
+}
+.pixel-box::after{
+  content:'';
+  position:absolute;
+  top:-3px;left:-3px;right:-3px;bottom:-3px;
+  pointer-events:none;
+  background:
+    linear-gradient(var(--neon),var(--neon)) top left / 12px 2px no-repeat,
+    linear-gradient(var(--neon),var(--neon)) top left / 2px 12px no-repeat,
+    linear-gradient(var(--neon),var(--neon)) top right / 12px 2px no-repeat,
+    linear-gradient(var(--neon),var(--neon)) top right / 2px 12px no-repeat,
+    linear-gradient(var(--neon),var(--neon)) bottom left / 12px 2px no-repeat,
+    linear-gradient(var(--neon),var(--neon)) bottom left / 2px 12px no-repeat,
+    linear-gradient(var(--neon),var(--neon)) bottom right / 12px 2px no-repeat,
+    linear-gradient(var(--neon),var(--neon)) bottom right / 2px 12px no-repeat;
+}
+
+/* HUD BAR */
+.hud-bar{
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:100;
+  background:rgba(2,4,8,0.9);
+  border-bottom:1px solid var(--border2);
+  padding:8px 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  backdrop-filter:blur(8px);
+}
+.hud-bar::after{
+  content:'';
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--neon), transparent);
+  animation:scanH 3s linear infinite;
+}
+@keyframes scanH{0%{transform:scaleX(0);transform-origin:left}50%{transform:scaleX(1);transform-origin:left}51%{transform:scaleX(1);transform-origin:right}100%{transform:scaleX(0);transform-origin:right}}
+
+.hud-logo{
+  font-family:var(--pixel);
+  font-size:10px;
+  color:var(--neon);
+  text-shadow:0 0 8px var(--neon);
+  letter-spacing:2px;
+}
+.hud-logo span{color:var(--gold);text-shadow:0 0 8px var(--gold)}
+.hud-right{
+  display:flex;
+  align-items:center;
+  gap:20px;
+  font-family:var(--hud);
+  font-size:10px;
+  color:var(--txt2);
+  letter-spacing:1px;
+}
+.hud-stat{display:flex;align-items:center;gap:6px}
+.hud-stat-val{color:var(--neon);font-weight:600;font-size:11px;text-shadow:0 0 6px var(--neon)}
+.hud-bar-ping{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 8px var(--green);
+  animation:ping 1.5s ease infinite;
+}
+@keyframes ping{0%,100%{opacity:0.4}50%{opacity:1}}
+
+/* HERO */
+.hero{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:120px 24px 80px;
+  text-align:center;
+  position:relative;
+  z-index:1;
+}
+.sprite-wrap{
+  margin-bottom:40px;
+  position:relative;
+  animation:spriteBob 2s ease-in-out infinite;
+}
+@keyframes spriteBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.sprite-wrap canvas{image-rendering:pixelated}
+
+.hero-badge{
+  font-family:var(--pixel);
+  font-size:8px;
+  color:var(--neon);
+  letter-spacing:2px;
+  background:rgba(0,229,255,0.06);
+  border:1px solid var(--neon);
+  padding:8px 16px;
+  margin-bottom:32px;
+  display:inline-block;
+  text-shadow:0 0 8px var(--neon);
+  box-shadow:0 0 12px rgba(0,229,255,0.2);
+  position:relative;
+  animation:fadeUp .6s ease .1s both;
+}
+.hero-badge::before{content:'> ';color:var(--green)}
+
+.hero-title{
+  font-family:var(--pixel);
+  font-size:clamp(22px,5vw,48px);
+  line-height:1.4;
+  letter-spacing:4px;
+  animation:fadeUp .6s ease .3s both;
+}
+.hero-title .line1{color:var(--txt);display:block}
+.hero-title .line2{color:var(--neon);text-shadow:0 0 20px var(--neon),0 0 40px rgba(0,229,255,0.3);display:block;margin-top:8px}
+.hero-sub{
+  font-family:var(--hud);
+  font-size:11px;
+  color:var(--txt2);
+  letter-spacing:3px;
+  margin-top:20px;
+  animation:fadeUp .6s ease .45s both;
+}
+.hero-sub::before{content:'// ';color:var(--gold)}
+
+/* SOCIAL BUTTONS */
+.socials{
+  display:flex;
+  gap:10px;
+  margin-top:40px;
+  flex-wrap:wrap;
+  justify-content:center;
+  animation:fadeUp .6s ease .75s both;
+}
+.slink{
+  font-family:var(--pixel);
+  font-size:7px;
+  color:var(--neon);
+  text-decoration:none;
+  letter-spacing:1px;
+  border:1px solid var(--neon);
+  padding:10px 16px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:rgba(0,229,255,0.04);
+  transition:all .15s;
+  position:relative;
+  overflow:hidden;
+}
+.slink::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:var(--neon);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .15s;
+  z-index:0;
+}
+.slink:hover::before{transform:scaleX(1)}
+.slink:hover{color:var(--bg)}
+.slink svg,.slink span{position:relative;z-index:1}
+.scroll-hint{
+  position:absolute;
+  bottom:32px;
+  left:50%;
+  transform:translateX(-50%);
+  font-family:var(--pixel);
+  font-size:7px;
+  color:var(--txt2);
+  letter-spacing:2px;
+  animation:bounce 1.5s ease infinite;
+}
+.scroll-hint::before{content:'▼ ';color:var(--neon)}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+/* SECTION DIVIDER */
+.sec-div{
+  display:flex;
+  align-items:center;
+  gap:0;
+  max-width:1000px;
+  margin:0 auto 60px;
+  padding:0 24px;
+  position:relative;
+  z-index:1;
+}
+.sec-div-line{flex:1;height:1px;background:var(--border2)}
+.sec-div-txt{
+  font-family:var(--pixel);
+  font-size:8px;
+  color:var(--bg);
+  background:var(--neon);
+  padding:6px 14px;
+  letter-spacing:2px;
+  white-space:nowrap;
+  box-shadow:0 0 12px rgba(0,229,255,0.4);
+}
+
+/* LAYOUT WRAP */
+.wrap{max-width:960px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+.sec-label{
+  font-family:var(--pixel);
+  font-size:7px;
+  color:var(--green);
+  letter-spacing:2px;
+  margin-bottom:12px;
+  text-shadow:0 0 8px var(--green);
+}
+.sec-label::before{content:'▶ ';color:var(--neon)}
+.sec-title{
+  font-family:var(--hud);
+  font-size:clamp(26px,4vw,42px);
+  font-weight:700;
+  letter-spacing:2px;
+  line-height:1.1;
+  margin-bottom:40px;
+  color:var(--txt);
+  text-transform:uppercase;
+}
+.sec-title em{color:var(--neon);font-style:normal;text-shadow:0 0 16px var(--neon)}
+
+/* GAME GRID (CUSTOM) */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  margin: 20px 0 60px;
+}
+@media (max-width: 680px) {
+  .game-grid { grid-template-columns: 1fr; gap: 28px; }
+}
+.game-card {
+  background: var(--panel);
+  border: 2px solid var(--border2);
+  transition: transform 0.2s ease, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.game-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 28px -8px rgba(0,0,0,0.6), 0 0 0 1px var(--neon2);
+}
+.game-img {
+  width: 100%;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.game-img img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  image-rendering: crisp-edges;
+  transition: opacity 0.2s;
+}
+.game-card:hover .game-img img {
+  opacity: 0.92;
+}
+.game-info {
+  padding: 24px 22px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.game-title {
+  font-family: var(--pixel);
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: var(--neon);
+  text-shadow: 0 0 6px var(--neon);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.game-title::before {
+  content: '🎮';
+  font-size: 12px;
+  filter: drop-shadow(0 0 4px var(--neon));
+}
+.game-desc {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--txt);
+  opacity: 0.9;
+  margin: 6px 0 8px;
+}
+.btn-game {
+  font-family: var(--pixel);
+  font-size: 8px;
+  letter-spacing: 1px;
+  background: rgba(0,229,255,0.08);
+  border: 1px solid var(--neon);
+  color: var(--neon);
+  padding: 10px 12px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  margin-top: 6px;
+  width: fit-content;
+}
+.btn-game:hover {
+  background: var(--neon);
+  color: var(--bg);
+  box-shadow: 0 0 14px rgba(0,229,255,0.5);
+  border-color: var(--neon2);
+}
+.btn-game svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+/* ABOUT GRID (original style) */
+.about-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:2px;
+  background:var(--border);
+  border:2px solid var(--border2);
+  overflow:hidden;
+  margin-top:40px;
+}
+.ac{
+  background:var(--panel);
+  padding:22px 26px;
+  position:relative;
+}
+.ac::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:1px;
+  background:linear-gradient(90deg,var(--neon),transparent);
+}
+.ac-l{font-family:var(--pixel);font-size:6px;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+.ac-l::before{content:'# ';color:var(--neon)}
+.ac-v{font-family:var(--hud);font-size:15px;font-weight:600;color:var(--txt);letter-spacing:1px}
+@media(max-width:600px){
+  .about-grid{grid-template-columns:1fr}
+  .game-info{padding: 18px 18px 22px;}
+}
+
+/* FOOTER */
+footer{
+  border-top:2px solid var(--border2);
+  padding:24px;
+  text-align:center;
+  font-family:var(--pixel);
+  font-size:7px;
+  color:var(--txt2);
+  letter-spacing:2px;
+  position:relative;
+  z-index:1;
+}
+footer::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--neon),transparent);
+}
+footer .fg{color:var(--neon);text-shadow:0 0 8px var(--neon)}
+
+/* TOAST (minimal) */
+.toast{
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--panel);
+  border:1px solid var(--neon);
+  color:var(--neon);
+  font-family:var(--pixel);font-size:8px;
+  letter-spacing:1px;
+  padding:10px 20px;
+  z-index:9999;
+  opacity:0;
+  transition:all .3s;
+  pointer-events:none;
+  box-shadow:0 0 20px rgba(0,229,255,0.3);
+  text-shadow:0 0 8px var(--neon);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#spriteCanvas{width:64px;height:64px;image-rendering:pixelated}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+section{padding-bottom:80px}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="stars"></div>
+
+<!-- HUD BAR (retro feel) -->
+<div class="hud-bar">
+  <div class="hud-logo">SUKA<span>LOGIKA</span></div>
+  <div class="hud-right">
+    <div class="hud-stat"><span>HP</span><span class="hud-stat-val">100</span></div>
+    <div class="hud-stat"><span>XP</span><span class="hud-stat-val" id="xpVal">0</span></div>
+    <div class="hud-stat"><span>LEVEL</span><span class="hud-stat-val">DEV</span></div>
+    <div class="hud-bar-ping"></div>
+    <span style="font-size:9px">ARCADE</span>
+  </div>
+</div>
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <div class="sprite-wrap">
+    <canvas id="spriteCanvas" width="64" height="64"></canvas>
+  </div>
+  <div class="hero-badge">✧ GAME CREATOR ✧</div>
+  <h1 class="hero-title">
+    <span class="line1">HENKY ADLIN SHAN</span>
+    <span class="line2">GAME LIBRARY</span>
+  </h1>
+  <p class="hero-sub">faith-driven interactive · build & play</p>
+  <div class="socials">
+    <a class="slink" href="https://youtube.com/@sukalogika/" target="_blank">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+      <span>YOUTUBE</span>
+    </a>
+    <a class="slink" href="https://www.instagram.com/sukalogika" target="_blank">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 3.3.2 4.8 1.7 5 5 .1 1.3.1 1.6.1 4.9s0 3.6-.1 4.9c-.2 3.3-1.7 4.8-5 5-1.3.1-1.6.1-4.9.1s-3.6 0-4.9-.1c-3.3-.2-4.8-1.7-5-5C2 16.6 2 16.3 2 13s0-3.6.1-4.9c.2-3.3 1.7-4.8 5-5C8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1.0 8.3 0 8.7 0 12s0 3.7.1 4.9C.3 21.3 2.7 23.7 7.1 23.9 8.3 24 8.7 24 12 24s3.7 0 4.9-.1c4.4-.2 6.8-2.6 7-7C24 15.7 24 15.3 24 12s0-3.7-.1-4.9C23.7 2.7 21.3.3 16.9.1 15.7 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 1 0 0 12.4A6.2 6.2 0 0 0 12 5.8zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-11.8a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8z"/></svg>
+      <span>INSTAGRAM</span>
+    </a>
+    <a class="slink" href="https://www.tiktok.com/@sukalogika" target="_blank">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 3a3 3 0 0 1-.7-2H16v13a2.5 2.5 0 0 1-2.5 2.5A2.5 2.5 0 0 1 11 14a2.5 2.5 0 0 1 2.5-2.5c.3 0 .5 0 .7.1V9a6.2 6.2 0 0 0-.7 0A6.2 6.2 0 0 0 7.3 15 6.2 6.2 0 0 0 13.5 21 6.2 6.2 0 0 0 19.7 15V8.4A8.7 8.7 0 0 0 24 9V6a5 5 0 0 1-4.4-3z"/></svg>
+      <span>TIKTOK</span>
+    </a>
+    <a class="slink" href="#" style="cursor:default;opacity:0.7">
+      <svg width="12" height="12" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"><path d="M448 128C554 128 640 214 640 320C640 426 554 512 448 512L192 512C86 512 0 426 0 320C0 214 86 128 192 128L448 128zM192 240C178.7 240 168 250.7 168 264L168 296L136 296C122.7 296 112 306.7 112 320C112 333.3 122.7 344 136 344L168 344L168 376C168 389.3 178.7 400 192 400C205.3 400 216 389.3 216 376L216 344L248 344C261.3 344 272 333.3 272 320C272 306.7 261.3 296 248 296L216 296L216 264C216 250.7 205.3 240 192 240zM432 336C414.3 336 400 350.3 400 368C400 385.7 414.3 400 432 400C449.7 400 464 385.7 464 368C464 350.3 449.7 336 432 336zM496 240C478.3 240 464 254.3 464 272C464 289.7 478.3 304 496 304C513.7 304 528 289.7 528 272C528 254.3 513.7 240 496 240z"/></svg>
+      <span>GAMES</span>
+    </a>
+  </div>
+  <div class="scroll-hint">EXPLORE GAMES</div>
+</section>
+
+<!-- GAME LIBRARY SECTION (daftar game) -->
+<div class="sec-div">
+  <div class="sec-div-line"></div>
+  <div class="sec-div-txt">★ GAME PORTFOLIO ★</div>
+  <div class="sec-div-line"></div>
+</div>
+
+<section class="wrap">
+  <div class="sec-label">games.list()</div>
+  <h2 class="sec-title">BUILD & PLAY<br><em>CREATIONS</em></h2>
+  
+  <div class="game-grid">
+    <!-- GAME 1: MANNA -->
+    <div class="game-card pixel-box">
+      <div class="game-img">
+        <img src="https://placehold.co/640x360/0a1428/00e5ff?text=MANNA+%E2%80%A2+FAITH+QUEST&font=orbitron" 
+             alt="Manna game screenshot - pixel art biblical adventure"
+             loading="lazy">
+      </div>
+      <div class="game-info">
+        <div class="game-title">MANNA — DAILY BREAD</div>
+        <div class="game-desc">
+          Kumpulkan manna dari langit, hindari badai gurun, dan pelajari arti percaya pada pemeliharaan Allah. 
+          Game petualangan ringan yang terinspirasi dari Keluaran 16. Setiap level mengajarkan tentang syukur dan iman.
+        </div>
+        <a href="https://sukalogika.com/games/manna/" class="btn-game" target="_blank" rel="noopener noreferrer">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          PLAY MANNA →
+        </a>
+      </div>
+    </div>
+
+    <!-- GAME 2: THE GOOD SHEPHERD -->
+    <div class="game-card pixel-box">
+      <div class="game-img">
+        <img src="https://placehold.co/640x360/0a1428/ffd600?text=THE+GOOD+SHEPHERD&font=orbitron" 
+             alt="The Good Shepherd game screenshot - guiding flock"
+             loading="lazy">
+      </div>
+      <div class="game-info">
+        <div class="game-title">THE GOOD SHEPHERD</div>
+        <div class="game-desc">
+          Pimpin domba-domba melewati lembah, lindungi dari serigala, dan temukan padang hijau. Game strategi 
+          yang merefleksikan Yohanes 10:11 — “Akulah gembala yang baik.” Setiap keputusan mengajarkan kasih dan perlindungan.
+        </div>
+        <a href="https://sukalogika.com/games/the-good-shepherd/" class="btn-game" target="_blank" rel="noopener noreferrer">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          PLAY SHEPHERD →
+        </a>
+      </div>
+    </div>
+  </div>
+  <!-- additional note: creative hint -->
+  <div style="text-align:center; margin: 16px 0 20px; font-family: var(--pixel); font-size: 7px; color: var(--txt2);">
+    <span>✨ setiap game dibangun dengan doa & kode · klik untuk bermain ✨</span>
+  </div>
+</section>
+
+<!-- ABOUT SECTION (sama seperti template asli) -->
+<div class="sec-div">
+  <div class="sec-div-line"></div>
+  <div class="sec-div-txt">★ PLAYER INFO ★</div>
+  <div class="sec-div-line"></div>
+</div>
+
+<section class="wrap">
+  <div class="sec-label">about()</div>
+  <h2 class="sec-title">PROGRAMMER<br><em>YANG TAKUT TUHAN</em></h2>
+  <div class="about-grid">
+    <div class="ac"><div class="ac-l">Display Name</div><div class="ac-v" style="color:var(--neon);text-shadow:0 0 10px var(--neon)">sukalogika</div></div>
+    <div class="ac"><div class="ac-l">Full Name</div><div class="ac-v">Henky Adlin Shan</div></div>
+    <div class="ac" style="grid-column:1/-1">
+      <div class="ac-l">Life Verse</div>
+      <div class="ac-v" style="font-family:var(--mono);font-size:15px;font-weight:400;line-height:1.6;border-left:2px solid var(--gold);padding-left:14px;color:var(--txt)">
+        "Ujilah segala sesuatu dan peganglah yang baik."
+        <span style="display:block;margin-top:6px;font-family:var(--pixel);font-size:7px;color:var(--gold);text-shadow:0 0 8px var(--gold)">— 1 TESALONIKA 5:21</span>
+      </div>
+    </div>
+    <div class="ac" style="grid-column:1/-1">
+      <div class="ac-l">Stack &amp; Tools</div>
+      <div class="ac-v" style="font-family:var(--mono);font-size:13px;color:var(--neon);line-height:1.8">game developer · javascript · phaser · alkitab & interactive media</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="fg">★ SUKALOGIKA ★</span> &nbsp;·&nbsp; DIBUAT DENGAN IMAN &amp; KODE &nbsp;·&nbsp; © 2025
+</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+  // ========== PIXEL SPRITE (sama seperti template) ==========
+  (function() {
+    const cvs = document.getElementById('spriteCanvas');
+    if(!cvs) return;
+    const c = cvs.getContext('2d');
+    const S = 4;
+    const frames = [
+      [
+        "0001111000","0011111100","0101001010","0111111110","0011111100",
+        "0001111000","0010000100","0011111100","0001001000","0001001000",
+        "0001001000","0000110000","0000110000","0000110000","0001001000","0001001000"
+      ],
+      [
+        "0001111000","0011111100","0101001010","0111111110","0011111100",
+        "0001111000","0010000100","0011111100","0001001000","0001001000",
+        "0001001000","0000110000","0000110000","0001001000","0010000100","0100000010"
+      ]
+    ];
+    const colors = ['transparent','#00e5ff'];
+    let frameIdx = 0;
+    function drawSprite() {
+      c.clearRect(0,0,64,64);
+      const f = frames[frameIdx];
+      for (let y = 0; y < f.length; y++) {
+        for (let x = 0; x < f[y].length; x++) {
+          const v = parseInt(f[y][x]);
+          if (v) {
+            c.fillStyle = colors[v];
+            c.shadowColor = '#00e5ff';
+            c.shadowBlur = 4;
+            c.fillRect(x*S + 2, y*S, S, S);
+          }
+        }
+      }
+    }
+    drawSprite();
+    setInterval(() => { frameIdx = 1 - frameIdx; drawSprite(); }, 620);
+  })();
+
+  // XP COUNTER (nostalgia)
+  let xp = 0;
+  const xpSpan = document.getElementById('xpVal');
+  if(xpSpan) {
+    setInterval(() => {
+      xp = (xp + Math.floor(Math.random() * 4)) % 9999;
+      xpSpan.textContent = xp;
+    }, 2100);
+  }
+
+  // optional toast helper (simple)
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    if(!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // small effect: ketika tombol game diklik -> toast notifikasi
+  document.querySelectorAll('.btn-game').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      // hanya efek tambahan, navigasi tetap berjalan
+      const gameName = btn.closest('.game-card')?.querySelector('.game-title')?.innerText || 'game';
+      showToast(`⟫ memuat ${gameName} ... selamat bermain!`);
+    });
+  });
+
+  // tambahan efek hover game card
+  const cards = document.querySelectorAll('.game-card');
+  cards.forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      // atmosfer
+    });
+  });
+</script>
+</body>
+</html>
