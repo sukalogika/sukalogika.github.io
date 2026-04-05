@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Genesis Puzzle — Susun Gambar Penciptaan</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #0a0705;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cinzel', serif;
+    }
+    #game-container {
+      position: relative;
+      width: 800px; height: 600px;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<div id="game-container"></div>
+<script>
+// ─────────────────────────────────────────────
+//  CONSTANTS
+// ─────────────────────────────────────────────
+const GAME_W = 800, GAME_H = 600;
+const PUZZLE_W = 540, PUZZLE_H = 360;
+
+const LEVELS = [
+  { id: 1, name: "Terang & Gelap",         color: "#1a0a2e", accent: "#f5e642", img: "FB_Preschool_Creation_JPEG/01_FB_Preschool_Creation_1024.jpg" },
+  { id: 2, name: "Langit & Air",            color: "#0d2b4e", accent: "#7dd6f5", img: "FB_Preschool_Creation_JPEG/04_FB_Preschool_Creation_1024.jpg" },
+  { id: 3, name: "Daratan & Tumbuhan",      color: "#1a3a1a", accent: "#7fe87f", img: "FB_Preschool_Creation_JPEG/05_FB_Preschool_Creation_1024.jpg" },
+  { id: 4, name: "Matahari, Bulan & Bintang", color: "#2d1a0e", accent: "#ffd166", img: "FB_Preschool_Creation_JPEG/06_FB_Preschool_Creation_1024.jpg" },
+  { id: 5, name: "Ikan & Burung",           color: "#0e2233", accent: "#06d6a0", img: "FB_Preschool_Creation_JPEG/07_FB_Preschool_Creation_1024.jpg" },
+  { id: 6, name: "Hewan Darat & Manusia",   color: "#2e1a0a", accent: "#ef8c4f", img: "FB_Preschool_Creation_JPEG/09_FB_Preschool_Creation_1024.jpg" },
+  { id: 7, name: "Hari Istirahat",          color: "#1a1a2e", accent: "#c77dff", img: "FB_Preschool_Creation_JPEG/10_FB_Preschool_Creation_1024.jpg" },
+];
+
+const DIFFICULTY = {
+  easy:   { cols: 2, rows: 3, label: "Easy",   sub: "2 × 3  (6 tile)" },
+  medium: { cols: 3, rows: 3, label: "Medium",  sub: "3 × 3  (9 tile)" },
+  hard:   { cols: 3, rows: 4, label: "Hard",    sub: "3 × 4  (12 tile)" },
+};
+
+// ─────────────────────────────────────────────
+//  BOOT SCENE
+// ─────────────────────────────────────────────
+class BootScene extends Phaser.Scene {
+  constructor() { super('BootScene'); }
+
+  preload() {
+    // progress bar
+    const bar = this.add.graphics();
+    const bg  = this.add.graphics();
+    bg.fillStyle(0x1a1a2e).fillRoundedRect(GAME_W/2-200, GAME_H/2-14, 400, 28, 14);
+    this.load.on('progress', v => {
+      bar.clear();
+      bar.fillStyle(0xc77dff).fillRoundedRect(GAME_W/2-198, GAME_H/2-12, 396*v, 24, 12);
+    });
+
+    const txt = this.add.text(GAME_W/2, GAME_H/2-50, 'GENESIS PUZZLE', {
+      fontFamily: "'Cinzel Decorative', serif", fontSize: 28, color: '#c77dff'
+    }).setOrigin(0.5);
+
+    // load all level images
+    LEVELS.forEach(l => this.load.image(`level${l.id}`, l.img));
+  }
+
+  create() {
+    this.scene.start('MenuScene');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  MENU SCENE
+// ─────────────────────────────────────────────
+class MenuScene extends Phaser.Scene {
+  constructor() { super('MenuScene'); }
+
+  create() {
+    this._drawBg();
+    this._drawTitle();
+    this._drawDifficultyCards();
+  }
+
+  _drawBg() {
+    const g = this.add.graphics();
+    g.fillGradientStyle(0x0a0705, 0x0a0705, 0x1a0a2e, 0x1a0a2e, 1);
+    g.fillRect(0, 0, GAME_W, GAME_H);
+
+    // subtle stars
+    for (let i = 0; i < 120; i++) {
+      const x = Phaser.Math.Between(0, GAME_W);
+      const y = Phaser.Math.Between(0, GAME_H);
+      const r = Math.random() * 1.5 + 0.3;
+      const a = Math.random() * 0.7 + 0.2;
+      g.fillStyle(0xffffff, a);
+      g.fillCircle(x, y, r);
+    }
+  }
+
+  _drawTitle() {
+    this.add.text(GAME_W/2, 80, 'GENESIS', {
+      fontFamily: "'Cinzel Decorative', serif",
+      fontSize: 52, color: '#c77dff',
+      stroke: '#6a0dad', strokeThickness: 2,
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 132, 'P  U  Z  Z  L  E', {
+      fontFamily: "'Cinzel', serif",
+      fontSize: 18, color: '#f5e6ff',
+      letterSpacing: 8,
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 174, '— Susun Kembali Kisah Penciptaan —', {
+      fontFamily: "'EB Garamond', serif",
+      fontSize: 14, color: '#a08090', fontStyle: 'italic',
+    }).setOrigin(0.5);
+  }
+
+  _drawDifficultyCards() {
+    this.add.text(GAME_W/2, 220, 'PILIH KESULITAN', {
+      fontFamily: "'Cinzel', serif", fontSize: 13,
+      color: '#806090', letterSpacing: 4,
+    }).setOrigin(0.5);
+
+    const diffs = [
+      { key: 'easy',   x: 170, icon: '🌱' },
+      { key: 'medium', x: 400, icon: '⚖️' },
+      { key: 'hard',   x: 630, icon: '🔥' },
+    ];
+
+    diffs.forEach(d => {
+      const cfg = DIFFICULTY[d.key];
+      const cx = d.x, cy = 360;
+
+      // card bg
+      const card = this.add.graphics();
+      this._drawCard(card, cx, cy, 0x1a0a2e, 0x6a0dad, false);
+
+      // icon
+      this.add.text(cx, cy - 52, d.icon, { fontSize: 36 }).setOrigin(0.5);
+
+      // label
+      this.add.text(cx, cy + 4, cfg.label.toUpperCase(), {
+        fontFamily: "'Cinzel', serif", fontSize: 18, color: '#e8d5ff', fontStyle: 'bold',
+      }).setOrigin(0.5);
+
+      this.add.text(cx, cy + 30, cfg.sub, {
+        fontFamily: "'EB Garamond', serif", fontSize: 13, color: '#9070a0',
+      }).setOrigin(0.5);
+
+      // hit area
+      const btn = this.add.rectangle(cx, cy, 210, 160).setInteractive({ useHandCursor: true });
+      btn.on('pointerover', () => { this._drawCard(card, cx, cy, 0x2d0a4e, 0xc77dff, true); });
+      btn.on('pointerout',  () => { this._drawCard(card, cx, cy, 0x1a0a2e, 0x6a0dad, false); });
+      btn.on('pointerdown', () => {
+        this.registry.set('difficulty', d.key);
+        this.registry.set('level', 1);
+        this.cameras.main.fadeOut(400, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('GameScene'));
+      });
+    });
+
+    // footer
+    this.add.text(GAME_W/2, 548, '7 Level  ·  Swap Tile  ·  Susun Gambar Penciptaan', {
+      fontFamily: "'EB Garamond', serif", fontSize: 12, color: '#504060', fontStyle: 'italic',
+    }).setOrigin(0.5);
+  }
+
+  _drawCard(g, cx, cy, bg, border, glow) {
+    g.clear();
+    if (glow) {
+      g.lineStyle(12, border, 0.18);
+      g.strokeRoundedRect(cx - 110, cy - 84, 220, 168, 14);
+    }
+    g.fillStyle(bg, 1);
+    g.fillRoundedRect(cx - 104, cy - 78, 208, 156, 12);
+    g.lineStyle(glow ? 2 : 1, border, glow ? 1 : 0.5);
+    g.strokeRoundedRect(cx - 104, cy - 78, 208, 156, 12);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  GAME SCENE
+// ─────────────────────────────────────────────
+class GameScene extends Phaser.Scene {
+  constructor() { super('GameScene'); }
+
+  init() {
+    this.diffKey   = this.registry.get('difficulty') || 'easy';
+    this.levelIdx  = (this.registry.get('level') || 1) - 1;
+    this.diff      = DIFFICULTY[this.diffKey];
+    this.levelData = LEVELS[this.levelIdx];
+
+    this.tiles       = [];
+    this.selected    = null;
+    this.isAnimating = false;
+    this.moves       = 0;
+  }
+
+  preload() {
+    // already loaded in boot
+  }
+
+  create() {
+    this._drawBackground();
+    this._buildHUD();
+    this._showPreview();
+  }
+
+  // ── BACKGROUND ──────────────────────────────
+  _drawBackground() {
+    const g = this.add.graphics();
+    const c = parseInt(this.levelData.color.replace('#', ''), 16);
+    g.fillStyle(c, 1);
+    g.fillRect(0, 0, GAME_W, GAME_H);
+
+    for (let i = 0; i < 80; i++) {
+      g.fillStyle(0xffffff, Math.random() * 0.4 + 0.1);
+      g.fillCircle(
+        Phaser.Math.Between(0, GAME_W),
+        Phaser.Math.Between(0, GAME_H),
+        Math.random() * 1.4 + 0.3
+      );
+    }
+  }
+
+  // ── HUD ─────────────────────────────────────
+  _buildHUD() {
+    const ac = this.levelData.accent;
+
+    // top bar
+    const topBar = this.add.graphics();
+    topBar.fillStyle(0x000000, 0.4);
+    topBar.fillRect(0, 0, GAME_W, 56);
+    topBar.lineStyle(1, parseInt(ac.replace('#',''), 16), 0.3);
+    topBar.strokeRect(0, 0, GAME_W, 56);
+
+    // level name
+    this.add.text(GAME_W/2, 14, `LEVEL ${this.levelData.id}`, {
+      fontFamily: "'Cinzel', serif", fontSize: 11, color: ac, letterSpacing: 4,
+    }).setOrigin(0.5, 0);
+
+    this.add.text(GAME_W/2, 30, this.levelData.name.toUpperCase(), {
+      fontFamily: "'Cinzel Decorative', serif", fontSize: 14, color: '#ffffff',
+    }).setOrigin(0.5, 0);
+
+    // moves counter
+    this.moveTxt = this.add.text(36, 28, 'MOVES: 0', {
+      fontFamily: "'Cinzel', serif", fontSize: 11, color: '#a08090',
+    }).setOrigin(0, 0.5);
+
+    // difficulty badge
+    this.add.text(GAME_W - 36, 28, this.diffKey.toUpperCase(), {
+      fontFamily: "'Cinzel', serif", fontSize: 11, color: ac,
+    }).setOrigin(1, 0.5);
+
+    // level dots
+    const dotY = GAME_H - 22;
+    const totalDots = 7;
+    const dotSpacing = 26;
+    const startX = GAME_W/2 - (totalDots - 1) * dotSpacing / 2;
+    LEVELS.forEach((l, i) => {
+      const g = this.add.graphics();
+      const active = i === this.levelIdx;
+      const done   = i < this.levelIdx;
+      const color  = done ? 0x90ee90 : active ? parseInt(ac.replace('#',''), 16) : 0x333333;
+      g.fillStyle(color, done || active ? 1 : 0.6);
+      g.fillCircle(startX + i * dotSpacing, dotY, active ? 7 : 5);
+      if (active) {
+        g.lineStyle(2, parseInt(ac.replace('#',''), 16), 0.5);
+        g.strokeCircle(startX + i * dotSpacing, dotY, 11);
+      }
+    });
+  }
+
+  // ── PREVIEW ──────────────────────────────────
+  _showPreview() {
+    const key = `level${this.levelData.id}`;
+    const imgW = PUZZLE_W, imgH = PUZZLE_H;
+    const ox = (GAME_W - imgW) / 2;
+    const oy = (GAME_H - imgH) / 2 + 8;
+
+    // overlay
+    const overlay = this.add.graphics().setDepth(10);
+    overlay.fillStyle(0x000000, 0.65);
+    overlay.fillRect(0, 0, GAME_W, GAME_H);
+
+    // preview frame
+    const frame = this.add.graphics().setDepth(11);
+    frame.lineStyle(2, parseInt(this.levelData.accent.replace('#',''), 16), 0.8);
+    frame.strokeRoundedRect(ox - 4, oy - 4, imgW + 8, imgH + 8, 4);
+
+    const img = this.add.image(GAME_W/2, GAME_H/2 + 8, key)
+      .setDisplaySize(imgW, imgH)
+      .setDepth(11);
+
+    const label = this.add.text(GAME_W/2, oy - 24, `— Ingat gambar ini —`, {
+      fontFamily: "'EB Garamond', serif", fontSize: 14,
+      color: this.levelData.accent, fontStyle: 'italic',
+    }).setOrigin(0.5).setDepth(12);
+
+    const countdownTxt = this.add.text(GAME_W/2, oy + imgH + 20, '2', {
+      fontFamily: "'Cinzel Decorative', serif", fontSize: 28,
+      color: '#ffffff',
+    }).setOrigin(0.5).setDepth(12);
+
+    let count = 2;
+    const timer = this.time.addEvent({
+      delay: 1000, repeat: 1,
+      callback: () => {
+        count--;
+        countdownTxt.setText(count > 0 ? String(count) : '');
+        if (count <= 0) {
+          overlay.destroy(); img.destroy(); frame.destroy();
+          label.destroy(); countdownTxt.destroy();
+          this._buildPuzzle();
+        }
+      }
+    });
+  }
+
+  // ── BUILD PUZZLE ─────────────────────────────
+  _buildPuzzle() {
+    const { cols, rows } = this.diff;
+    const key = `level${this.levelData.id}`;
+    const tileW = Math.floor(PUZZLE_W / cols);
+    const tileH = Math.floor(PUZZLE_H / rows);
+    const offX  = Math.floor((GAME_W  - cols * tileW) / 2);
+    const offY  = Math.floor((GAME_H  - rows * tileH) / 2) + 8;
+
+    this.tileW = tileW; this.tileH = tileH;
+    this.offX  = offX;  this.offY  = offY;
+    this.cols  = cols;  this.rows  = rows;
+
+    const sourceImg = this.textures.get(key).getSourceImage();
+    const imgW = sourceImg.width, imgH = sourceImg.height;
+
+    this.tiles = [];
+    const order = this._shuffleOrder(cols * rows);
+
+    for (let idx = 0; idx < cols * rows; idx++) {
+      const ci = idx % cols;
+      const ri = Math.floor(idx / cols);
+
+      // create canvas texture for each tile
+      const texKey = `tile_${this.levelIdx}_${idx}`;
+      if (!this.textures.exists(texKey)) {
+        const canvas = this.textures.createCanvas(texKey, tileW, tileH);
+        const ctx    = canvas.getContext();
+        const sx = Math.floor((ci / cols) * imgW);
+        const sy = Math.floor((ri / rows) * imgH);
+        const sw = Math.floor(imgW / cols);
+        const sh = Math.floor(imgH / rows);
+        ctx.drawImage(sourceImg, sx, sy, sw, sh, 0, 0, tileW, tileH);
+        canvas.refresh();
+      }
+
+      const slotIdx   = order[idx];
+      const slotCol   = slotIdx % cols;
+      const slotRow   = Math.floor(slotIdx / cols);
+      const px        = offX + slotCol * tileW + tileW / 2;
+      const py        = offY + slotRow * tileH + tileH / 2;
+
+      const img = this.add.image(px, py, texKey)
+        .setDisplaySize(tileW - 2, tileH - 2)
+        .setInteractive({ useHandCursor: true });
+
+      const tile = {
+        img,
+        correct_index: idx,
+        current_index: slotIdx,
+        texKey,
+      };
+
+      img.on('pointerdown', () => this._onTileClick(tile));
+      img.on('pointerover', () => {
+        if (this.selected !== tile && !this.isAnimating)
+          img.setTint(0xdddddd);
+      });
+      img.on('pointerout', () => {
+        if (this.selected !== tile)
+          img.clearTint();
+      });
+
+      this.tiles.push(tile);
+    }
+
+    this._drawGrid();
+  }
+
+  _drawGrid() {
+    if (this.gridGfx) this.gridGfx.destroy();
+    this.gridGfx = this.add.graphics().setDepth(-1);
+    const ac = parseInt(this.levelData.accent.replace('#',''), 16);
+    this.gridGfx.lineStyle(1, ac, 0.12);
+    const { cols, rows, tileW, tileH, offX, offY } = this;
+    for (let r = 0; r <= rows; r++)
+      this.gridGfx.strokeLineShape(new Phaser.Geom.Line(offX, offY + r*tileH, offX + cols*tileW, offY + r*tileH));
+    for (let c = 0; c <= cols; c++)
+      this.gridGfx.strokeLineShape(new Phaser.Geom.Line(offX + c*tileW, offY, offX + c*tileW, offY + rows*tileH));
+
+    // outer border
+    this.gridGfx.lineStyle(2, ac, 0.5);
+    this.gridGfx.strokeRect(offX, offY, cols*tileW, rows*tileH);
+  }
+
+  // ── TILE INTERACTION ─────────────────────────
+  _onTileClick(tile) {
+    if (this.isAnimating) return;
+
+    if (!this.selected) {
+      this.selected = tile;
+      tile.img.setTint(0xffee55);
+      // glow ring
+      if (this.selectGfx) this.selectGfx.destroy();
+      this.selectGfx = this.add.graphics().setDepth(5);
+      const ac = parseInt(this.levelData.accent.replace('#',''), 16);
+      this.selectGfx.lineStyle(3, ac, 0.9);
+      this.selectGfx.strokeRect(
+        tile.img.x - this.tileW/2 + 1,
+        tile.img.y - this.tileH/2 + 1,
+        this.tileW - 2, this.tileH - 2
+      );
+    } else if (this.selected === tile) {
+      this.selected.img.clearTint();
+      this.selected = null;
+      if (this.selectGfx) { this.selectGfx.destroy(); this.selectGfx = null; }
+    } else {
+      this._swapTiles(this.selected, tile);
+    }
+  }
+
+  _swapTiles(a, b) {
+    if (this.selectGfx) { this.selectGfx.destroy(); this.selectGfx = null; }
+    this.isAnimating = true;
+    this.selected    = null;
+    a.img.clearTint();
+    b.img.clearTint();
+
+    const ax = a.img.x, ay = a.img.y;
+    const bx = b.img.x, by = b.img.y;
+
+    this.tweens.add({
+      targets: a.img, x: bx, y: by, duration: 220,
+      ease: 'Cubic.easeInOut',
+    });
+    this.tweens.add({
+      targets: b.img, x: ax, y: ay, duration: 220,
+      ease: 'Cubic.easeInOut',
+      onComplete: () => {
+        // swap current_index
+        const tmp        = a.current_index;
+        a.current_index  = b.current_index;
+        b.current_index  = tmp;
+
+        this.moves++;
+        this.moveTxt.setText(`MOVES: ${this.moves}`);
+        this.isAnimating = false;
+        this._checkWin();
+      }
+    });
+  }
+
+  // ── VALIDATION ───────────────────────────────
+  _checkWin() {
+    const solved = this.tiles.every(t => t.correct_index === t.current_index);
+    if (solved) this._onWin();
+  }
+
+  _onWin() {
+    this.isAnimating = true;
+
+    // flash each tile
+    this.tiles.forEach((t, i) => {
+      this.time.delayedCall(i * 30, () => {
+        this.tweens.add({
+          targets: t.img, scaleX: 1.08, scaleY: 1.08,
+          duration: 120, yoyo: true, ease: 'Sine.easeInOut',
+        });
+      });
+    });
+
+    this.time.delayedCall(this.tiles.length * 30 + 300, () => {
+      this._showWinOverlay();
+    });
+  }
+
+  _showWinOverlay() {
+    const key = `level${this.levelData.id}`;
+    const ac  = this.levelData.accent;
+    const acInt = parseInt(ac.replace('#',''), 16);
+
+    const ov = this.add.graphics().setDepth(20);
+    ov.fillStyle(0x000000, 0.72);
+    ov.fillRect(0, 0, GAME_W, GAME_H);
+
+    // full image reveal
+    const imgW = PUZZLE_W * 0.7, imgH = PUZZLE_H * 0.7;
+    this.add.image(GAME_W/2, GAME_H/2 - 30, key)
+      .setDisplaySize(imgW, imgH).setDepth(21)
+      .setAlpha(0);
+    const previewImg = this.children.getAll().find(c => c.depth === 21 && c.type === 'Image');
+    this.tweens.add({ targets: previewImg, alpha: 1, duration: 600 });
+
+    this.add.text(GAME_W/2, GAME_H/2 - imgH/2 - 36, '✦  SELESAI  ✦', {
+      fontFamily: "'Cinzel Decorative', serif", fontSize: 22, color: ac,
+    }).setOrigin(0.5).setDepth(22);
+
+    this.add.text(GAME_W/2, GAME_H/2 + imgH/2 + 20, `${this.moves} Gerakan`, {
+      fontFamily: "'Cinzel', serif", fontSize: 14, color: '#c0a0d0',
+    }).setOrigin(0.5).setDepth(22);
+
+    const isLastLevel = this.levelIdx >= 6;
+    const btnLabel    = isLastLevel ? 'LIHAT ENDING' : 'LEVEL BERIKUTNYA ›';
+    const btn         = this.add.text(GAME_W/2, GAME_H/2 + imgH/2 + 55, btnLabel, {
+      fontFamily: "'Cinzel', serif", fontSize: 16, color: '#ffffff',
+      backgroundColor: ac, padding: { x: 20, y: 10 },
+    }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
+
+    btn.on('pointerover', () => btn.setAlpha(0.85));
+    btn.on('pointerout',  () => btn.setAlpha(1));
+    btn.on('pointerdown', () => {
+      this.cameras.main.fadeOut(400, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        if (isLastLevel) {
+          this.scene.start('EndScene', { difficulty: this.diffKey });
+        } else {
+          this.registry.set('level', this.levelIdx + 2);
+          this.scene.restart();
+        }
+      });
+    });
+  }
+
+  // ── SHUFFLE ──────────────────────────────────
+  _shuffleOrder(n) {
+    const arr = Array.from({ length: n }, (_, i) => i);
+    let solved = true;
+    while (solved) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      solved = arr.every((v, i) => v === i);
+    }
+    return arr;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  END SCENE
+// ─────────────────────────────────────────────
+class EndScene extends Phaser.Scene {
+  constructor() { super('EndScene'); }
+
+  init(data) { this.diffKey = data.difficulty || 'easy'; }
+
+  create() {
+    // starfield bg
+    const g = this.add.graphics();
+    g.fillGradientStyle(0x0a0020, 0x0a0020, 0x1a0040, 0x1a0040, 1);
+    g.fillRect(0, 0, GAME_W, GAME_H);
+    for (let i = 0; i < 200; i++) {
+      g.fillStyle(0xffffff, Math.random() * 0.8 + 0.1);
+      g.fillCircle(Phaser.Math.Between(0, GAME_W), Phaser.Math.Between(0, GAME_H), Math.random() * 1.5 + 0.2);
+    }
+
+    // glow circle
+    const gc = this.add.graphics();
+    gc.fillStyle(0xc77dff, 0.07);
+    gc.fillCircle(GAME_W/2, GAME_H/2, 260);
+    gc.fillStyle(0xc77dff, 0.04);
+    gc.fillCircle(GAME_W/2, GAME_H/2, 320);
+
+    this.add.text(GAME_W/2, 130, '✦', { fontSize: 40, color: '#ffd166' }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 195, 'TAMAT', {
+      fontFamily: "'Cinzel Decorative', serif", fontSize: 54,
+      color: '#c77dff', stroke: '#6a0dad', strokeThickness: 3,
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 258, 'Semua 7 Level Penciptaan Selesai!', {
+      fontFamily: "'EB Garamond', serif", fontSize: 18,
+      color: '#e8d5ff', fontStyle: 'italic',
+    }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, 300, `Dimainkan dengan tingkat kesulitan: ${DIFFICULTY[this.diffKey].label}`, {
+      fontFamily: "'EB Garamond', serif", fontSize: 14, color: '#906090',
+    }).setOrigin(0.5);
+
+    // level summary
+    const summaryY = 348;
+    LEVELS.forEach((l, i) => {
+      const col = i % 4, row = Math.floor(i / 4);
+      const x = GAME_W/2 - 225 + col * 150 + (i < 4 ? 0 : 75);
+      const y = summaryY + row * 44;
+      const ac = parseInt(l.accent.replace('#',''), 16);
+      this.add.text(x, y, `${l.id}. ${l.name}`, {
+        fontFamily: "'Cinzel', serif", fontSize: 10, color: l.accent,
+      }).setOrigin(0.5);
+    });
+
+    // play again
+    const btn = this.add.text(GAME_W/2, 520, '↺  MAIN LAGI', {
+      fontFamily: "'Cinzel', serif", fontSize: 18, color: '#1a0a2e',
+      backgroundColor: '#c77dff', padding: { x: 28, y: 12 },
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    btn.on('pointerover', () => btn.setAlpha(0.85));
+    btn.on('pointerout',  () => btn.setAlpha(1));
+    btn.on('pointerdown', () => {
+      this.cameras.main.fadeOut(400, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.registry.set('level', 1);
+        this.scene.start('MenuScene');
+      });
+    });
+
+    this.cameras.main.fadeIn(600);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  PHASER CONFIG & LAUNCH
+// ─────────────────────────────────────────────
+const config = {
+  type: Phaser.AUTO,
+  width: GAME_W,
+  height: GAME_H,
+  backgroundColor: '#0a0705',
+  parent: 'game-container',
+  scene: [BootScene, MenuScene, GameScene, EndScene],
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+};
+
+new Phaser.Game(config);
+</script>
+</body>
+</html>
