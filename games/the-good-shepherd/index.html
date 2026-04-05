@@ -329,7 +329,17 @@ const MAZES = [
   [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,1,1,0,1,0,1],[1,0,1,0,0,1,0,1],[1,0,0,0,1,1,0,1],[1,1,1,0,0,0,1,1],[1,0,0,0,1,0,1,1],[1,0,1,1,1,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
   [[1,1,1,1,1,1,1,1],[1,0,0,0,1,0,0,1],[1,0,1,0,1,0,1,1],[1,1,0,0,1,0,0,1],[1,0,0,1,0,1,0,1],[1,0,1,0,1,0,0,1],[1,0,1,0,0,0,1,1],[1,0,0,1,1,0,1,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
   [[1,1,1,1,1,1,1,1],[1,0,0,0,1,0,0,1],[1,0,1,0,0,0,1,1],[1,0,1,1,1,0,0,1],[1,0,0,0,0,0,1,1],[1,1,0,1,0,0,0,1],[1,0,0,1,0,1,0,1],[1,0,1,0,0,1,0,1],[1,0,0,0,1,0,0,1],[1,1,1,1,1,1,1,1]],
-  [[1,1,1,1,1,1,1,1],[1,0,0,1,0,0,0,1],[1,0,1,0,0,1,0,1],[1,0,0,0,1,0,0,1],[1,1,0,1,0,0,1,1],[1,0,0,0,0,1,0,1],[1,0,1,1,0,0,0,1],[1,0,0,1,0,1,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+  [
+  [1,1,1,1,1,1,1,1],
+  [1,0,0,1,0,0,0,1],
+  [1,0,1,0,0,1,0,1],
+  [1,0,0,0,1,0,0,1],
+  [1,1,0,1,0,0,1,1],
+  [1,0,1,0,0,1,0,1],
+  [1,0,1,1,0,0,0,1],
+  [1,0,0,1,0,1,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1]],
 ];
 
 const SHEEP_POS = [
@@ -345,22 +355,48 @@ const WOLF_PATHS = [
   [[[3,5],[3,6],[2,6],[2,5]]],
   [[[6,5],[6,6],[5,6],[5,5]]],
   [[[3,4],[3,5],[4,5],[4,4]], [[5,2],[5,3],[6,3],[6,2]]],
-  [[[2,2],[2,3],[3,3],[3,2]], [[5,5],[5,6],[6,6],[6,5]], [[2,6],[2,7],[3,7],[3,6]]],
+  [[[2,2],[2,3],[3,3],[3,2]], [[4,6],[5,6],[6,6]], [[1,7],[2,7],[2,8],[1,8]]],
 ];
 
 const LEVEL_CFG = [
-  {time:40, moral:'"Tuhan sayang setiap orang" — Lukas 15',          stars:[30,20,10], bonus:200},
-  {time:50, moral:'"Setia dalam hal kecil" — Lukas 16:10',           stars:[40,28,15], bonus:180},
-  {time:60, moral:'"Menjaga yang dipercayakan" — Yohanes 10',        stars:[48,32,18], bonus:160},
-  {time:55, moral:'"Jangan takut, Aku selalu ada" — Yosua 1:9',      stars:[42,28,14], bonus:150},
-  {time:65, moral:'"Kasihilah sesamamu manusia" — Markus 12:31',     stars:[50,35,20], bonus:130},
+  {
+    time:40,
+    moral:'"Ayo kita cari domba yang hilang!" — Lukas 15:4',
+    stars:[30,20,10],
+    bonus:200
+  },
+  {
+    time:50,
+    moral:'"Dombanya nambah, kita jaga semua ya!" — Yohanes 10:14',
+    stars:[40,28,15],
+    bonus:180
+  },
+  {
+    time:60,
+    moral:'"Awas serigala! Jangan sampai ada yang hilang!" — Yohanes 10:12',
+    stars:[48,32,18],
+    bonus:160
+  },
+  {
+    time:55,
+    moral:'"Jangan takut, kita jagain bareng!" — Yosua 1:9',
+    stars:[42,28,14],
+    bonus:150
+  },
+  {
+    time:65,
+    moral:'"Semua penting! Jangan tinggalin satu pun!" — Yohanes 13:34',
+    stars:[49,35,20],
+    bonus:130
+  },
 ];
+
 
 const LEVEL_INFO = [
   {label:'Level 1 🌱', sub:'1 Domba · 40 detik',              col:0x52B788, badge:''},
   {label:'Level 2 🌿', sub:'2 Domba · 50 detik',              col:0xF4A460, badge:''},
   {label:'Level 3 🌳', sub:'3 Domba + 🐺 · 60 detik',         col:0xFF6B6B, badge:''},
-  {label:'Level 4 ⚡',  sub:'3 Domba + 2 Serigala · 55 detik', col:0xAA44CC, badge:'BARU!'},
+  {label:'Level 4 ⚡',  sub:'3 Domba + 2 Serigala · 55 detik', col:0xAA44CC, badge:'HARD!'},
   {label:'Level 5 🔥',  sub:'3 Domba + 3 Serigala · 65 detik', col:0xCC2244, badge:'BOSS!'},
 ];
 
