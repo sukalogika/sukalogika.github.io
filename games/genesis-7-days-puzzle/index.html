@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Genesis Puzzle — Susun Gambar Penciptaan</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
@@ -14,10 +14,10 @@
       overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       font-family: 'Cinzel', serif;
+      touch-action: none;
     }
     #game-container {
       position: relative;
-      width: 800px; height: 600px;
     }
     canvas { display: block; }
   </style>
@@ -26,26 +26,68 @@
 <div id="game-container"></div>
 <script>
 // ─────────────────────────────────────────────
+//  RESPONSIVE DIMENSIONS
+// ─────────────────────────────────────────────
+function getGameDims() {
+  const sw = window.innerWidth;
+  const sh = window.innerHeight;
+  const isPortrait = sh > sw;
+
+  if (isPortrait) {
+    // Portrait: gunakan lebar layar penuh, tinggi menyesuaikan
+    const W = Math.min(sw, 480);
+    const H = Math.min(sh, Math.round(W * 1.55));
+    return { W, H, isPortrait: true };
+  } else {
+    // Landscape: layout asli, scale down jika perlu
+    const W = Math.min(sw, 800);
+    const H = Math.min(sh, 600);
+    return { W, H, isPortrait: false };
+  }
+}
+
+const DIMS = getGameDims();
+const GAME_W = DIMS.W;
+const GAME_H = DIMS.H;
+const IS_PORTRAIT = DIMS.isPortrait;
+
+// Puzzle area — di portrait lebih kecil & persegi
+function getPuzzleArea() {
+  if (IS_PORTRAIT) {
+    const W = Math.round(GAME_W * 0.94);
+    // Gambar asli 1024x768 → ratio 4:3
+    const H = Math.round(W * 0.75);
+    return { W, H };
+  }
+  return { W: 540, H: 360 };
+}
+const PUZZLE = getPuzzleArea();
+
+// ─────────────────────────────────────────────
 //  CONSTANTS
 // ─────────────────────────────────────────────
-const GAME_W = 600, GAME_H = 450;
-const PUZZLE_W = 500, PUZZLE_H = 375;
-
 const LEVELS = [
-  { id: 1, name: "Terang & Gelap",         color: "#1a0a2e", accent: "#f5e642", img: "FB_Preschool_Creation_JPEG/01_FB_Preschool_Creation_1024.jpg" },
-  { id: 2, name: "Langit & Air",            color: "#0d2b4e", accent: "#7dd6f5", img: "FB_Preschool_Creation_JPEG/04_FB_Preschool_Creation_1024.jpg" },
-  { id: 3, name: "Daratan & Tumbuhan",      color: "#1a3a1a", accent: "#7fe87f", img: "FB_Preschool_Creation_JPEG/05_FB_Preschool_Creation_1024.jpg" },
+  { id: 1, name: "Terang & Gelap",           color: "#1a0a2e", accent: "#f5e642", img: "FB_Preschool_Creation_JPEG/01_FB_Preschool_Creation_1024.jpg" },
+  { id: 2, name: "Langit & Air",              color: "#0d2b4e", accent: "#7dd6f5", img: "FB_Preschool_Creation_JPEG/04_FB_Preschool_Creation_1024.jpg" },
+  { id: 3, name: "Daratan & Tumbuhan",        color: "#1a3a1a", accent: "#7fe87f", img: "FB_Preschool_Creation_JPEG/05_FB_Preschool_Creation_1024.jpg" },
   { id: 4, name: "Matahari, Bulan & Bintang", color: "#2d1a0e", accent: "#ffd166", img: "FB_Preschool_Creation_JPEG/06_FB_Preschool_Creation_1024.jpg" },
-  { id: 5, name: "Ikan & Burung",           color: "#0e2233", accent: "#06d6a0", img: "FB_Preschool_Creation_JPEG/07_FB_Preschool_Creation_1024.jpg" },
-  { id: 6, name: "Hewan Darat & Manusia",   color: "#2e1a0a", accent: "#ef8c4f", img: "FB_Preschool_Creation_JPEG/09_FB_Preschool_Creation_1024.jpg" },
-  { id: 7, name: "Hari Istirahat",          color: "#1a1a2e", accent: "#c77dff", img: "FB_Preschool_Creation_JPEG/10_FB_Preschool_Creation_1024.jpg" },
+  { id: 5, name: "Ikan & Burung",             color: "#0e2233", accent: "#06d6a0", img: "FB_Preschool_Creation_JPEG/07_FB_Preschool_Creation_1024.jpg" },
+  { id: 6, name: "Hewan Darat & Manusia",     color: "#2e1a0a", accent: "#ef8c4f", img: "FB_Preschool_Creation_JPEG/09_FB_Preschool_Creation_1024.jpg" },
+  { id: 7, name: "Hari Istirahat",            color: "#1a1a2e", accent: "#c77dff", img: "FB_Preschool_Creation_JPEG/10_FB_Preschool_Creation_1024.jpg" },
 ];
 
 const DIFFICULTY = {
-  easy:   { cols: 2, rows: 3, label: "Easy",   sub: "2 × 3  (6 tile)" },
-  medium: { cols: 3, rows: 3, label: "Medium",  sub: "3 × 3  (9 tile)" },
-  hard:   { cols: 3, rows: 4, label: "Hard",    sub: "3 × 4  (12 tile)" },
+  easy:   { cols: 2, rows: 3, label: "Easy",   sub: "2×3  (6 tile)" },
+  medium: { cols: 3, rows: 3, label: "Medium",  sub: "3×3  (9 tile)" },
+  hard:   { cols: 3, rows: 4, label: "Hard",    sub: "3×4  (12 tile)" },
 };
+
+// ─────────────────────────────────────────────
+//  FONT SIZE HELPERS
+// ─────────────────────────────────────────────
+const FS = IS_PORTRAIT
+  ? { title: 28, subtitle: 13, body: 11, small: 9, btn: 13, levelName: 11, winTitle: 18, winBtn: 13 }
+  : { title: 52, subtitle: 18, body: 14, small: 12, btn: 16, levelName: 14, winTitle: 22, winBtn: 16 };
 
 // ─────────────────────────────────────────────
 //  BOOT SCENE
@@ -54,26 +96,22 @@ class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
 
   preload() {
-    // progress bar
     const bar = this.add.graphics();
     const bg  = this.add.graphics();
-    bg.fillStyle(0x1a1a2e).fillRoundedRect(GAME_W/2-200, GAME_H/2-14, 400, 28, 14);
+    bg.fillStyle(0x1a1a2e).fillRoundedRect(GAME_W/2-160, GAME_H/2-12, 320, 24, 12);
     this.load.on('progress', v => {
       bar.clear();
-      bar.fillStyle(0xc77dff).fillRoundedRect(GAME_W/2-198, GAME_H/2-12, 396*v, 24, 12);
+      bar.fillStyle(0xc77dff).fillRoundedRect(GAME_W/2-158, GAME_H/2-10, 316*v, 20, 10);
     });
 
-    const txt = this.add.text(GAME_W/2, GAME_H/2-50, 'GENESIS PUZZLE', {
-      fontFamily: "'Cinzel Decorative', serif", fontSize: 28, color: '#c77dff'
+    this.add.text(GAME_W/2, GAME_H/2-46, 'GENESIS PUZZLE', {
+      fontFamily: "'Cinzel Decorative', serif", fontSize: IS_PORTRAIT ? 20 : 28, color: '#c77dff'
     }).setOrigin(0.5);
 
-    // load all level images
     LEVELS.forEach(l => this.load.image(`level${l.id}`, l.img));
   }
 
-  create() {
-    this.scene.start('MenuScene');
-  }
+  create() { this.scene.start('MenuScene'); }
 }
 
 // ─────────────────────────────────────────────
@@ -92,97 +130,134 @@ class MenuScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.fillGradientStyle(0x0a0705, 0x0a0705, 0x1a0a2e, 0x1a0a2e, 1);
     g.fillRect(0, 0, GAME_W, GAME_H);
-
-    // subtle stars
     for (let i = 0; i < 120; i++) {
-      const x = Phaser.Math.Between(0, GAME_W);
-      const y = Phaser.Math.Between(0, GAME_H);
-      const r = Math.random() * 1.5 + 0.3;
-      const a = Math.random() * 0.7 + 0.2;
-      g.fillStyle(0xffffff, a);
-      g.fillCircle(x, y, r);
+      g.fillStyle(0xffffff, Math.random() * 0.7 + 0.2);
+      g.fillCircle(Phaser.Math.Between(0, GAME_W), Phaser.Math.Between(0, GAME_H), Math.random() * 1.5 + 0.3);
     }
   }
 
   _drawTitle() {
-    this.add.text(GAME_W/2, 80, 'GENESIS', {
-      fontFamily: "'Cinzel Decorative', serif",
-      fontSize: 52, color: '#c77dff',
-      stroke: '#6a0dad', strokeThickness: 2,
-    }).setOrigin(0.5);
-
-    this.add.text(GAME_W/2, 132, 'P  U  Z  Z  L  E', {
-      fontFamily: "'Cinzel', serif",
-      fontSize: 18, color: '#f5e6ff',
-      letterSpacing: 8,
-    }).setOrigin(0.5);
-
-    this.add.text(GAME_W/2, 174, '— Susun Kembali Kisah Penciptaan —', {
-      fontFamily: "'EB Garamond', serif",
-      fontSize: 14, color: '#a08090', fontStyle: 'italic',
-    }).setOrigin(0.5);
+    if (IS_PORTRAIT) {
+      this.add.text(GAME_W/2, GAME_H * 0.10, 'GENESIS', {
+        fontFamily: "'Cinzel Decorative', serif",
+        fontSize: FS.title, color: '#c77dff',
+        stroke: '#6a0dad', strokeThickness: 1,
+      }).setOrigin(0.5);
+      this.add.text(GAME_W/2, GAME_H * 0.16, 'P  U  Z  Z  L  E', {
+        fontFamily: "'Cinzel', serif", fontSize: FS.subtitle, color: '#f5e6ff',
+      }).setOrigin(0.5);
+      this.add.text(GAME_W/2, GAME_H * 0.21, '— Susun Kisah Penciptaan —', {
+        fontFamily: "'EB Garamond', serif", fontSize: FS.body, color: '#a08090', fontStyle: 'italic',
+      }).setOrigin(0.5);
+    } else {
+      this.add.text(GAME_W/2, 80, 'GENESIS', {
+        fontFamily: "'Cinzel Decorative', serif", fontSize: FS.title, color: '#c77dff',
+        stroke: '#6a0dad', strokeThickness: 2,
+      }).setOrigin(0.5);
+      this.add.text(GAME_W/2, 132, 'P  U  Z  Z  L  E', {
+        fontFamily: "'Cinzel', serif", fontSize: FS.subtitle, color: '#f5e6ff',
+      }).setOrigin(0.5);
+      this.add.text(GAME_W/2, 174, '— Susun Kembali Kisah Penciptaan —', {
+        fontFamily: "'EB Garamond', serif", fontSize: FS.body, color: '#a08090', fontStyle: 'italic',
+      }).setOrigin(0.5);
+    }
   }
 
   _drawDifficultyCards() {
-    this.add.text(GAME_W/2, 220, 'PILIH KESULITAN', {
-      fontFamily: "'Cinzel', serif", fontSize: 13,
+    const labelY = IS_PORTRAIT ? GAME_H * 0.27 : 220;
+    this.add.text(GAME_W/2, labelY, 'PILIH KESULITAN', {
+      fontFamily: "'Cinzel', serif", fontSize: IS_PORTRAIT ? 10 : 13,
       color: '#806090', letterSpacing: 4,
     }).setOrigin(0.5);
 
-    const diffs = [
-      { key: 'easy',   x: 170, icon: '🌱' },
-      { key: 'medium', x: 400, icon: '⚖️' },
-      { key: 'hard',   x: 630, icon: '🔥' },
-    ];
+    if (IS_PORTRAIT) {
+      // Portrait: kartu vertikal ditumpuk
+      const diffs = [
+        { key: 'easy',   icon: '🌱' },
+        { key: 'medium', icon: '⚖️' },
+        { key: 'hard',   icon: '🔥' },
+      ];
+      const cardW  = Math.round(GAME_W * 0.82);
+      const cardH  = Math.round(GAME_H * 0.13);
+      const startY = GAME_H * 0.34;
+      const gap    = cardH + 14;
 
-    diffs.forEach(d => {
-      const cfg = DIFFICULTY[d.key];
-      const cx = d.x, cy = 360;
+      diffs.forEach((d, idx) => {
+        const cfg = DIFFICULTY[d.key];
+        const cx  = GAME_W / 2;
+        const cy  = startY + idx * gap;
 
-      // card bg
-      const card = this.add.graphics();
-      this._drawCard(card, cx, cy, 0x1a0a2e, 0x6a0dad, false);
+        const card = this.add.graphics();
+        this._drawCardRect(card, cx, cy, cardW, cardH, 0x1a0a2e, 0x6a0dad, false);
 
-      // icon
-      this.add.text(cx, cy - 52, d.icon, { fontSize: 36 }).setOrigin(0.5);
+        this.add.text(cx - cardW/2 + 28, cy, d.icon, { fontSize: 22 }).setOrigin(0.5);
+        this.add.text(cx - cardW/2 + 28, cy, '', {}).setOrigin(0.5); // spacer
+        this.add.text(cx, cy - 8, cfg.label.toUpperCase(), {
+          fontFamily: "'Cinzel', serif", fontSize: 15, color: '#e8d5ff', fontStyle: 'bold',
+        }).setOrigin(0.5);
+        this.add.text(cx, cy + 12, cfg.sub, {
+          fontFamily: "'EB Garamond', serif", fontSize: 11, color: '#9070a0',
+        }).setOrigin(0.5);
 
-      // label
-      this.add.text(cx, cy + 4, cfg.label.toUpperCase(), {
-        fontFamily: "'Cinzel', serif", fontSize: 18, color: '#e8d5ff', fontStyle: 'bold',
-      }).setOrigin(0.5);
-
-      this.add.text(cx, cy + 30, cfg.sub, {
-        fontFamily: "'EB Garamond', serif", fontSize: 13, color: '#9070a0',
-      }).setOrigin(0.5);
-
-      // hit area
-      const btn = this.add.rectangle(cx, cy, 210, 160).setInteractive({ useHandCursor: true });
-      btn.on('pointerover', () => { this._drawCard(card, cx, cy, 0x2d0a4e, 0xc77dff, true); });
-      btn.on('pointerout',  () => { this._drawCard(card, cx, cy, 0x1a0a2e, 0x6a0dad, false); });
-      btn.on('pointerdown', () => {
-        this.registry.set('difficulty', d.key);
-        this.registry.set('level', 1);
-        this.cameras.main.fadeOut(400, 0, 0, 0);
-        this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('GameScene'));
+        const btn = this.add.rectangle(cx, cy, cardW, cardH).setInteractive({ useHandCursor: true });
+        btn.on('pointerover', () => this._drawCardRect(card, cx, cy, cardW, cardH, 0x2d0a4e, 0xc77dff, true));
+        btn.on('pointerout',  () => this._drawCardRect(card, cx, cy, cardW, cardH, 0x1a0a2e, 0x6a0dad, false));
+        btn.on('pointerdown', () => {
+          this.registry.set('difficulty', d.key);
+          this.registry.set('level', 1);
+          this.cameras.main.fadeOut(400, 0, 0, 0);
+          this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('GameScene'));
+        });
       });
-    });
+    } else {
+      // Landscape: kartu horizontal
+      const diffs = [
+        { key: 'easy',   x: 170, icon: '🌱' },
+        { key: 'medium', x: 400, icon: '⚖️' },
+        { key: 'hard',   x: 630, icon: '🔥' },
+      ];
+      diffs.forEach(d => {
+        const cfg = DIFFICULTY[d.key];
+        const cx = d.x, cy = 360;
+        const card = this.add.graphics();
+        this._drawCard(card, cx, cy, 0x1a0a2e, 0x6a0dad, false);
+        this.add.text(cx, cy - 52, d.icon, { fontSize: 36 }).setOrigin(0.5);
+        this.add.text(cx, cy + 4, cfg.label.toUpperCase(), {
+          fontFamily: "'Cinzel', serif", fontSize: 18, color: '#e8d5ff', fontStyle: 'bold',
+        }).setOrigin(0.5);
+        this.add.text(cx, cy + 30, cfg.sub, {
+          fontFamily: "'EB Garamond', serif", fontSize: 13, color: '#9070a0',
+        }).setOrigin(0.5);
+        const btn = this.add.rectangle(cx, cy, 210, 160).setInteractive({ useHandCursor: true });
+        btn.on('pointerover', () => this._drawCard(card, cx, cy, 0x2d0a4e, 0xc77dff, true));
+        btn.on('pointerout',  () => this._drawCard(card, cx, cy, 0x1a0a2e, 0x6a0dad, false));
+        btn.on('pointerdown', () => {
+          this.registry.set('difficulty', d.key);
+          this.registry.set('level', 1);
+          this.cameras.main.fadeOut(400, 0, 0, 0);
+          this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('GameScene'));
+        });
+      });
+    }
 
-    // footer
-    this.add.text(GAME_W/2, 548, '7 Level  ·  Swap Tile  ·  Susun Gambar Penciptaan', {
-      fontFamily: "'EB Garamond', serif", fontSize: 12, color: '#504060', fontStyle: 'italic',
+    const footerY = IS_PORTRAIT ? GAME_H - 26 : 548;
+    this.add.text(GAME_W/2, footerY, '7 Level  ·  Swap Tile  ·  Susun Gambar Penciptaan', {
+      fontFamily: "'EB Garamond', serif", fontSize: IS_PORTRAIT ? 9 : 12, color: '#504060', fontStyle: 'italic',
     }).setOrigin(0.5);
+  }
+
+  _drawCardRect(g, cx, cy, w, h, bg, border, glow) {
+    g.clear();
+    if (glow) { g.lineStyle(10, border, 0.16); g.strokeRoundedRect(cx - w/2 - 4, cy - h/2 - 4, w + 8, h + 8, 10); }
+    g.fillStyle(bg, 1); g.fillRoundedRect(cx - w/2, cy - h/2, w, h, 10);
+    g.lineStyle(glow ? 2 : 1, border, glow ? 1 : 0.5); g.strokeRoundedRect(cx - w/2, cy - h/2, w, h, 10);
   }
 
   _drawCard(g, cx, cy, bg, border, glow) {
     g.clear();
-    if (glow) {
-      g.lineStyle(12, border, 0.18);
-      g.strokeRoundedRect(cx - 110, cy - 84, 220, 168, 14);
-    }
-    g.fillStyle(bg, 1);
-    g.fillRoundedRect(cx - 104, cy - 78, 208, 156, 12);
-    g.lineStyle(glow ? 2 : 1, border, glow ? 1 : 0.5);
-    g.strokeRoundedRect(cx - 104, cy - 78, 208, 156, 12);
+    if (glow) { g.lineStyle(12, border, 0.18); g.strokeRoundedRect(cx-110, cy-84, 220, 168, 14); }
+    g.fillStyle(bg, 1); g.fillRoundedRect(cx-104, cy-78, 208, 156, 12);
+    g.lineStyle(glow ? 2 : 1, border, glow ? 1 : 0.5); g.strokeRoundedRect(cx-104, cy-78, 208, 156, 12);
   }
 }
 
@@ -197,15 +272,10 @@ class GameScene extends Phaser.Scene {
     this.levelIdx  = (this.registry.get('level') || 1) - 1;
     this.diff      = DIFFICULTY[this.diffKey];
     this.levelData = LEVELS[this.levelIdx];
-
     this.tiles       = [];
     this.selected    = null;
     this.isAnimating = false;
     this.moves       = 0;
-  }
-
-  preload() {
-    // already loaded in boot
   }
 
   create() {
@@ -214,105 +284,155 @@ class GameScene extends Phaser.Scene {
     this._showPreview();
   }
 
-  // ── BACKGROUND ──────────────────────────────
   _drawBackground() {
     const g = this.add.graphics();
     const c = parseInt(this.levelData.color.replace('#', ''), 16);
     g.fillStyle(c, 1);
     g.fillRect(0, 0, GAME_W, GAME_H);
-
     for (let i = 0; i < 80; i++) {
       g.fillStyle(0xffffff, Math.random() * 0.4 + 0.1);
-      g.fillCircle(
-        Phaser.Math.Between(0, GAME_W),
-        Phaser.Math.Between(0, GAME_H),
-        Math.random() * 1.4 + 0.3
-      );
+      g.fillCircle(Phaser.Math.Between(0, GAME_W), Phaser.Math.Between(0, GAME_H), Math.random() * 1.4 + 0.3);
     }
   }
 
   // ── HUD ─────────────────────────────────────
+  // Portrait: HUD di atas (level name) & bawah (dots + moves)
+  // Landscape: HUD di atas saja
   _buildHUD() {
-    const ac = this.levelData.accent;
+    const ac    = this.levelData.accent;
+    const acInt = parseInt(ac.replace('#', ''), 16);
 
-    // top bar
-    const topBar = this.add.graphics();
-    topBar.fillStyle(0x000000, 0.4);
-    topBar.fillRect(0, 0, GAME_W, 56);
-    topBar.lineStyle(1, parseInt(ac.replace('#',''), 16), 0.3);
-    topBar.strokeRect(0, 0, GAME_W, 56);
+    if (IS_PORTRAIT) {
+      // Top bar
+      const topH = 44;
+      const topBar = this.add.graphics();
+      topBar.fillStyle(0x000000, 0.42);
+      topBar.fillRect(0, 0, GAME_W, topH);
+      topBar.lineStyle(1, acInt, 0.3);
+      topBar.strokeRect(0, 0, GAME_W, topH);
 
-    // level name
-    this.add.text(GAME_W/2, 14, `LEVEL ${this.levelData.id}`, {
-      fontFamily: "'Cinzel', serif", fontSize: 11, color: ac, letterSpacing: 4,
-    }).setOrigin(0.5, 0);
+      this.add.text(GAME_W/2, 8, `LEVEL ${this.levelData.id}`, {
+        fontFamily: "'Cinzel', serif", fontSize: 9, color: ac, letterSpacing: 3,
+      }).setOrigin(0.5, 0);
+      this.add.text(GAME_W/2, 22, this.levelData.name.toUpperCase(), {
+        fontFamily: "'Cinzel Decorative', serif", fontSize: 11, color: '#ffffff',
+      }).setOrigin(0.5, 0);
 
-    this.add.text(GAME_W/2, 30, this.levelData.name.toUpperCase(), {
-      fontFamily: "'Cinzel Decorative', serif", fontSize: 14, color: '#ffffff',
-    }).setOrigin(0.5, 0);
+      // Bottom bar
+      const botH = 38;
+      const botBar = this.add.graphics();
+      botBar.fillStyle(0x000000, 0.42);
+      botBar.fillRect(0, GAME_H - botH, GAME_W, botH);
+      botBar.lineStyle(1, acInt, 0.2);
+      botBar.strokeRect(0, GAME_H - botH, GAME_W, botH);
 
-    // moves counter
-    this.moveTxt = this.add.text(36, 28, 'MOVES: 0', {
-      fontFamily: "'Cinzel', serif", fontSize: 11, color: '#a08090',
-    }).setOrigin(0, 0.5);
+      this.moveTxt = this.add.text(14, GAME_H - botH/2, 'MOVES: 0', {
+        fontFamily: "'Cinzel', serif", fontSize: 9, color: '#a08090',
+      }).setOrigin(0, 0.5);
 
-    // difficulty badge
-    this.add.text(GAME_W - 36, 28, this.diffKey.toUpperCase(), {
-      fontFamily: "'Cinzel', serif", fontSize: 11, color: ac,
-    }).setOrigin(1, 0.5);
+      this.add.text(GAME_W - 14, GAME_H - botH/2, this.diffKey.toUpperCase(), {
+        fontFamily: "'Cinzel', serif", fontSize: 9, color: ac,
+      }).setOrigin(1, 0.5);
 
-    // level dots
-    const dotY = GAME_H - 22;
-    const totalDots = 7;
-    const dotSpacing = 26;
-    const startX = GAME_W/2 - (totalDots - 1) * dotSpacing / 2;
-    LEVELS.forEach((l, i) => {
-      const g = this.add.graphics();
-      const active = i === this.levelIdx;
-      const done   = i < this.levelIdx;
-      const color  = done ? 0x90ee90 : active ? parseInt(ac.replace('#',''), 16) : 0x333333;
-      g.fillStyle(color, done || active ? 1 : 0.6);
-      g.fillCircle(startX + i * dotSpacing, dotY, active ? 7 : 5);
-      if (active) {
-        g.lineStyle(2, parseInt(ac.replace('#',''), 16), 0.5);
-        g.strokeCircle(startX + i * dotSpacing, dotY, 11);
-      }
-    });
+      // Level dots centered in bottom bar
+      const totalDots  = 7;
+      const dotSpacing = Math.round(GAME_W * 0.08);
+      const startX     = GAME_W/2 - (totalDots - 1) * dotSpacing / 2;
+      const dotY       = GAME_H - botH/2;
+      LEVELS.forEach((l, i) => {
+        const gd     = this.add.graphics();
+        const active = i === this.levelIdx;
+        const done   = i < this.levelIdx;
+        const color  = done ? 0x90ee90 : active ? acInt : 0x333333;
+        gd.fillStyle(color, done || active ? 1 : 0.5);
+        gd.fillCircle(startX + i * dotSpacing, dotY, active ? 5 : 3.5);
+      });
+    } else {
+      // Landscape HUD (original)
+      const topBar = this.add.graphics();
+      topBar.fillStyle(0x000000, 0.4);
+      topBar.fillRect(0, 0, GAME_W, 56);
+      topBar.lineStyle(1, acInt, 0.3);
+      topBar.strokeRect(0, 0, GAME_W, 56);
+
+      this.add.text(GAME_W/2, 14, `LEVEL ${this.levelData.id}`, {
+        fontFamily: "'Cinzel', serif", fontSize: 11, color: ac, letterSpacing: 4,
+      }).setOrigin(0.5, 0);
+      this.add.text(GAME_W/2, 30, this.levelData.name.toUpperCase(), {
+        fontFamily: "'Cinzel Decorative', serif", fontSize: 14, color: '#ffffff',
+      }).setOrigin(0.5, 0);
+
+      this.moveTxt = this.add.text(36, 28, 'MOVES: 0', {
+        fontFamily: "'Cinzel', serif", fontSize: 11, color: '#a08090',
+      }).setOrigin(0, 0.5);
+
+      this.add.text(GAME_W - 36, 28, this.diffKey.toUpperCase(), {
+        fontFamily: "'Cinzel', serif", fontSize: 11, color: ac,
+      }).setOrigin(1, 0.5);
+
+      const dotY = GAME_H - 22;
+      const totalDots = 7;
+      const dotSpacing = 26;
+      const startX = GAME_W/2 - (totalDots - 1) * dotSpacing / 2;
+      LEVELS.forEach((l, i) => {
+        const gd = this.add.graphics();
+        const active = i === this.levelIdx, done = i < this.levelIdx;
+        const color = done ? 0x90ee90 : active ? acInt : 0x333333;
+        gd.fillStyle(color, done || active ? 1 : 0.6);
+        gd.fillCircle(startX + i * dotSpacing, dotY, active ? 7 : 5);
+        if (active) {
+          gd.lineStyle(2, acInt, 0.5);
+          gd.strokeCircle(startX + i * dotSpacing, dotY, 11);
+        }
+      });
+    }
+  }
+
+  // ── PUZZLE OFFSET ────────────────────────────
+  _getPuzzleOffset() {
+    const hudTop = IS_PORTRAIT ? 44 : 56;
+    const hudBot = IS_PORTRAIT ? 38 : 30;
+    const available = GAME_H - hudTop - hudBot;
+
+    const pw = PUZZLE.W;
+    const ph = PUZZLE.H;
+
+    const ox = Math.floor((GAME_W - pw) / 2);
+    const oy = Math.floor(hudTop + (available - ph) / 2);
+    return { ox, oy };
   }
 
   // ── PREVIEW ──────────────────────────────────
   _showPreview() {
-    const key = `level${this.levelData.id}`;
-    const imgW = PUZZLE_W, imgH = PUZZLE_H;
-    const ox = (GAME_W - imgW) / 2;
-    const oy = (GAME_H - imgH) / 2 + 8;
+    const key  = `level${this.levelData.id}`;
+    const { ox, oy } = this._getPuzzleOffset();
+    const cx = ox + PUZZLE.W / 2;
+    const cy = oy + PUZZLE.H / 2;
 
-    // overlay
     const overlay = this.add.graphics().setDepth(10);
     overlay.fillStyle(0x000000, 0.65);
     overlay.fillRect(0, 0, GAME_W, GAME_H);
 
-    // preview frame
+    const acInt = parseInt(this.levelData.accent.replace('#', ''), 16);
     const frame = this.add.graphics().setDepth(11);
-    frame.lineStyle(2, parseInt(this.levelData.accent.replace('#',''), 16), 0.8);
-    frame.strokeRoundedRect(ox - 4, oy - 4, imgW + 8, imgH + 8, 4);
+    frame.lineStyle(2, acInt, 0.8);
+    frame.strokeRoundedRect(ox - 3, oy - 3, PUZZLE.W + 6, PUZZLE.H + 6, 4);
 
-    const img = this.add.image(GAME_W/2, GAME_H/2 + 8, key)
-      .setDisplaySize(imgW, imgH)
+    const img = this.add.image(cx, cy, key)
+      .setDisplaySize(PUZZLE.W, PUZZLE.H)
       .setDepth(11);
 
-    const label = this.add.text(GAME_W/2, oy - 24, `— Ingat gambar ini —`, {
-      fontFamily: "'EB Garamond', serif", fontSize: 14,
+    const label = this.add.text(cx, oy - 18, `— Ingat gambar ini —`, {
+      fontFamily: "'EB Garamond', serif", fontSize: IS_PORTRAIT ? 11 : 14,
       color: this.levelData.accent, fontStyle: 'italic',
     }).setOrigin(0.5).setDepth(12);
 
-    const countdownTxt = this.add.text(GAME_W/2, oy + imgH + 20, '2', {
-      fontFamily: "'Cinzel Decorative', serif", fontSize: 28,
-      color: '#ffffff',
+    const countdownTxt = this.add.text(cx, oy + PUZZLE.H + 18, '2', {
+      fontFamily: "'Cinzel Decorative', serif", fontSize: IS_PORTRAIT ? 20 : 28, color: '#ffffff',
     }).setOrigin(0.5).setDepth(12);
 
     let count = 2;
-    const timer = this.time.addEvent({
+    this.time.addEvent({
       delay: 1000, repeat: 1,
       callback: () => {
         count--;
@@ -329,14 +449,14 @@ class GameScene extends Phaser.Scene {
   // ── BUILD PUZZLE ─────────────────────────────
   _buildPuzzle() {
     const { cols, rows } = this.diff;
-    const key = `level${this.levelData.id}`;
-    const tileW = Math.floor(PUZZLE_W / cols);
-    const tileH = Math.floor(PUZZLE_H / rows);
-    const offX  = Math.floor((GAME_W  - cols * tileW) / 2);
-    const offY  = Math.floor((GAME_H  - rows * tileH) / 2) + 8;
+    const key  = `level${this.levelData.id}`;
+    const { ox, oy } = this._getPuzzleOffset();
+
+    const tileW = Math.floor(PUZZLE.W / cols);
+    const tileH = Math.floor(PUZZLE.H / rows);
 
     this.tileW = tileW; this.tileH = tileH;
-    this.offX  = offX;  this.offY  = offY;
+    this.offX  = ox;    this.offY  = oy;
     this.cols  = cols;  this.rows  = rows;
 
     const sourceImg = this.textures.get(key).getSourceImage();
@@ -349,7 +469,6 @@ class GameScene extends Phaser.Scene {
       const ci = idx % cols;
       const ri = Math.floor(idx / cols);
 
-      // create canvas texture for each tile
       const texKey = `tile_${this.levelIdx}_${idx}`;
       if (!this.textures.exists(texKey)) {
         const canvas = this.textures.createCanvas(texKey, tileW, tileH);
@@ -362,32 +481,21 @@ class GameScene extends Phaser.Scene {
         canvas.refresh();
       }
 
-      const slotIdx   = order[idx];
-      const slotCol   = slotIdx % cols;
-      const slotRow   = Math.floor(slotIdx / cols);
-      const px        = offX + slotCol * tileW + tileW / 2;
-      const py        = offY + slotRow * tileH + tileH / 2;
+      const slotIdx = order[idx];
+      const slotCol = slotIdx % cols;
+      const slotRow = Math.floor(slotIdx / cols);
+      const px = ox + slotCol * tileW + tileW / 2;
+      const py = oy + slotRow * tileH + tileH / 2;
 
       const img = this.add.image(px, py, texKey)
         .setDisplaySize(tileW - 2, tileH - 2)
         .setInteractive({ useHandCursor: true });
 
-      const tile = {
-        img,
-        correct_index: idx,
-        current_index: slotIdx,
-        texKey,
-      };
+      const tile = { img, correct_index: idx, current_index: slotIdx, texKey };
 
       img.on('pointerdown', () => this._onTileClick(tile));
-      img.on('pointerover', () => {
-        if (this.selected !== tile && !this.isAnimating)
-          img.setTint(0xdddddd);
-      });
-      img.on('pointerout', () => {
-        if (this.selected !== tile)
-          img.clearTint();
-      });
+      img.on('pointerover', () => { if (this.selected !== tile && !this.isAnimating) img.setTint(0xdddddd); });
+      img.on('pointerout',  () => { if (this.selected !== tile) img.clearTint(); });
 
       this.tiles.push(tile);
     }
@@ -398,15 +506,13 @@ class GameScene extends Phaser.Scene {
   _drawGrid() {
     if (this.gridGfx) this.gridGfx.destroy();
     this.gridGfx = this.add.graphics().setDepth(-1);
-    const ac = parseInt(this.levelData.accent.replace('#',''), 16);
+    const ac = parseInt(this.levelData.accent.replace('#', ''), 16);
     this.gridGfx.lineStyle(1, ac, 0.12);
     const { cols, rows, tileW, tileH, offX, offY } = this;
     for (let r = 0; r <= rows; r++)
       this.gridGfx.strokeLineShape(new Phaser.Geom.Line(offX, offY + r*tileH, offX + cols*tileW, offY + r*tileH));
     for (let c = 0; c <= cols; c++)
       this.gridGfx.strokeLineShape(new Phaser.Geom.Line(offX + c*tileW, offY, offX + c*tileW, offY + rows*tileH));
-
-    // outer border
     this.gridGfx.lineStyle(2, ac, 0.5);
     this.gridGfx.strokeRect(offX, offY, cols*tileW, rows*tileH);
   }
@@ -414,18 +520,15 @@ class GameScene extends Phaser.Scene {
   // ── TILE INTERACTION ─────────────────────────
   _onTileClick(tile) {
     if (this.isAnimating) return;
-
     if (!this.selected) {
       this.selected = tile;
       tile.img.setTint(0xffee55);
-      // glow ring
       if (this.selectGfx) this.selectGfx.destroy();
       this.selectGfx = this.add.graphics().setDepth(5);
-      const ac = parseInt(this.levelData.accent.replace('#',''), 16);
+      const ac = parseInt(this.levelData.accent.replace('#', ''), 16);
       this.selectGfx.lineStyle(3, ac, 0.9);
       this.selectGfx.strokeRect(
-        tile.img.x - this.tileW/2 + 1,
-        tile.img.y - this.tileH/2 + 1,
+        tile.img.x - this.tileW/2 + 1, tile.img.y - this.tileH/2 + 1,
         this.tileW - 2, this.tileH - 2
       );
     } else if (this.selected === tile) {
@@ -440,26 +543,19 @@ class GameScene extends Phaser.Scene {
   _swapTiles(a, b) {
     if (this.selectGfx) { this.selectGfx.destroy(); this.selectGfx = null; }
     this.isAnimating = true;
-    this.selected    = null;
-    a.img.clearTint();
-    b.img.clearTint();
+    this.selected = null;
+    a.img.clearTint(); b.img.clearTint();
 
     const ax = a.img.x, ay = a.img.y;
     const bx = b.img.x, by = b.img.y;
 
+    this.tweens.add({ targets: a.img, x: bx, y: by, duration: 220, ease: 'Cubic.easeInOut' });
     this.tweens.add({
-      targets: a.img, x: bx, y: by, duration: 220,
-      ease: 'Cubic.easeInOut',
-    });
-    this.tweens.add({
-      targets: b.img, x: ax, y: ay, duration: 220,
-      ease: 'Cubic.easeInOut',
+      targets: b.img, x: ax, y: ay, duration: 220, ease: 'Cubic.easeInOut',
       onComplete: () => {
-        // swap current_index
-        const tmp        = a.current_index;
-        a.current_index  = b.current_index;
-        b.current_index  = tmp;
-
+        const tmp = a.current_index;
+        a.current_index = b.current_index;
+        b.current_index = tmp;
         this.moves++;
         this.moveTxt.setText(`MOVES: ${this.moves}`);
         this.isAnimating = false;
@@ -468,60 +564,53 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  // ── VALIDATION ───────────────────────────────
   _checkWin() {
-    const solved = this.tiles.every(t => t.correct_index === t.current_index);
-    if (solved) this._onWin();
+    if (this.tiles.every(t => t.correct_index === t.current_index)) this._onWin();
   }
 
   _onWin() {
     this.isAnimating = true;
-
-    // flash each tile
     this.tiles.forEach((t, i) => {
       this.time.delayedCall(i * 30, () => {
-        this.tweens.add({
-          targets: t.img, scaleX: 1.08, scaleY: 1.08,
-          duration: 120, yoyo: true, ease: 'Sine.easeInOut',
-        });
+        this.tweens.add({ targets: t.img, scaleX: 1.08, scaleY: 1.08, duration: 120, yoyo: true, ease: 'Sine.easeInOut' });
       });
     });
-
-    this.time.delayedCall(this.tiles.length * 30 + 300, () => {
-      this._showWinOverlay();
-    });
+    this.time.delayedCall(this.tiles.length * 30 + 300, () => { this._showWinOverlay(); });
   }
 
   _showWinOverlay() {
-    const key = `level${this.levelData.id}`;
-    const ac  = this.levelData.accent;
-    const acInt = parseInt(ac.replace('#',''), 16);
+    const key   = `level${this.levelData.id}`;
+    const ac    = this.levelData.accent;
+    const acInt = parseInt(ac.replace('#', ''), 16);
 
     const ov = this.add.graphics().setDepth(20);
     ov.fillStyle(0x000000, 0.72);
     ov.fillRect(0, 0, GAME_W, GAME_H);
 
-    // full image reveal
-    const imgW = PUZZLE_W * 0.7, imgH = PUZZLE_H * 0.7;
-    this.add.image(GAME_W/2, GAME_H/2 - 30, key)
-      .setDisplaySize(imgW, imgH).setDepth(21)
-      .setAlpha(0);
-    const previewImg = this.children.getAll().find(c => c.depth === 21 && c.type === 'Image');
+    // Preview image — proporsi disesuaikan
+    const revealW = IS_PORTRAIT ? Math.round(GAME_W * 0.82) : PUZZLE.W * 0.7;
+    const revealH = Math.round(revealW * 0.75); // pertahankan rasio 4:3 gambar asli
+
+    const previewImg = this.add.image(GAME_W/2, GAME_H/2 - (IS_PORTRAIT ? 24 : 30), key)
+      .setDisplaySize(revealW, revealH).setDepth(21).setAlpha(0);
     this.tweens.add({ targets: previewImg, alpha: 1, duration: 600 });
 
-    this.add.text(GAME_W/2, GAME_H/2 - imgH/2 - 36, '✦  SELESAI  ✦', {
-      fontFamily: "'Cinzel Decorative', serif", fontSize: 22, color: ac,
+    const titleY = GAME_H/2 - revealH/2 - (IS_PORTRAIT ? 28 : 36);
+    this.add.text(GAME_W/2, titleY, '✦  SELESAI  ✦', {
+      fontFamily: "'Cinzel Decorative', serif", fontSize: IS_PORTRAIT ? 16 : 22, color: ac,
     }).setOrigin(0.5).setDepth(22);
 
-    this.add.text(GAME_W/2, GAME_H/2 + imgH/2 + 20, `${this.moves} Gerakan`, {
-      fontFamily: "'Cinzel', serif", fontSize: 14, color: '#c0a0d0',
+    const movesY = GAME_H/2 + revealH/2 + (IS_PORTRAIT ? 10 : 20);
+    this.add.text(GAME_W/2, movesY, `${this.moves} Gerakan`, {
+      fontFamily: "'Cinzel', serif", fontSize: IS_PORTRAIT ? 11 : 14, color: '#c0a0d0',
     }).setOrigin(0.5).setDepth(22);
 
     const isLastLevel = this.levelIdx >= 6;
     const btnLabel    = isLastLevel ? 'LIHAT ENDING' : 'LEVEL BERIKUTNYA ›';
-    const btn         = this.add.text(GAME_W/2, GAME_H/2 + imgH/2 + 55, btnLabel, {
-      fontFamily: "'Cinzel', serif", fontSize: 16, color: '#ffffff',
-      backgroundColor: ac, padding: { x: 20, y: 10 },
+    const btnY        = movesY + (IS_PORTRAIT ? 32 : 40);
+    const btn = this.add.text(GAME_W/2, btnY, btnLabel, {
+      fontFamily: "'Cinzel', serif", fontSize: IS_PORTRAIT ? 13 : 16, color: '#1a0a2e',
+      backgroundColor: ac, padding: { x: IS_PORTRAIT ? 16 : 20, y: IS_PORTRAIT ? 8 : 10 },
     }).setOrigin(0.5).setDepth(22).setInteractive({ useHandCursor: true });
 
     btn.on('pointerover', () => btn.setAlpha(0.85));
@@ -539,7 +628,6 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  // ── SHUFFLE ──────────────────────────────────
   _shuffleOrder(n) {
     const arr = Array.from({ length: n }, (_, i) => i);
     let solved = true;
@@ -559,11 +647,9 @@ class GameScene extends Phaser.Scene {
 // ─────────────────────────────────────────────
 class EndScene extends Phaser.Scene {
   constructor() { super('EndScene'); }
-
   init(data) { this.diffKey = data.difficulty || 'easy'; }
 
   create() {
-    // starfield bg
     const g = this.add.graphics();
     g.fillGradientStyle(0x0a0020, 0x0a0020, 0x1a0040, 0x1a0040, 1);
     g.fillRect(0, 0, GAME_W, GAME_H);
@@ -572,45 +658,57 @@ class EndScene extends Phaser.Scene {
       g.fillCircle(Phaser.Math.Between(0, GAME_W), Phaser.Math.Between(0, GAME_H), Math.random() * 1.5 + 0.2);
     }
 
-    // glow circle
     const gc = this.add.graphics();
-    gc.fillStyle(0xc77dff, 0.07);
-    gc.fillCircle(GAME_W/2, GAME_H/2, 260);
-    gc.fillStyle(0xc77dff, 0.04);
-    gc.fillCircle(GAME_W/2, GAME_H/2, 320);
+    gc.fillStyle(0xc77dff, 0.07); gc.fillCircle(GAME_W/2, GAME_H/2, 220);
+    gc.fillStyle(0xc77dff, 0.04); gc.fillCircle(GAME_W/2, GAME_H/2, 280);
 
-    this.add.text(GAME_W/2, 130, '✦', { fontSize: 40, color: '#ffd166' }).setOrigin(0.5);
+    const star_y   = IS_PORTRAIT ? GAME_H * 0.12 : 130;
+    const tamat_y  = IS_PORTRAIT ? GAME_H * 0.22 : 195;
+    const sub_y    = IS_PORTRAIT ? GAME_H * 0.32 : 258;
+    const diff_y   = IS_PORTRAIT ? GAME_H * 0.38 : 300;
+    const dots_y   = IS_PORTRAIT ? GAME_H * 0.46 : 348;
+    const btn_y    = IS_PORTRAIT ? GAME_H * 0.84 : 520;
 
-    this.add.text(GAME_W/2, 195, 'TAMAT', {
-      fontFamily: "'Cinzel Decorative', serif", fontSize: 54,
-      color: '#c77dff', stroke: '#6a0dad', strokeThickness: 3,
+    this.add.text(GAME_W/2, star_y, '✦', { fontSize: IS_PORTRAIT ? 28 : 40, color: '#ffd166' }).setOrigin(0.5);
+
+    this.add.text(GAME_W/2, tamat_y, 'TAMAT', {
+      fontFamily: "'Cinzel Decorative', serif", fontSize: IS_PORTRAIT ? 38 : 54,
+      color: '#c77dff', stroke: '#6a0dad', strokeThickness: IS_PORTRAIT ? 2 : 3,
     }).setOrigin(0.5);
 
-    this.add.text(GAME_W/2, 258, 'Semua 7 Level Penciptaan Selesai!', {
-      fontFamily: "'EB Garamond', serif", fontSize: 18,
+    this.add.text(GAME_W/2, sub_y, 'Semua 7 Level Penciptaan Selesai!', {
+      fontFamily: "'EB Garamond', serif", fontSize: IS_PORTRAIT ? 14 : 18,
       color: '#e8d5ff', fontStyle: 'italic',
     }).setOrigin(0.5);
 
-    this.add.text(GAME_W/2, 300, `Dimainkan dengan tingkat kesulitan: ${DIFFICULTY[this.diffKey].label}`, {
-      fontFamily: "'EB Garamond', serif", fontSize: 14, color: '#906090',
+    this.add.text(GAME_W/2, diff_y, `Kesulitan: ${DIFFICULTY[this.diffKey].label}`, {
+      fontFamily: "'EB Garamond', serif", fontSize: IS_PORTRAIT ? 11 : 14, color: '#906090',
     }).setOrigin(0.5);
 
-    // level summary
-    const summaryY = 348;
-    LEVELS.forEach((l, i) => {
-      const col = i % 4, row = Math.floor(i / 4);
-      const x = GAME_W/2 - 225 + col * 150 + (i < 4 ? 0 : 75);
-      const y = summaryY + row * 44;
-      const ac = parseInt(l.accent.replace('#',''), 16);
-      this.add.text(x, y, `${l.id}. ${l.name}`, {
-        fontFamily: "'Cinzel', serif", fontSize: 10, color: l.accent,
-      }).setOrigin(0.5);
-    });
+    // Level summary dots — portrait: 2 kolom
+    if (IS_PORTRAIT) {
+      LEVELS.forEach((l, i) => {
+        const col = i % 2, row = Math.floor(i / 2);
+        const x = GAME_W/2 - 80 + col * 160;
+        const y = dots_y + row * 28;
+        this.add.text(x, y, `${l.id}. ${l.name}`, {
+          fontFamily: "'Cinzel', serif", fontSize: 9, color: l.accent,
+        }).setOrigin(0.5);
+      });
+    } else {
+      LEVELS.forEach((l, i) => {
+        const col = i % 4, row = Math.floor(i / 4);
+        const x = GAME_W/2 - 225 + col * 150 + (i < 4 ? 0 : 75);
+        const y = dots_y + row * 44;
+        this.add.text(x, y, `${l.id}. ${l.name}`, {
+          fontFamily: "'Cinzel', serif", fontSize: 10, color: l.accent,
+        }).setOrigin(0.5);
+      });
+    }
 
-    // play again
-    const btn = this.add.text(GAME_W/2, 520, '↺  MAIN LAGI', {
-      fontFamily: "'Cinzel', serif", fontSize: 18, color: '#1a0a2e',
-      backgroundColor: '#c77dff', padding: { x: 28, y: 12 },
+    const btn = this.add.text(GAME_W/2, btn_y, '↺  MAIN LAGI', {
+      fontFamily: "'Cinzel', serif", fontSize: IS_PORTRAIT ? 15 : 18, color: '#1a0a2e',
+      backgroundColor: '#c77dff', padding: { x: IS_PORTRAIT ? 22 : 28, y: IS_PORTRAIT ? 10 : 12 },
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     btn.on('pointerover', () => btn.setAlpha(0.85));
@@ -632,7 +730,7 @@ class EndScene extends Phaser.Scene {
 // ─────────────────────────────────────────────
 const config = {
   type: Phaser.AUTO,
-  width: GAME_W,
+  width:  GAME_W,
   height: GAME_H,
   backgroundColor: '#0a0705',
   parent: 'game-container',
