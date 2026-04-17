@@ -55,7 +55,7 @@
   #popup-message{font-size:.95rem;color:#555;margin-bottom:8px;line-height:1.5;}
   #popup-moral{font-size:.82rem;color:#52B788;font-weight:800;margin-bottom:18px;
     font-style:italic;padding:8px 12px;background:#f0fdf4;border-radius:10px;}
-  #popup-score-detail{font-size:.82rem;color:#888;margin-bottom:14px;}
+  #popup-score-detail{font-size:.82rem;color:#888;margin-bottom:14px;}  
   #popup-stars{font-size:2rem;margin-bottom:12px;letter-spacing:4px;}
   #popup-btn {
     background:linear-gradient(135deg,#52B788,#2D6A4F); color:#fff; border:none;
@@ -78,6 +78,70 @@
     font-family:'Fredoka One',cursive; font-size:.85rem; color:#D4700A;
     box-shadow:0 4px 12px rgba(0,0,0,.15); backdrop-filter:blur(4px);
   }
+
+  /* ═══════════════════════════════════════════
+     VIRTUAL JOYSTICK
+  ═══════════════════════════════════════════ */
+  #joystick-container {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    display: none; /* shown via JS on touch device */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #joystick-zone {
+    position: relative;
+    width: 148px;
+    height: 148px;
+  }
+  /* outer ring */
+  #joystick-base {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 35%, rgba(255,255,255,.28), rgba(0,0,0,.18));
+    border: 3px solid rgba(255,255,255,.55);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 24px rgba(0,0,0,.3), inset 0 2px 6px rgba(255,255,255,.2);
+  }
+  /* direction arrows etched into base */
+  #joystick-base::before {
+    content: '▲';
+    position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+    font-size: 14px; color: rgba(255,255,255,.45); pointer-events: none;
+  }
+  #joystick-base::after {
+    content: '▼';
+    position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+    font-size: 14px; color: rgba(255,255,255,.45); pointer-events: none;
+  }
+  .joystick-lr {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 14px; color: rgba(255,255,255,.45); pointer-events: none;
+  }
+  #joystick-left  { left: 7px; }
+  #joystick-right { right: 7px; }
+  /* thumb knob */
+  #joystick-knob {
+    position: absolute;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 36% 32%, rgba(255,255,255,.85), rgba(120,200,140,.7) 60%, rgba(45,106,79,.85));
+    border: 3px solid rgba(255,255,255,.7);
+    box-shadow: 0 4px 16px rgba(0,0,0,.35), inset 0 2px 5px rgba(255,255,255,.5);
+    transition: box-shadow .08s;
+    pointer-events: none;
+  }
+  #joystick-knob.active {
+    box-shadow: 0 6px 22px rgba(0,0,0,.45), inset 0 2px 5px rgba(255,255,255,.5);
+    background: radial-gradient(circle at 36% 32%, rgba(255,255,255,.95), rgba(82,183,136,.85) 60%, rgba(25,80,50,.9));
+  }
 </style>
 </head>
 <body>
@@ -88,7 +152,18 @@
 <div id="highscore-badge">🏆 Skor Terbaik: <span id="hs-val">0</span></div>
 <div id="game-title">🐑 Gembala yang Baik</div>
 <div id="game-wrapper"><div id="game-container"></div></div>
-<div id="controls-hint">⬆️ ⬇️ ⬅️ ➡️ Tombol panah atau tap tile tujuan</div>
+<div id="controls-hint" id="kb-hint">⬆️ ⬇️ ⬅️ ➡️ Tombol panah untuk bergerak</div>
+
+<!-- Virtual Joystick -->
+<div id="joystick-container">
+  <div id="joystick-zone">
+    <div id="joystick-base">
+      <span class="joystick-lr" id="joystick-left">◀</span>
+      <span class="joystick-lr" id="joystick-right">▶</span>
+    </div>
+    <div id="joystick-knob"></div>
+  </div>
+</div>
 
 <div id="popup-overlay">
   <div id="popup-box">
@@ -107,6 +182,97 @@
 
 <script>
 'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+//  VIRTUAL JOYSTICK — touch input mapped to virtual key state
+// ═══════════════════════════════════════════════════════════════
+const vKeys = { left:false, right:false, up:false, down:false };
+
+// Joystick visibility & lock control — called by GameScene / IntroScene
+const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+let joystickEnabled = false;
+
+function showJoystick(){
+  if(!isTouchDevice) return;
+  document.getElementById('joystick-container').style.display = 'block';
+  document.getElementById('controls-hint').textContent = '🕹️ Gunakan joystick di bawah untuk bergerak';
+}
+function hideJoystick(){
+  document.getElementById('joystick-container').style.display = 'none';
+  document.getElementById('controls-hint').textContent = '⬆️ ⬇️ ⬅️ ➡️ Tombol panah untuk bergerak';
+  // reset vKeys when hidden
+  vKeys.left = vKeys.right = vKeys.up = vKeys.down = false;
+}
+function enableJoystick(v){ joystickEnabled = v; if(!v){ vKeys.left=vKeys.right=vKeys.up=vKeys.down=false; } }
+
+(function initJoystick(){
+
+  const zone  = document.getElementById('joystick-zone');
+  const knob  = document.getElementById('joystick-knob');
+  const RADIUS = 74;  // half of zone width
+  const DEAD   = 12;  // dead-zone px
+  let activeTouchId = null;
+  let zoneRect = null;
+
+  function getCenter(){
+    if(!zoneRect) zoneRect = zone.getBoundingClientRect();
+    return { cx: zoneRect.left + zoneRect.width/2, cy: zoneRect.top + zoneRect.height/2 };
+  }
+
+  function applyDelta(dx, dy){
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    // Clamp knob to radius
+    const clamp = Math.min(dist, RADIUS - 10);
+    const ratio = dist > 0 ? clamp/dist : 0;
+    const kx = dx * ratio;
+    const ky = dy * ratio;
+    knob.style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+    knob.classList.add('active');
+    // Direction states
+    vKeys.left  = dx < -DEAD;
+    vKeys.right = dx >  DEAD;
+    vKeys.up    = dy < -DEAD;
+    vKeys.down  = dy >  DEAD;
+  }
+
+  function reset(){
+    knob.style.transform = 'translate(-50%, -50%)';
+    knob.classList.remove('active');
+    vKeys.left = vKeys.right = vKeys.up = vKeys.down = false;
+    activeTouchId = null;
+  }
+
+  zone.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if(!joystickEnabled) return;
+    zoneRect = zone.getBoundingClientRect();
+    if(activeTouchId === null){
+      const t = e.changedTouches[0];
+      activeTouchId = t.identifier;
+      const {cx,cy} = getCenter();
+      applyDelta(t.clientX - cx, t.clientY - cy);
+    }
+  }, {passive:false});
+
+  window.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if(!joystickEnabled || activeTouchId === null) return;
+    for(const t of e.changedTouches){
+      if(t.identifier === activeTouchId){
+        const {cx,cy} = getCenter();
+        applyDelta(t.clientX - cx, t.clientY - cy);
+        break;
+      }
+    }
+  }, {passive:false});
+
+  window.addEventListener('touchend', e => {
+    for(const t of e.changedTouches){
+      if(t.identifier === activeTouchId){ reset(); break; }
+    }
+  });
+  window.addEventListener('touchcancel', reset);
+})();
 
 // ═══════════════════════════════════════════════════════════════
 //  WEB AUDIO — suara prosedural
@@ -139,7 +305,6 @@ const SFX = {
   tick:    () => beep(880,'square',.08,.12),
   combo:   () => { [784,1047,1175].forEach((f,i) => beep(f,'sine',.25,.2,[],i*.08)); },
   levelup: () => { [523,659,784,659,784,1047].forEach((f,i) => beep(f,'triangle',.3,.25,[],i*.12)); },
-  step:    () => beep(440,'sine',.06,.08),
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -164,7 +329,17 @@ const MAZES = [
   [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,1,1,0,1,0,1],[1,0,1,0,0,1,0,1],[1,0,0,0,1,1,0,1],[1,1,1,0,0,0,1,1],[1,0,0,0,1,0,1,1],[1,0,1,1,1,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
   [[1,1,1,1,1,1,1,1],[1,0,0,0,1,0,0,1],[1,0,1,0,1,0,1,1],[1,1,0,0,1,0,0,1],[1,0,0,1,0,1,0,1],[1,0,1,0,1,0,0,1],[1,0,1,0,0,0,1,1],[1,0,0,1,1,0,1,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
   [[1,1,1,1,1,1,1,1],[1,0,0,0,1,0,0,1],[1,0,1,0,0,0,1,1],[1,0,1,1,1,0,0,1],[1,0,0,0,0,0,1,1],[1,1,0,1,0,0,0,1],[1,0,0,1,0,1,0,1],[1,0,1,0,0,1,0,1],[1,0,0,0,1,0,0,1],[1,1,1,1,1,1,1,1]],
-  [[1,1,1,1,1,1,1,1],[1,0,0,1,0,0,0,1],[1,0,1,0,0,1,0,1],[1,0,0,0,1,0,0,1],[1,1,0,1,0,0,1,1],[1,0,1,0,0,1,0,1],[1,0,1,1,0,0,0,1],[1,0,0,1,0,1,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+  [
+  [1,1,1,1,1,1,1,1],
+  [1,0,0,1,0,0,0,1],
+  [1,0,1,0,0,1,0,1],
+  [1,0,0,0,1,0,0,1],
+  [1,1,0,1,0,0,1,1],
+  [1,0,1,0,0,1,0,1],
+  [1,0,1,1,0,0,0,1],
+  [1,0,0,1,0,1,0,1],
+  [1,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1]],
 ];
 
 const SHEEP_POS = [
@@ -184,12 +359,38 @@ const WOLF_PATHS = [
 ];
 
 const LEVEL_CFG = [
-  { time:43, moral:'"Ayo kita cari domba yang hilang!" — Lukas 15:4',        stars:[30,20,10], bonus:200 },
-  { time:53, moral:'"Dombanya nambah, kita jaga semua ya!" — Yohanes 10:14', stars:[36,28,15], bonus:180 },
-  { time:63, moral:'"Awas serigala! Jangan sampai ada yang hilang!" — Yohanes 10:12', stars:[40,32,18], bonus:160 },
-  { time:58, moral:'"Jangan takut, kita jagain bareng!" — Yosua 1:9',        stars:[38,28,14], bonus:150 },
-  { time:68, moral:'"Semua penting! Jangan tinggalin satu pun!" — Yohanes 13:34', stars:[45,35,20], bonus:130 },
+  {
+    time:43,
+    moral:'"Ayo kita cari domba yang hilang!" — Lukas 15:4',
+    stars:[30,20,10],
+    bonus:200
+  },
+  {
+    time:53,
+    moral:'"Dombanya nambah, kita jaga semua ya!" — Yohanes 10:14',
+    stars:[36,28,15],
+    bonus:180
+  },
+  {
+    time:63,
+    moral:'"Awas serigala! Jangan sampai ada yang hilang!" — Yohanes 10:12',
+    stars:[40,32,18],
+    bonus:160
+  },
+  {
+    time:58,
+    moral:'"Jangan takut, kita jagain bareng!" — Yosua 1:9',
+    stars:[38,28,14],
+    bonus:150
+  },
+  {
+    time:68,
+    moral:'"Semua penting! Jangan tinggalin satu pun!" — Yohanes 13:34',
+    stars:[45,35,20],
+    bonus:130
+  },
 ];
+
 
 const LEVEL_INFO = [
   {label:'Level 1 🌱', sub:'1 Domba · 40 detik',              col:0x52B788, badge:''},
@@ -249,13 +450,19 @@ class IntroScene extends Phaser.Scene {
     this.load.image('sheep',  'assets/img/sheep.png');
     this.load.image('wolf',   'assets/img/wolf.png');
     this.load.audio('bgm', 'assets/audio/tilixia-summer-david-and-his-sheep-235258.mp3');
-    this.load.audio('sfx_baa', 'assets/audio/stu9-sheep-352668.mp3');
+	this.load.audio('sfx_baa', 'assets/audio/stu9-sheep-352668.mp3');
+
   }
 
   create(){
+    hideJoystick();
     this.bgm = this.sound.add('bgm', { loop:true, volume:0.25 });
     this.bgm.play();
-    this.sfx = { baa: this.sound.add('sfx_baa') };
+	
+	this.sfx = {
+    baa: this.sound.add('sfx_baa')
+};
+
 
     const g = this.add.graphics();
     g.fillGradientStyle(0x87CEEB,0x87CEEB,0x98E4C8,0x98E4C8,1);
@@ -300,7 +507,7 @@ class IntroScene extends Phaser.Scene {
       }
     });
 
-    this.add.text(W/2,H-14,'Tap tile tujuan atau gunakan tombol panah ⬆️⬇️⬅️➡️',{
+    this.add.text(W/2,H-14,'⬆️⬇️⬅️➡️ Tombol panah / joystick untuk bergerak',{
       fontFamily:'Nunito,sans-serif', fontSize:'11px', color:'#2D6A4F'
     }).setOrigin(.5,1);
   }
@@ -313,6 +520,8 @@ class GameScene extends Phaser.Scene {
   constructor(){ super({key:'GameScene'}); }
 
   create(){
+    showJoystick();
+    enableJoystick(false); // disabled until countdown finishes
     this.lvl          = currentLevel;
     this.timeLeft     = LEVEL_CFG[this.lvl].time;
     this.totalSheep   = SHEEP_POS[this.lvl].length;
@@ -324,16 +533,7 @@ class GameScene extends Phaser.Scene {
     this.wolfIdxs     = [];
     this.wolves       = [];
 
-    // ── TILE-BASED MOVEMENT STATE ──────────────────────────────
-    // Player position in tile coordinates
-    this.playerTileX  = 1;
-    this.playerTileY  = 1;
-    this.moving       = false;      // true while tween-walking
-    this.moveQueue    = [];         // queued steps [{dx,dy}]
-    this.countingDown = true;
-
     const maze = MAZES[this.lvl];
-    this.maze  = maze;              // store ref for tap-path calculation
 
     // ── TILES ──────────────────────────────────────────────────
     this.walls = this.physics.add.staticGroup();
@@ -347,35 +547,21 @@ class GameScene extends Phaser.Scene {
       }
     }
 
-    // ── FIND PLAYER START ──────────────────────────────────────
+    // ── PLAYER ─────────────────────────────────────────────────
     let sc=1,sr=1;
     outer: for(let r=1;r<ROWS-1;r++) for(let c=1;c<COLS-1;c++){
       if(maze[r][c]===0){sc=c;sr=r;break outer;}
     }
-    this.playerTileX = sc;
-    this.playerTileY = sr;
-
-    // ── PLAYER (non-physics sprite, moved via tweens) ───────────
-    this.player = this.add.sprite(
-      sc*TILE+TILE/2,
-      sr*TILE+TILE/2,
-      'player'
-    );
+    this.player = this.physics.add.sprite(sc*TILE+TILE/2, sr*TILE+TILE/2,'player');
     const pw=TILE*0.4, ph=pw/(87/171);
-    this.player.setDisplaySize(pw,ph).setDepth(3);
-
-    // ── TAP INDICATOR (ring that appears on tap) ────────────────
-    this.tapRing = this.add.graphics().setDepth(2).setAlpha(0);
+    this.player.setDisplaySize(pw,ph).setCollideWorldBounds(true);
 
     // ── SHEEP ──────────────────────────────────────────────────
     const sw=TILE*0.4, sh=sw/(83/86);
-    this.sheepGrp = this.add.group();
-    this.sheepSprites = [];
+    this.sheepGrp = this.physics.add.staticGroup();
     SHEEP_POS[this.lvl].forEach(([c,r])=>{
-      const sp = this.add.sprite(c*TILE+TILE/2, r*TILE+TILE/2, 'sheep');
-      sp.setDisplaySize(sw,sh).setDepth(2);
-      sp.tileX = c; sp.tileY = r; sp.alive = true;
-      this.sheepSprites.push(sp);
+      const sp=this.sheepGrp.create(c*TILE+TILE/2,r*TILE+TILE/2,'sheep');
+      sp.setDisplaySize(sw,sh).refreshBody();
       this.tweens.add({targets:sp,y:sp.y-7,duration:700+Math.random()*300,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     });
 
@@ -385,27 +571,26 @@ class GameScene extends Phaser.Scene {
       wolfPaths.forEach((path,wi)=>{
         const [wc,wr]=path[0];
         const ww=TILE*0.5, wh=ww/(81/100);
-        const wolf=this.add.sprite(wc*TILE+TILE/2, wr*TILE+TILE/2,'wolf');
-        wolf.setDisplaySize(ww,wh).setDepth(2);
-        wolf.tileX = wc; wolf.tileY = wr;
+        const wolf=this.physics.add.sprite(wc*TILE+TILE/2,wr*TILE+TILE/2,'wolf');
+        wolf.setDisplaySize(ww,wh);
         if(wi%2===1) wolf.setFlipX(true);
         this.wolves.push(wolf);
         this.wolfCooldowns.push(0);
         this.wolfIdxs.push(0);
+        this.physics.add.collider(wolf,this.walls);
+        this.physics.add.overlap(this.player,wolf,()=>this._wolfHit(wi),null,this);
       });
       wolfPaths.forEach((_,wi)=>{
         this.time.addEvent({delay:900+wi*300,loop:true,callback:()=>this._moveWolf(wi),callbackScope:this});
       });
     }
 
+    // ── PHYSICS ────────────────────────────────────────────────
+    this.physics.add.collider(this.player,this.walls);
+    this.physics.add.overlap(this.player,this.sheepGrp,this._grabSheep,null,this);
+
     // ── CONTROLS ───────────────────────────────────────────────
     this.cursors = this.input.keyboard.createCursorKeys();
-    this._keyHeld  = { left:false, right:false, up:false, down:false };
-    this._keyDelay = 0; // cooldown for keyboard repeat
-
-    // ── TAP TO MOVE ────────────────────────────────────────────
-    // Make game canvas interactive for tap/click
-    this.input.on('pointerdown', this._onTap, this);
 
     // ── UI ─────────────────────────────────────────────────────
     this._buildUI();
@@ -414,13 +599,19 @@ class GameScene extends Phaser.Scene {
     this.time.addEvent({delay:1000,loop:true,callback:this._tick,callbackScope:this});
 
     // ── BAA OTOMATIS ───────────────────────────────────────────
-    this.time.addEvent({
-      delay:3800, loop:true,
-      callback:()=>{
-        if(!this.over && this.sheepSprites.some(s=>s.alive))
-          this.sound.play('sfx_baa');
-      }
-    });
+// ── BAA OTOMATIS ───────────────────────────────────────────
+this.time.addEvent({
+    delay: 3800,
+    loop: true,
+    callback: () => {
+        if (!this.over && this.sheepGrp.countActive() > 0)
+        {
+            this.sound.play('sfx_baa');
+
+        }
+    }
+});
+
 
     // ── FEEDBACK TEXT ──────────────────────────────────────────
     this.fbTxt = this.add.text(W/2,H/2-70,'',{
@@ -428,6 +619,7 @@ class GameScene extends Phaser.Scene {
       color:'#1B5E20', stroke:'#fff', strokeThickness:4, align:'center'
     }).setOrigin(.5).setDepth(10);
 
+    // ── COMBO TEXT ─────────────────────────────────────────────
     this.comboTxt = this.add.text(W/2,H/2-100,'',{
       fontFamily:'Fredoka One,cursive', fontSize:'22px',
       color:'#FF6B00', stroke:'#fff', strokeThickness:5, align:'center'
@@ -442,254 +634,22 @@ class GameScene extends Phaser.Scene {
     this._showCountdown();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  //  TAP TO MOVE
-  //  Calculates axis-aligned path from player tile to tapped tile,
-  //  stopping one tile before any wall.
-  // ─────────────────────────────────────────────────────────────
-  _onTap(pointer){
-    if(this.over || this.countingDown) return;
-
-    // Convert pixel tap → tile coordinate
-    const tapC = Math.floor(pointer.x / TILE);
-    const tapR  = Math.floor(pointer.y / TILE);
-
-    // Clamp to valid range
-    if(tapC<0||tapC>=COLS||tapR<0||tapR>=ROWS) return;
-    if(this.maze[tapR][tapC]===1) return; // tapped on a wall
-
-    // Show ring indicator
-    this._showTapRing(tapC*TILE+TILE/2, tapR*TILE+TILE/2);
-
-    // Build step list: move horizontally first, then vertically
-    // Each step is {dx, dy} of ±1 tile
-    const steps = this._buildPath(this.playerTileX, this.playerTileY, tapC, tapR);
-    if(steps.length === 0) return;
-
-    // Replace current queue
-    this.moveQueue = steps;
-
-    // Start movement if not already moving
-    if(!this.moving) this._nextStep();
+  _showCountdown(){
+    this.countingDown = true;
+    this.player.setVelocity(0,0);
+    const overlay=this.add.graphics().setDepth(20);
+    overlay.fillStyle(0x000000,.45).fillRect(0,0,W,H);
+    const txt=this.add.text(W/2,H/2,'3',{
+      fontFamily:'Fredoka One,cursive',fontSize:'90px',color:'#FFD700',stroke:'#000',strokeThickness:8
+    }).setOrigin(.5).setDepth(21);
+    let count=3;
+    const doCount=()=>{
+      if(count>0){ txt.setText(String(count)); SFX.tick(); count--; this.time.delayedCall(700,doCount); }
+      else if(count===0){ txt.setText('Mulai!'); SFX.levelup(); count--; this.time.delayedCall(700,()=>{ overlay.destroy(); txt.destroy(); enableJoystick(true); this.countingDown=false; }); }
+    };
+    doCount();
   }
 
-  _showTapRing(px, py){
-    const g = this.tapRing;
-    g.clear().setAlpha(1);
-    g.lineStyle(3, 0xFFD700, 0.9);
-    g.strokeCircle(px, py, TILE*0.38);
-    this.tweens.killTweensOf(g);
-    this.tweens.add({targets:g, alpha:0, duration:500, ease:'Cubic.easeOut'});
-  }
-
-  // Build axis-aligned path: horizontal steps then vertical steps.
-  // Stops before any wall tile.
-  _buildPath(fromC, fromR, toC, toR){
-    const steps = [];
-    const dx = toC > fromC ? 1 : toC < fromC ? -1 : 0;
-    const dy = toR > fromR ? 1 : toR < fromR ? -1 : 0;
-
-    // Horizontal segment first
-    let c = fromC;
-    if(dx !== 0){
-      while(c !== toC){
-        const nc = c + dx;
-        if(this.maze[fromR][nc] === 1) break; // wall ahead
-        steps.push({dc: dx, dr: 0});
-        c = nc;
-      }
-    }
-
-    // Vertical segment after
-    let r = fromR;
-    // We need the column we ended up at after horizontal movement
-    const endC = fromC + steps.filter(s=>s.dc!==0).reduce((a,s)=>a+s.dc,0);
-    if(dy !== 0){
-      while(r !== toR){
-        const nr = r + dy;
-        if(this.maze[nr][endC] === 1) break; // wall ahead
-        steps.push({dc: 0, dr: dy});
-        r = nr;
-      }
-    }
-
-    return steps;
-  }
-
-  _nextStep(){
-    if(this.over || this.moveQueue.length === 0){
-      this.moving = false;
-      return;
-    }
-
-    // Safety: check next step isn't now blocked
-    const {dc, dr} = this.moveQueue[0];
-    const nc = this.playerTileX + dc;
-    const nr = this.playerTileY + dr;
-
-    if(this.maze[nr][nc] === 1){
-      // Wall (could happen if state changed) — abort queue
-      this.moveQueue = [];
-      this.moving = false;
-      return;
-    }
-
-    this.moveQueue.shift();
-    this.moving = true;
-    this.playerTileX = nc;
-    this.playerTileY = nr;
-
-    // Flip sprite
-    if(dc < 0) this.player.setFlipX(true);
-    if(dc > 0) this.player.setFlipX(false);
-
-    SFX.step();
-
-    this.tweens.add({
-      targets: this.player,
-      x: nc*TILE+TILE/2,
-      y: nr*TILE+TILE/2,
-      duration: 130,
-      ease: 'Linear',
-      onComplete: ()=>{
-        this._checkSheep();
-        this._checkWolf();
-        this._nextStep();
-      }
-    });
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  //  KEYBOARD MOVEMENT (one step per keypress / held repeat)
-  // ─────────────────────────────────────────────────────────────
-  _tryKeyMove(dc, dr){
-    if(this.over || this.countingDown) return;
-    const nc = this.playerTileX + dc;
-    const nr = this.playerTileY + dr;
-    if(nc<0||nc>=COLS||nr<0||nr>=ROWS) return;
-    if(this.maze[nr][nc]===1) return;
-
-    // Queue single step (replace queue so keyboard is responsive)
-    this.moveQueue = [{dc, dr}];
-    if(!this.moving) this._nextStep();
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  //  CHECK SHEEP / WOLF after each step
-  // ─────────────────────────────────────────────────────────────
-  _checkSheep(){
-    this.sheepSprites.forEach(sp=>{
-      if(!sp.alive) return;
-      if(sp.tileX === this.playerTileX && sp.tileY === this.playerTileY){
-        sp.alive = false;
-        this.tweens.killTweensOf(sp);
-        this.tweens.add({targets:sp, alpha:0, scaleX:1.5, scaleY:1.5, duration:300,
-          onComplete:()=>sp.setVisible(false)});
-        this.collected++;
-        this.combo++;
-        const comboBonus = this.combo>1 ? this.combo*30 : 0;
-        const basePoints = 100 + comboBonus;
-        this.score += basePoints;
-        this.sheepTxt.setText(`🐑 ${this.collected}/${this.totalSheep}`);
-        this.scoreTxt.setText(`Skor: ${this.score}`);
-        SFX.collect();
-        if(this.combo>=2){
-          SFX.combo();
-          this._fbCombo(`COMBO x${this.combo}! +${basePoints}✨`);
-        } else {
-          this._fb('🐑 Domba ditemukan! +100 ✨');
-        }
-        if(this.collected>=this.totalSheep) this._end(true);
-      }
-    });
-  }
-
-  _checkWolf(){
-    if(!this.wolves.length) return;
-    const wolfPaths = WOLF_PATHS[this.lvl];
-    if(!wolfPaths) return;
-    this.wolves.forEach((wolf, wi)=>{
-      if(this.wolfCooldowns[wi]>0) return;
-      if(wolf.tileX === this.playerTileX && wolf.tileY === this.playerTileY){
-        this._wolfHit(wi);
-      }
-    });
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  //  WOLF MOVEMENT
-  // ─────────────────────────────────────────────────────────────
-  _moveWolf(wi){
-    if(!this.wolves[wi]||this.over) return;
-    const path=WOLF_PATHS[this.lvl][wi];
-    this.wolfIdxs[wi]=(this.wolfIdxs[wi]+1)%path.length;
-    const [c,r]=path[this.wolfIdxs[wi]];
-    const speed = this.lvl>=4 ? 700 : 850;
-    this.wolves[wi].tileX = c;
-    this.wolves[wi].tileY = r;
-    this.tweens.add({
-      targets:this.wolves[wi],
-      x:c*TILE+TILE/2, y:r*TILE+TILE/2,
-      duration:speed, ease:'Linear',
-      onComplete:()=>{
-        // check if player is on wolf tile after wolf moves
-        if(this.wolves[wi].tileX===this.playerTileX && this.wolves[wi].tileY===this.playerTileY){
-          this._wolfHit(wi);
-        }
-      }
-    });
-  }
-
-  _wolfHit(wi){
-    if(this.over||this.wolfCooldowns[wi]>0) return;
-    this.wolfCooldowns[wi]=3000;
-    SFX.wolfHit();
-    this.combo=0;
-    // Stop movement queue on hit
-    this.moveQueue = [];
-    if(this.collected>0){
-      this.collected--;
-      this.score=Math.max(0,this.score-50);
-      this.sheepTxt.setText(`🐑 ${this.collected}/${this.totalSheep}`);
-      this.scoreTxt.setText(`Skor: ${this.score}`);
-      this._respawnSheep();
-      this._fb('🐺 Aduh! Serigala nakal!\nDomba kabur lagi... 😅');
-    } else {
-      this._fb('🐺 Serigala menyerang!\nHati-hati! 😰');
-    }
-    this.cameras.main.shake(200,0.012);
-    this.tweens.add({targets:this.player,alpha:.3,duration:90,yoyo:true,repeat:5,
-      onComplete:()=>this.player.setAlpha(1)});
-    this.time.delayedCall(3000,()=>{ this.wolfCooldowns[wi]=0; });
-  }
-
-  _respawnSheep(){
-    const maze=this.maze, open=[];
-    for(let r=1;r<ROWS-1;r++) for(let c=1;c<COLS-1;c++)
-      if(maze[r][c]===0) open.push([c,r]);
-    const px=this.playerTileX, py=this.playerTileY;
-    open.sort((a,b)=>(Math.abs(b[0]-px)+Math.abs(b[1]-py))-(Math.abs(a[0]-px)+Math.abs(a[1]-py)));
-    const [rc,rr]=open[0];
-    const sw=TILE*0.4, sh=sw/(83/86);
-    // Reuse first dead sheep
-    const dead = this.sheepSprites.find(s=>!s.alive);
-    if(dead){
-      dead.setVisible(true).setAlpha(1).setScale(1);
-      dead.x = rc*TILE+TILE/2; dead.y = rr*TILE+TILE/2;
-      dead.tileX = rc; dead.tileY = rr; dead.alive = true;
-      this.tweens.add({targets:dead,y:dead.y-7,duration:750,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
-    } else {
-      const ns = this.add.sprite(rc*TILE+TILE/2, rr*TILE+TILE/2,'sheep');
-      ns.setDisplaySize(sw,sh).setDepth(2);
-      ns.tileX = rc; ns.tileY = rr; ns.alive = true;
-      this.sheepSprites.push(ns);
-      this.tweens.add({targets:ns,y:ns.y-7,duration:750,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  //  UI
-  // ─────────────────────────────────────────────────────────────
   _buildUI(){
     this.add.graphics().setDepth(5)
       .fillStyle(0x1B5E20,.88)
@@ -721,6 +681,69 @@ class GameScene extends Phaser.Scene {
     if(this.timeLeft<=0) this._end(false);
   }
 
+  _grabSheep(_p, sheep){
+    if(!sheep.active) return;
+    sheep.destroy();
+    this.collected++;
+    this.combo++;
+    const comboBonus = this.combo>1 ? this.combo*30 : 0;
+    const basePoints = 100 + comboBonus;
+    this.score += basePoints;
+    this.sheepTxt.setText(`🐑 ${this.collected}/${this.totalSheep}`);
+    this.scoreTxt.setText(`Skor: ${this.score}`);
+    SFX.collect();
+    if(this.combo>=2){
+      SFX.combo();
+      this._fbCombo(`COMBO x${this.combo}! +${basePoints}✨`);
+    } else {
+      this._fb('🐑 Domba ditemukan! +100 ✨');
+    }
+    if(this.collected>=this.totalSheep) this._end(true);
+  }
+
+  _wolfHit(wi){
+    if(this.over||this.wolfCooldowns[wi]>0) return;
+    this.wolfCooldowns[wi]=3000;
+    SFX.wolfHit();
+    this.combo=0;
+    if(this.collected>0){
+      this.collected--;
+      this.score=Math.max(0,this.score-50);
+      this.sheepTxt.setText(`🐑 ${this.collected}/${this.totalSheep}`);
+      this.scoreTxt.setText(`Skor: ${this.score}`);
+      this._respawnSheep();
+      this._fb('🐺 Aduh! Serigala nakal!\nDomba kabur lagi... 😅');
+    } else {
+      this._fb('🐺 Serigala menyerang!\nHati-hati! 😰');
+    }
+    this.cameras.main.shake(200,0.012);
+    this.tweens.add({targets:this.player,alpha:.3,duration:90,yoyo:true,repeat:5,
+      onComplete:()=>this.player.setAlpha(1)});
+    this.time.delayedCall(3000,()=>{ this.wolfCooldowns[wi]=0; });
+  }
+
+  _respawnSheep(){
+    const maze=MAZES[this.lvl], open=[];
+    for(let r=1;r<ROWS-1;r++) for(let c=1;c<COLS-1;c++)
+      if(maze[r][c]===0) open.push([c,r]);
+    const px=Math.floor(this.player.x/TILE), py=Math.floor(this.player.y/TILE);
+    open.sort((a,b)=>(Math.abs(b[0]-px)+Math.abs(b[1]-py))-(Math.abs(a[0]-px)+Math.abs(a[1]-py)));
+    const [rc,rr]=open[0];
+    const sw=TILE*0.4, sh=sw/(83/86);
+    const ns=this.sheepGrp.create(rc*TILE+TILE/2,rr*TILE+TILE/2,'sheep');
+    ns.setDisplaySize(sw,sh).refreshBody();
+    this.tweens.add({targets:ns,y:ns.y-7,duration:750,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+  }
+
+  _moveWolf(wi){
+    if(!this.wolves[wi]||this.over) return;
+    const path=WOLF_PATHS[this.lvl][wi];
+    this.wolfIdxs[wi]=(this.wolfIdxs[wi]+1)%path.length;
+    const [c,r]=path[this.wolfIdxs[wi]];
+    const speed = this.lvl>=4 ? 700 : 850;
+    this.tweens.add({targets:this.wolves[wi],x:c*TILE+TILE/2,y:r*TILE+TILE/2,duration:speed,ease:'Linear'});
+  }
+
   _fb(txt){
     this.fbTxt.setText(txt).setAlpha(1).setY(H/2-70);
     this.tweens.add({targets:this.fbTxt,y:H/2-115,alpha:0,duration:2500,ease:'Cubic.easeOut'});
@@ -734,8 +757,9 @@ class GameScene extends Phaser.Scene {
   _end(win){
     if(this.over) return;
     this.over=true;
-    this.moveQueue=[];
-    this.player.setVelocity && this.player.setVelocity(0,0);
+    enableJoystick(false);
+    hideJoystick();
+    this.player.setVelocity(0,0);
     const moral=LEVEL_CFG[this.lvl].moral;
     const last=this.lvl>=4;
 
@@ -769,50 +793,23 @@ class GameScene extends Phaser.Scene {
         `Tidak apa-apa! Latihan lagi ya! Skor: ${this.score}`,
         moral,'🔄 Coba Lagi',
         ()=>this.scene.restart(),
-        '',0,false, true,
+        '','',0,false, true,
         ()=>{ this.scene.start('IntroScene'); }
       );
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  //  COUNTDOWN
-  // ─────────────────────────────────────────────────────────────
-  _showCountdown(){
-    this.countingDown = true;
-    const overlay=this.add.graphics().setDepth(20);
-    overlay.fillStyle(0x000000,.45).fillRect(0,0,W,H);
-    const txt=this.add.text(W/2,H/2,'3',{
-      fontFamily:'Fredoka One,cursive',fontSize:'90px',color:'#FFD700',stroke:'#000',strokeThickness:8
-    }).setOrigin(.5).setDepth(21);
-    let count=3;
-    const doCount=()=>{
-      if(count>0){ txt.setText(String(count)); SFX.tick(); count--; this.time.delayedCall(700,doCount); }
-      else if(count===0){ txt.setText('Mulai!'); SFX.levelup(); count--; this.time.delayedCall(700,()=>{ overlay.destroy(); txt.destroy(); this.countingDown=false; }); }
-    };
-    doCount();
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  //  UPDATE — only handles keyboard
-  // ─────────────────────────────────────────────────────────────
-  update(_t, delta){
+  update(_t,delta){
     if(this.over || this.countingDown) return;
+    this.wolfCooldowns=this.wolfCooldowns.map(c=>Math.max(0,c-delta));
+    this.player.setVelocity(0,0);
+    const spd=150;
 
-    // Wolf cooldown delta
-    this.wolfCooldowns = this.wolfCooldowns.map(c=>Math.max(0,c-delta));
-
-    // Keyboard: one step per press (with repeat after hold)
-    this._keyDelay = Math.max(0, this._keyDelay - delta);
-    if(this._keyDelay > 0) return;
-
-    let moved = false;
-    if(this.cursors.left.isDown  && !this.moving){ this._tryKeyMove(-1, 0); moved=true; }
-    else if(this.cursors.right.isDown && !this.moving){ this._tryKeyMove( 1, 0); moved=true; }
-    else if(this.cursors.up.isDown    && !this.moving){ this._tryKeyMove( 0,-1); moved=true; }
-    else if(this.cursors.down.isDown  && !this.moving){ this._tryKeyMove( 0, 1); moved=true; }
-
-    if(moved) this._keyDelay = 160; // repeat delay
+    // Keyboard OR virtual joystick
+    if(this.cursors.left.isDown  || vKeys.left)  { this.player.setVelocityX(-spd); this.player.setFlipX(true);  }
+    if(this.cursors.right.isDown || vKeys.right)  { this.player.setVelocityX( spd); this.player.setFlipX(false); }
+    if(this.cursors.up.isDown    || vKeys.up)     this.player.setVelocityY(-spd);
+    if(this.cursors.down.isDown  || vKeys.down)   this.player.setVelocityY( spd);
   }
 }
 
