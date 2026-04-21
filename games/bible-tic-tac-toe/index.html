@@ -171,14 +171,14 @@ h1 {
 <div id="selectScreen">
     <h1>⬡ TIC TAC TOE</h1>
 
-    <span class="section-label">Pilih Lawan Main</span>
+    <span class="section-label">Pilih Tingkat Tantangan</span>
     <div class="level-row">
-        <button class="level-btn active" data-level="easy">🍞 Abigail</button>
-        <button class="level-btn" data-level="medium">👑 Salomo</button>
-        <button class="level-btn" data-level="hard">🌾 Yusuf</button>
+        <button class="level-btn" data-level="easy">🍞 Easy</button>
+        <button class="level-btn active" data-level="medium">👑 Medium</button>
+        <button class="level-btn" data-level="hard">🌾 Hard</button>
     </div>
 
-    <span class="section-label">Pilih Jagoan Kamu (P1 = kamu, P2 = CPU)</span>
+    <span class="section-label">Pilih Marker Kamu (P1 = kamu, P2 = CPU)</span>
     <div class="char-row" id="charRow"></div>
 
     <button id="startBtn">▶ MULAI MAIN</button>
@@ -220,7 +220,7 @@ document.getElementById('year').innerHTML = new Date().getFullYear();
     <div class="status-bar" id="gameStatus">✨ YOUR TURN ✨</div>
     <div id="phaser-game"></div>
     <div class="game-btns">
-        <button class="btn-secondary" id="backBtn">← Ganti Jagoan</button>
+        <button class="btn-secondary" id="backBtn">← Ganti Marker</button>
         <button class="btn-primary" id="playAgainBtn">🔄 Main Lagi</button>
     </div>
 </div>
@@ -343,7 +343,7 @@ const CHARS = [
 // ══ State ══
 let selectedP1 = null;
 let selectedP2 = null;
-let selectedLevel = 'easy';
+let selectedLevel = 'medium';
 let scores = { p1: 0, draw: 0, p2: 0 };
 let phaserGame = null;
 
@@ -474,6 +474,8 @@ function startPhaserGame(playAgain) {
 
             this._loadSvg(p1key, CHARS.find(c=>c.key===p1key).svg);
             this._loadSvg(p2key, CHARS.find(c=>c.key===p2key).svg);
+			
+			this.load.audio('bgm', 'assets/audio/bgm.mp3');
         }
 
         _loadSvg(key, svg_string) {
@@ -486,6 +488,9 @@ function startPhaserGame(playAgain) {
 
         create() {
             if (this._urls) { this._urls.forEach(u=>URL.revokeObjectURL(u)); this._urls=[]; }
+			
+
+
 
             this.board = Array(9).fill(null);
             this.marks = [];
@@ -521,6 +526,11 @@ function startPhaserGame(playAgain) {
                 this.zones[idx]=z;
             }
             this.setStatus('✨ YOUR TURN ✨');
+
+			this.input.once('pointerdown', () => {
+    this.sound.play('bgm', { loop: true });
+});
+
         }
 
         resetBoard() {
