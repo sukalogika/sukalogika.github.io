@@ -3,67 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Noah’s Animal Pairs</title>
+    <title>NOAH’S ANIMAL PAIRS</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body { 
-            background-color: #0f172a; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            /* 
-             * PERBAIKAN 1: min-height + overflow:hidden
-             * Sebelumnya: height: 100vh → Phaser terus membaca ukuran viewport
-             * dan menyesuaikan canvas, menyebabkan loop pembesar.
-             * Sekarang: min-height cukup untuk centering, tapi tidak paksa 100vh penuh.
-            */
-            min-height: 100vh;
-            overflow: hidden;
-            font-family: Arial, sans-serif; 
+            margin: 0; padding: 0; background-color: #0f172a; 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; overflow: hidden; font-family: Arial, sans-serif; 
         }
-
         #game-container { 
-            /* 
-             * PERBAIKAN 2: Ukuran container HARUS fixed dan eksplisit
-             * Sebelumnya: tidak ada width/height → container mengikuti canvas
-             * yang terus membesar (chicken-and-egg loop).
-             * Sekarang: kita kunci container tepat sesuai ukuran game (600x800).
-            */
-            width: 600px;
-            height: 800px;
-
             border: 1px solid rgba(255, 255, 255, 0.1); 
-            border-radius: 16px; 
-            overflow: hidden; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-
-            /* Pastikan container tidak bisa di-stretch oleh Phaser */
-            flex-shrink: 0;
-        }
-
-        /* 
-         * PERBAIKAN 3: Paksa canvas di dalam container tidak melampaui batasnya
-         * Phaser kadang set inline style pada canvas, ini override dari luar.
-        */
-        #game-container canvas {
-            display: block !important;
-            width: 600px !important;
-            height: 800px !important;
+            border-radius: 16px; overflow: hidden; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
         }
     </style>
 </head>
 <body>
+    <!-- Container tempat game akan muncul -->
     <div id="game-container"></div>
 
     <script>
-        const SVG_ICONS = [
-`<svg width="800px" height="800px" viewBox="-10 0 188 188" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        /**
+         * =========================================
+         * MOO-MORY ADVANCED (VANILLA JS + PHASER)
+         * =========================================
+         */
+        
+        // 1. DAFTAR GAMBAR (SVG) - Sekarang akan muncul FULL CARD (HD)
+        const SVG_ICONS = [`<svg width="800px" height="800px" viewBox="-10 0 188 188" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <path d="M17.5 7C21.0899 7 24 4.08985 24 0.5C24 0.331764 23.9936 0.165021 23.9811 0H33.0189C33.0064 0.165021 33 0.331764 33 0.5C33 4.08985 35.9101 7 39.5 7C43.0899 7 46 4.08985 46 0.5C46 0.331764 45.9936 0.165021 45.9811 0H55.0189C55.0064 0.165021 55 0.331764 55 0.5C55 4.08985 57.9101 7 61.5 7C65.0899 7 68 4.08985 68 0.5C68 0.331764 67.9936 0.165021 67.9811 0H77.0189C77.0064 0.165021 77 0.331764 77 0.5C77 4.08985 79.9101 7 83.5 7C87.0899 7 90 4.08985 90 0.5C90 0.331764 89.9936 0.165021 89.9811 0H99.0189C99.0064 0.165021 99 0.331764 99 0.5C99 4.08985 101.91 7 105.5 7C109.09 7 112 4.08985 112 0.5C112 0.331764 111.994 0.165021 111.981 0H121.019C121.006 0.165021 121 0.331764 121 0.5C121 4.08985 123.91 7 127.5 7C131.09 7 134 4.08985 134 0.5C134 0.331764 133.994 0.165021 133.981 0H143.019C143.006 0.165021 143 0.331764 143 0.5C143 4.08985 145.91 7 149.5 7C153.09 7 156 4.08985 156 0.5C156 0.331764 155.994 0.165021 155.981 0H168V12.0189C167.835 12.0064 167.668 12 167.5 12C163.91 12 161 14.9101 161 18.5C161 22.0899 163.91 25 167.5 25C167.668 25 167.835 24.9936 168 24.9811V34.0189C167.835 34.0064 167.668 34 167.5 34C163.91 34 161 36.9101 161 40.5C161 44.0899 163.91 47 167.5 47C167.668 47 167.835 46.9936 168 46.9811V56.0189C167.835 56.0064 167.668 56 167.5 56C163.91 56 161 58.9101 161 62.5C161 66.0899 163.91 69 167.5 69C167.668 69 167.835 68.9936 168 68.9811V78.0189C167.835 78.0064 167.668 78 167.5 78C163.91 78 161 80.9101 161 84.5C161 88.0899 163.91 91 167.5 91C167.668 91 167.835 90.9936 168 90.9811V100.019C167.835 100.006 167.668 100 167.5 100C163.91 100 161 102.91 161 106.5C161 110.09 163.91 113 167.5 113C167.668 113 167.835 112.994 168 112.981V122.019C167.835 122.006 167.668 122 167.5 122C163.91 122 161 124.91 161 128.5C161 132.09 163.91 135 167.5 135C167.668 135 167.835 134.994 168 134.981V144.019C167.835 144.006 167.668 144 167.5 144C163.91 144 161 146.91 161 150.5C161 154.09 163.91 157 167.5 157C167.668 157 167.835 156.994 168 156.981V166.019C167.835 166.006 167.668 166 167.5 166C163.91 166 161 168.91 161 172.5C161 176.09 163.91 179 167.5 179C167.668 179 167.835 178.994 168 178.981V188H155.981C155.726 184.644 152.922 182 149.5 182C146.078 182 143.274 184.644 143.019 188H133.981C133.726 184.644 130.922 182 127.5 182C124.078 182 121.274 184.644 121.019 188H111.981C111.726 184.644 108.922 182 105.5 182C102.078 182 99.2743 184.644 99.0189 188H89.9811C89.7257 184.644 86.9216 182 83.5 182C80.0784 182 77.2743 184.644 77.0189 188H67.9811C67.7257 184.644 64.9216 182 61.5 182C58.0784 182 55.2743 184.644 55.0189 188H45.9811C45.7257 184.644 42.9216 182 39.5 182C36.0784 182 33.2743 184.644 33.0189 188H23.9811C23.7257 184.644 20.9216 182 17.5 182C14.0784 182 11.2743 184.644 11.0189 188H0V178.981C0.165021 178.994 0.331764 179 0.5 179C4.08985 179 7 176.09 7 172.5C7 168.91 4.08985 166 0.5 166C0.331764 166 0.165021 166.006 0 166.019V156.981C0.165021 156.994 0.331764 157 0.5 157C4.08985 157 7 154.09 7 150.5C7 146.91 4.08985 144 0.5 144C0.331764 144 0.165021 144.006 0 144.019V134.981C0.165021 134.994 0.331764 135 0.5 135C4.08985 135 7 132.09 7 128.5C7 124.91 4.08985 122 0.5 122C0.331764 122 0.165021 122.006 0 122.019V112.981C0.165021 112.994 0.331764 113 0.5 113C4.08985 113 7 110.09 7 106.5C7 102.91 4.08985 100 0.5 100C0.331764 100 0.165021 100.006 0 100.019V90.9811C0.165021 90.9936 0.331764 91 0.5 91C4.08985 91 7 88.0899 7 84.5C7 80.9101 4.08985 78 0.5 78C0.331764 78 0.165021 78.0064 0 78.0189V68.9811C0.165021 68.9936 0.331764 69 0.5 69C4.08985 69 7 66.0899 7 62.5C7 58.9101 4.08985 56 0.5 56C0.331764 56 0.165021 56.0064 0 56.0189V46.9811C0.165021 46.9936 0.331764 47 0.5 47C4.08985 47 7 44.0899 7 40.5C7 36.9101 4.08985 34 0.5 34C0.331764 34 0.165021 34.0064 0 34.0189V24.9811C0.165021 24.9936 0.331764 25 0.5 25C4.08985 25 7 22.0899 7 18.5C7 14.9101 4.08985 12 0.5 12C0.331764 12 0.165021 12.0064 0 12.0189V0H11.0189C11.0064 0.165021 11 0.331764 11 0.5C11 4.08985 13.9101 7 17.5 7Z" fill="white"/>
 <rect x="14" y="16" width="140" height="156" rx="4" fill="#EAEAEA"/>
 <path d="M62.0114 86.4923C72.0153 62.7518 68.9117 41.5772 43.0761 38.6578" stroke="#FFEBA8" stroke-width="4" stroke-linecap="round"/>
@@ -847,32 +814,36 @@
 </svg>`
         ];
 
+        // 2. TATA LETAK & WARNA
         const COLORS = { bg: '#0F172A', accent: '#38BDF8', cBack: '#1E293B', cFront: '#F8FAFC' };
         const LEVELS = {
-            easy:   { r: 4, c: 3, lbl: 'EASY' },
-            medium: { r: 5, c: 4, lbl: 'MEDIUM' },
-            hard:   { r: 6, c: 5, lbl: 'HARD' }
+            easy: { r: 3, c: 4, lbl: 'EASY' },
+            medium: { r: 4, c: 4, lbl: 'MEDIUM' },
+            hard: { r: 5, c: 4, lbl: 'HARD' }
         };
-        const CARD_SIZE = 100;
+        const CARD_SIZE = 100; // Ukuran kotak 1:1
 
+        /**
+         * SCENE BOOT: Persiapan asset gambar dan musik
+         */
         class BootScene extends Phaser.Scene {
             constructor() { super('BootScene'); }
             preload() {
                 const { width, height } = this.cameras.main;
                 this.add.text(width/2, height/2, 'LOADING HD...', { fontSize: '24px', color: COLORS.accent }).setOrigin(0.5);
-                this.prepareTextures();
-				
-				    this.load.audio('bgm', 'assets/audio/bgm.mp3');
 
+                // --- BAGIAN MP3: MASUKKAN FILE ANDA DI SINI ---
+                // Ganti 'suara/namafil.mp3' dengan lokasi file asli di folder Anda nanti.
+                this.load.audio('bgm', 'assets/audio/bgm.mp3'); 
+                // this.load.audio('sfx_flip', 'assets/audio/flip.mp3');
+                // this.load.audio('sfx_win', 'assets/audio/win.mp3');
+
+                this.prepareTextures();
             }
-            create() { this.scene.start('MenuScene'); 
-			    this.sound.play('bgm', {
-        loop: true,
-        volume: 0.5
-    });
-			}
+            create() { this.scene.start('MenuScene'); }
 
             prepareTextures() {
+                // Sisi Belakang Kartu
                 const g = this.add.graphics();
                 g.fillStyle(Phaser.Display.Color.HexStringToColor(COLORS.cBack).color, 1);
                 g.fillRoundedRect(0, 0, CARD_SIZE, CARD_SIZE, 12);
@@ -885,22 +856,24 @@
                 rt.saveTexture('cBack');
                 g.clear(); qT.destroy();
 
+                // Sisi Depan Kartu
                 g.fillStyle(Phaser.Display.Color.HexStringToColor(COLORS.cFront).color, 1);
                 g.fillRoundedRect(0, 0, CARD_SIZE, CARD_SIZE, 12);
                 if (this.textures.exists('cFront')) this.textures.remove('cFront');
                 g.generateTexture('cFront', CARD_SIZE, CARD_SIZE);
                 g.destroy();
 
+                // Ikon SVG HD: Sekarang FULL CARD
                 SVG_ICONS.forEach((svg, i) => {
                     const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
                     const img = new Image();
                     img.onload = () => {
-                        const hRes = 512;
-                        const canvas = document.createElement('canvas');
+                        const hRes = 512; // Resolusi Tinggi (HD)
+                        const canvas = document.createElement('canvas'); // Hanya di memori (tidak tampil di DOM)
                         canvas.width = hRes; canvas.height = hRes;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, hRes, hRes);
+                        ctx.drawImage(img, 0, 0, hRes, hRes); // Full coverage
                         if (this.textures.exists(`icon_${i}`)) this.textures.remove(`icon_${i}`);
                         this.textures.addCanvas(`icon_${i}`, canvas);
                         URL.revokeObjectURL(url);
@@ -910,25 +883,18 @@
             }
         }
 
+        /**
+         * SCENE MENU: Halaman Pilih Level
+         */
         class MenuScene extends Phaser.Scene {
             constructor() { super('MenuScene'); }
             create() {
                 const { width, height } = this.cameras.main;
                 this.add.graphics().fillGradientStyle(0x1E293B, 0x1E293B, 0x0F172A, 0x0F172A, 1).fillRect(0, 0, width, height);
-this.add.text(width / 2, 180, 'Noah’s Animal Pairs', {
-    fontSize: '32px',
-    fontStyle: 'bold',
-    color: COLORS.accent
-}).setOrigin(0.5);
+                this.add.text(width / 2, 180, 'NOAH’S ANIMAL PAIRS', { fontSize: '64px', fontStyle: 'bold', color: COLORS.accent }).setOrigin(0.5);
 
-this.add.text(width / 2, 230, 'Find every pair and help the animals get on the ark!', {
-    fontSize: '16px',
-    color: COLORS.accent,
-    align: 'center',
-    wordWrap: { width: 400 }
-}).setOrigin(0.5);
-
-
+                // --- INFO: Putar Background Music jika sudah di-load nanti ---
+                if (this.sound.get('bgm')) this.sound.play('bgm', { loop: true, volume: 0.5 });
 
                 ['easy', 'medium', 'hard'].forEach((key, i) => {
                     const btn = this.add.container(width / 2, 400 + i * 90);
@@ -936,20 +902,18 @@ this.add.text(width / 2, 230, 'Find every pair and help the animals get on the a
                     const txt = this.add.text(0, 0, LEVELS[key].lbl, { fontSize: '20px', fontWeight: 'bold' }).setOrigin(0.5);
                     btn.add([shape, txt]);
                     btn.setInteractive(new Phaser.Geom.Rectangle(-150, -25, 300, 50), Phaser.Geom.Rectangle.Contains);
-                    btn.on('pointerdown', () => this.scene.start('GameScene', { level: key }));
+                    btn.on('pointerdown', () => {
+                        // --- PLAY SOUND SFX FLIP DISINI NANTI ---
+                        // this.sound.play('sfx_flip');
+                        this.scene.start('GameScene', { level: key });
+                    });
                 });
-				
-				this.add.text(width / 2, 677, '© 2026 Henky Adlin Shan - sukalogika.com - MIT License', {
-    fontSize: '12px',
-    color: COLORS.accent,
-    align: 'center',
-    wordWrap: { width: 400 }
-}).setOrigin(0.5);
-
-
             }
         }
 
+        /**
+         * SCENE GAME: Inti Permainan
+         */
         class GameScene extends Phaser.Scene {
             constructor() { super('GameScene'); }
             init(d) { this.lvl = d.level; this.sel = []; this.mtch = 0; this.active = true; this.start = 0; this.timer = 0; }
@@ -957,9 +921,11 @@ this.add.text(width / 2, 230, 'Find every pair and help the animals get on the a
                 const { width, height } = this.cameras.main;
                 const conf = LEVELS[this.lvl]; this.total = (conf.r * conf.c) / 2;
                 this.add.graphics().fillGradientStyle(0x1E293B, 0x1E293B, 0x0F172A, 0x0F172A, 1).fillRect(0, 0, width, height);
+
                 this.matchTxt = this.add.text(width-40, 40, `MATCH: 0/${this.total}`, { fontSize: '14px', color: COLORS.accent }).setOrigin(1, 0.5);
                 this.timeTxt = this.add.text(40, 70, `TIME: 0s`, { fontSize: '14px', color: COLORS.accent }).setOrigin(0, 0.5);
                 this.add.text(40, 40, '←', { fontSize: '24px', color: '#fff' }).setInteractive().on('pointerdown', () => this.scene.start('MenuScene'));
+                
                 this.createBoard();
                 this.start = this.time.now;
             }
@@ -983,11 +949,13 @@ this.add.text(width / 2, 230, 'Find every pair and help the animals get on the a
             addCard(x, y, id, sc) {
                 const card = this.add.container(x, y).setScale(sc);
                 const back = this.add.image(0, 0, 'cBack'), front = this.add.image(0, 0, 'cFront').setVisible(false), icon = this.add.image(0, 0, `icon_${id}`).setVisible(false);
-                icon.setScale(CARD_SIZE / 512);
+                icon.setScale(CARD_SIZE / 512); // PENTING: Menyesuaikan HD (512px) ke kartu game (100px)
                 card.add([front, back, icon]);
                 card.setInteractive(new Phaser.Geom.Rectangle(-50, -50, 100, 100), Phaser.Geom.Rectangle.Contains);
                 card.on('pointerdown', () => {
                     if(!this.active || card.isOut || this.sel.length >= 2) return;
+                    // Suara balik kartu
+                    // this.sound.play('sfx_flip');
                     card.isOut = true; this.sel.push({card, back, front, icon, id, sc});
                     this.tweens.add({ targets: card, scaleX: 0, duration: 150, onComplete: () => {
                         back.setVisible(false); front.setVisible(true); icon.setVisible(true);
@@ -1014,6 +982,8 @@ this.add.text(width / 2, 230, 'Find every pair and help the animals get on the a
             }
 
             showWin() {
+                // --- Suara Menang ---
+                // this.sound.play('sfx_win');
                 this.add.rectangle(300, 400, 600, 800, 0x0F172A, 0.9);
                 this.add.text(300, 350, 'WIN!', { fontSize: '80px', fontStyle: 'bold' }).setOrigin(0.5);
                 this.add.text(300, 430, `TIMER: ${this.timer}s`, { fontSize: '24px', color: COLORS.accent }).setOrigin(0.5);
@@ -1021,30 +991,14 @@ this.add.text(width / 2, 230, 'Find every pair and help the animals get on the a
             }
         }
 
-        if (window.gameInstance) window.gameInstance.destroy(true);
+        /**
+         * PENGATURAN AWAL: Mencegah penggandaan game saat reload
+         */
+        if (window.gameInstance) window.gameInstance.destroy(true); // Hancurkan game lama
         window.gameInstance = new Phaser.Game({
-            type: Phaser.AUTO,
-            parent: 'game-container',
-            width: 600,
-            height: 800,
+            type: Phaser.AUTO, parent: 'game-container', width: 600, height: 800,
             scene: [BootScene, MenuScene, GameScene],
-            /*
-             * PERBAIKAN 4 (INTI): Ganti Scale Mode
-             * 
-             * Sebelumnya: Phaser.Scale.FIT
-             *   → Phaser akan terus resize canvas mengikuti ukuran parent/window.
-             *   → Karena parent tidak punya ukuran fixed, ini menciptakan loop:
-             *     canvas membesar → parent ikut besar → canvas makin besar → dst.
-             * 
-             * Sekarang: Phaser.Scale.NONE
-             *   → Phaser TIDAK menyentuh ukuran canvas sama sekali.
-             *   → Canvas tetap persis 600x800px sesuai yang didefinisikan di atas.
-             *   → Centering ditangani oleh CSS flexbox, bukan oleh Phaser.
-            */
-            scale: {
-                mode: Phaser.Scale.NONE,
-                autoCenter: Phaser.Scale.NO_CENTER
-            }
+            scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
         });
     </script>
 </body>
