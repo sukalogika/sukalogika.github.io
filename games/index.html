@@ -41,21 +41,6 @@ body{
   cursor:crosshair;
 }
 
-/* SCANLINES OVERLAY */
-body::before{
-  content:'';
-  position:fixed;
-  inset:0;
-  z-index:9999;
-  pointer-events:none;
-  background:repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,0.08) 2px,
-    rgba(0,0,0,0.08) 4px
-  );
-}
 /* CRT VIGNETTE */
 body::after{
   content:'';
@@ -629,10 +614,10 @@ Setiap permainan mengajarkan kasih, kepedulian, dan tanggung jawab terhadap sesa
   <div class="game-info">
     <div class="game-title">BIBLE TIC-TAC-TOE</div>
     <div class="game-desc">
-Main tic-tac-toe dengan simbol pilihanmu!
-Pilih singa, domba, ular, elang, atau rubah.
-Setiap simbol punya arti yang bisa kamu kenal sambil bermain.
-Ayo pilih dan menangkan permainannya!
+      Main tic-tac-toe dengan nuansa Alkitab yang unik!
+Tantang Abigail (easy), Salomo (medium), dan Yusuf (hard) sebagai lawanmu.
+Pilih marker spesial seperti singa, domba, ular, elang, atau rubah — masing-masing punya makna simbolis dalam Alkitab.
+Bukan sekadar strategi, tapi juga belajar arti di balik setiap simbol sambil bermain.
     </div>
     <a href="bible-tic-tac-toe/" class="btn-game" target="_blank" rel="noopener noreferrer">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -640,6 +625,30 @@ Ayo pilih dan menangkan permainannya!
     </a>
   </div>
 </div>
+
+
+<!-- GAME 4: NOAH’S ANIMAL PAIRS -->
+<div class="game-card pixel-box">
+  <div class="game-img">
+    <img src="noah-animal-pairs/assets/img/cover-memory.jpg" 
+         alt="Game memory mencocokkan pasangan hewan tema Nuh"
+         loading="lazy">
+  </div>
+  <div class="game-info">
+    <div class="game-title">NOAH’S ANIMAL PAIRS</div>
+    <div class="game-desc">
+Temukan pasangan hewan yang sama!  
+Buka kartu satu per satu dan ingat posisinya.  
+Jika cocok, mereka akan tetap terbuka.  
+Ayo kumpulkan semua pasangan dan menangkan permainan!
+    </div>
+    <a href="noah-animal-pairs/" class="btn-game" target="_blank" rel="noopener noreferrer">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      MAINKAN → 
+    </a>
+  </div>
+</div>
+
 
 
 
