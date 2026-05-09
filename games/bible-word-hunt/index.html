@@ -264,21 +264,23 @@
         // Format: { word: "KATA", question: "Pertanyaan?" }
         // Kata harus huruf kapital, panjang max 8 huruf (karena grid 8x8)
         // ============================================================
-        const WORDS_BANK = [
-            { word: "NOAH", question: "Siapa yang membuat bahtera besar?" },
-            { word: "DANIEL", question: "Siapa yang dilempar ke gua singa?" },
-            { word: "DAVID", question: "Siapa yang mengalahkan Goliat?" },
-            { word: "ADAM", question: "Manusia pertama di taman Eden?" },
-            { word: "MARY", question: "Ibu Yesus Kristus?" },
-            { word: "PETER", question: "Rasul yang menyangkal Yesus tiga kali?" },
-            { word: "SOLOMON", question: "Raja yang sangat bijaksana (penulis Amsal)?" },
-            { word: "ELIJAH", question: "Nabi yang diangkat ke surga dengan kereta api?" },
-            { word: "MOSES", question: "Siapa yang membelah Laut Merah?" },
-            { word: "JONAH", question: "Nabi yang ditelan ikan besar?" }
-            // 🔽 Anda bisa menambah lebih banyak di sini (misal: JESUS, RUTH, ESTHER, dll)
-            // { word: "JESUS", question: "Putra Allah yang lahir di Betlehem?" },
-            // { word: "RUTH", question: "Perempuan Moab yang setia kepada Naomi?" }
-        ];
+const WORDS_BANK = [
+    { word: "ADAM", question: "Manusia pertama ciptaan Tuhan (Kej 2:7)?" },
+    { word: "HAWA", question: "Wanita pertama di taman Eden (Kej 3:20)?" },
+    { word: "BAHTERA", question: "Kapal besar buatan nabi Nuh (Kej 6:14)?" },
+    { word: "PELANGI", question: "Tanda janji Tuhan kepada Nuh (Kej 9:13)?" },
+    { word: "ISHAK", question: "Anak perjanjian Abraham dan Sara (Kej 21:3)?" },
+    { word: "TONGKAT", question: "Benda Musa untuk membelah laut (Kel 14:16)?" },
+    { word: "MANNA", question: "Roti dari surga untuk Israel (Kel 16:31)?" },
+    { word: "GOLIAT", question: "Raksasa yang dikalahkan Daud (1 Sam 17:4)?" },
+    { word: "KETAPEL", question: "Senjata Daud mengalahkan raksasa (1 Sam 17:40)?" },
+    { word: "SINGA", question: "Daniel selamat di dalam gua (Dan 6:17)?" },
+    { word: "LIMA", question: "Jumlah roti kasih makan 5000 (Mat 14:17)?" },
+    { word: "PALUNGAN", question: "Tempat bayi Yesus dibaringkan (Luk 2:7)?" },
+    { word: "GEMBALA", question: "Orang pertama kunjungi bayi Yesus (Luk 2:8)?" },
+    { word: "SALIB", question: "Tempat Yesus mati menebus dosa (Yoh 19:17)?" },
+    { word: "KASIH", question: "Perintah baru yang Yesus berikan (Yoh 13:34)?" }
+];
 
         const TARGET_COUNT = 8;   // Jumlah kata yang akan dimainkan setiap game (harus <= grid muat)
         const GRID_SIZE = 8;
