@@ -394,6 +394,15 @@ const WORDS_BANK = [
         }
         
         class ArkWordSearch extends Phaser.Scene {
+		
+		preload() {
+    console.log('preload jalan');
+
+    this.load.audio('bgm', [
+        'assets/audio/bgm.mp3'
+    ]);
+}
+
             constructor() {
                 super("ArkWordSearch");
                 this.gridLetters = [];
@@ -433,6 +442,20 @@ const WORDS_BANK = [
                 this.updateQuestionPanel();
                 this.updateScoreUI();
                 this.startTimerInternal();
+				
+				
+				this.input.once('pointerdown', () => {
+    if (!this.bgm) {
+        this.bgm = this.sound.add('bgm', {
+            loop: true,
+            volume: 0.5
+        });
+        this.bgm.play();
+        console.log('bgm started');
+    }
+});
+
+
             }
             
             initGame() {
