@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Alkitab Quote Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+<style>
+  body {
+    background: #000;
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 800px;
+    width: 100%;
+    text-align: center;
+  }
+  button {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: #fff;
+    color: #000;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: 8px;
+    transition: 0.3s;
+  }
+  button:hover { background: #ddd; }
+  .loading { display: none; margin-top: 20px; font-size: 18px; color: #aaa; }
+  canvas { display: none; }
+  .info { margin-top: 30px; font-size: 12px; color: #555; }
+  .pattern-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 12px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>🎨 Generator Ayat Alkitab Hari Ini</h2>
+  <p style="color:#ccc; font-size:14px;">Klik tombol di bawah untuk mengambil ayat dari API dan membuat gambar quote.</p>
+  <button id="generateBtn">✨ GENERATE FROM API ✨</button>
+  <div id="patternBadge" class="pattern-badge" style="display:none;"></div>
+  <div class="loading" id="loadingMsg">Mengambil data dari API... Mohon tunggu.</div>
+  <div id="statusMsg" style="margin-top:15px; font-size:14px; color:#ffaa00;"></div>
+</div>
+
+<div id="canvas_container"></div>
+<div class="info">© SABDA.org | LAI 1974 | Gambar dibuat secara lokal di browser Anda.</div>
+
+<script>
+  const apiUrl = 'https://alkitab.sabda.org/api/vod.php?format=jsonp';
+
+  // ============================================================
+  // BACKGROUND PATTERN FUNCTIONS
+  // ============================================================
+
+  const backgroundPatterns = [
+
+    // 1. Dot grid
+    {
+      name: 'Dot Grid',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = 'rgba(255,255,255,0.10)';
+        const spacing = 40;
+        for (let x = 0; x < w; x += spacing) {
+          for (let y = 0; y < h; y += spacing) {
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+    },
+
+    // 2. Diagonal lines
+    {
+      name: 'Diagonal Lines',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (let i = -h; i < w + h; i += 24) {
+          ctx.beginPath();
+          ctx.moveTo(i, 0);
+          ctx.lineTo(i + h, h);
+          ctx.stroke();
+        }
+      }
+    },
+
+    // 3. Fine grid
+    {
+      name: 'Fine Grid',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        const step = 50;
+        for (let x = 0; x <= w; x += step) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        }
+        for (let y = 0; y <= h; y += step) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+      }
+    },
+
+    // 4. Hexagonal mesh
+    {
+      name: 'Hexagonal Mesh',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#020202';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+        ctx.lineWidth = 1;
+        const r = 38;
+        const cols = Math.ceil(w / (r * 1.5)) + 2;
+        const rows = Math.ceil(h / (r * Math.sqrt(3))) + 2;
+        for (let q = -1; q < cols; q++) {
+          for (let p = -1; p < rows; p++) {
+            const cx = q * r * 1.5;
+            const cy = p * r * Math.sqrt(3) + (q % 2) * r * Math.sqrt(3) / 2;
+            ctx.beginPath();
+            for (let s = 0; s < 6; s++) {
+              const a = Math.PI / 3 * s;
+              const nx = cx + r * Math.cos(a);
+              const ny = cy + r * Math.sin(a);
+              s === 0 ? ctx.moveTo(nx, ny) : ctx.lineTo(nx, ny);
+            }
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+      }
+    },
+
+    // 5. Chevron wave
+    {
+      name: 'Chevron Wave',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#040404';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+        ctx.lineWidth = 1.5;
+        const waveH = 14;
+        const freq = 8;
+        for (let y = -40; y < h + 40; y += 36) {
+          ctx.beginPath();
+          for (let x = 0; x <= w; x += 2) {
+            const yy = y + Math.sin((x / w) * Math.PI * freq) * waveH;
+            x === 0 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
+          }
+          ctx.stroke();
+        }
+      }
+    },
+
+    // 6. Random noise scatter
+    {
+      name: 'Noise Scatter',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#030303';
+        ctx.fillRect(0, 0, w, h);
+        const count = 700;
+        for (let i = 0; i < count; i++) {
+          const x = Math.random() * w;
+          const y = Math.random() * h;
+          const r = Math.random() * 2.5 + 0.5;
+          const a = Math.random() * 0.14 + 0.03;
+          ctx.fillStyle = `rgba(255,255,255,${a})`;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    },
+
+    // 7. Concentric circles
+    {
+      name: 'Concentric Circles',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#030303';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        const cx = w / 2;
+        const cy = h / 2;
+        const maxR = Math.sqrt(cx * cx + cy * cy) + 100;
+        for (let r = 40; r < maxR; r += 46) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+    },
+
+    // 8. Crosshatch
+    {
+      name: 'Crosshatch',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#040404';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        const gap = 30;
+        for (let i = -h; i < w + h; i += gap) {
+          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + h, h); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(i, h); ctx.lineTo(i + h, 0); ctx.stroke();
+        }
+      }
+    },
+
+    // 9. Triangle mesh
+    {
+      name: 'Triangle Mesh',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#030303';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        const size = 60;
+        const rows = Math.ceil(h / size) + 1;
+        const cols = Math.ceil(w / (size / 2)) + 1;
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            const x = col * (size / 2);
+            const y = row * size;
+            const offset = (col % 2) * (size / 2);
+            ctx.beginPath();
+            ctx.moveTo(x, y + offset);
+            ctx.lineTo(x + size / 2, y + offset + size);
+            ctx.lineTo(x - size / 2, y + offset + size);
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+      }
+    },
+
+    // 10. Radial rays
+    {
+      name: 'Radial Rays',
+      draw: (ctx, w, h) => {
+        ctx.fillStyle = '#020202';
+        ctx.fillRect(0, 0, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        const cx = w / 2;
+        const cy = h / 2;
+        const rays = 36;
+        const maxR = Math.sqrt(w * w + h * h);
+        for (let i = 0; i < rays; i++) {
+          const angle = (Math.PI * 2 / rays) * i;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(angle) * maxR, cy + Math.sin(angle) * maxR);
+          ctx.stroke();
+        }
+      }
+    },
+  ];
+
+  // Pick a random pattern
+  function getRandomPattern() {
+    const idx = Math.floor(Math.random() * backgroundPatterns.length);
+    return backgroundPatterns[idx];
+  }
+
+  // ============================================================
+  // ORIGINAL HELPER FUNCTIONS
+  // ============================================================
+
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    if (!text) return [];
+    var words = text.split(' ');
+    var line = '';
+    var lines = [];
+    for (var n = 0; n < words.length; n++) {
+      var testLine = line + words[n] + ' ';
+      var metrics = ctx.measureText(testLine);
+      var testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        lines.push(line);
+        line = words[n] + ' ';
+      } else {
+        line = testLine;
+      }
+    }
+    lines.push(line);
+    return lines;
+  }
+
+  function cleanText(text) {
+    if (!text) return '';
+    let cleaned = text.replace(/^"|"$/g, '');
+    cleaned = cleaned.replace(/\\"/g, '"');
+    return cleaned.trim();
+  }
+
+  function fetchVerseData() {
+    return new Promise((resolve, reject) => {
+      const callbackName = 'jsonp_callback_' + Date.now();
+      const script = document.createElement('script');
+      window[callbackName] = (data) => {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        resolve(data);
+      };
+      script.onerror = () => {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        reject(new Error('Gagal mengambil data dari API. Cek koneksi atau CORS.'));
+      };
+      script.src = `${apiUrl}&callback=${callbackName}`;
+      document.body.appendChild(script);
+    });
+  }
+
+  // ============================================================
+  // GENERATE IMAGE (with random background pattern)
+  // ============================================================
+
+  function generateImageFromVerse(verseData) {
+    return new Promise((resolve, reject) => {
+      try {
+        let rawText = verseData.html?.text || '';
+        let passage = verseData.html?.passage || 'Alkitab';
+        let bookAbbr = verseData.html?.abbr || '';
+        let chapter = verseData.html?.chapter || '';
+        let verse = verseData.html?.verse || '';
+
+        if (!rawText && !passage) {
+          reject(new Error('Data ayat tidak lengkap dari API.'));
+          return;
+        }
+
+        let cleanVerseText = cleanText(rawText);
+        let titleText = passage || `${bookAbbr} ${chapter}:${verse}`;
+
+        if (!cleanVerseText && verseData.html?.text) {
+          cleanVerseText = cleanText(verseData.html.text);
+        }
+        if (!cleanVerseText) {
+          cleanVerseText = "Kamu adalah garam dunia... (Matius 5:13)";
+        }
+
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1920;
+        const ctx = canvas.getContext('2d');
+
+        // === 1. RANDOM BACKGROUND PATTERN ===
+        const pattern = getRandomPattern();
+        pattern.draw(ctx, canvas.width, canvas.height);
+
+        // === 2. Subtle vignette overlay ===
+        const vignette = ctx.createRadialGradient(540, 960, 200, 540, 960, 1100);
+        vignette.addColorStop(0, 'rgba(0,0,0,0)');
+        vignette.addColorStop(1, 'rgba(0,0,0,0.55)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // === 3. BIG QUOTE tanda petik ===
+        ctx.fillStyle = '#ffffff';
+        ctx.font = "bold 200px 'Poppins', sans-serif";
+        ctx.fillText('\u201C', 80, 250);
+
+        // === 4. TITLE (passage) ===
+        ctx.font = "600 55px 'Poppins', sans-serif";
+        let titleLines = wrapText(ctx, titleText, 100, 420, 880, 75);
+        let yPos = 420;
+        titleLines.forEach(line => {
+          ctx.fillText(line, 100, yPos);
+          yPos += 75;
+        });
+
+        // === 5. CONTENT (teks ayat) ===
+        ctx.font = "300 46px 'Poppins', sans-serif";
+        let contentLines = wrapText(ctx, cleanVerseText, 100, yPos + 50, 880, 70);
+        yPos += 50;
+        contentLines.forEach(line => {
+          ctx.fillText(line, 100, yPos);
+          yPos += 70;
+        });
+
+        // === 6. WATERMARK ===
+        ctx.font = "300 34px 'Poppins', sans-serif";
+        ctx.fillStyle = '#888888';
+        ctx.fillText('@sukalogika', 100, 1820);
+
+        const dataURL = canvas.toDataURL('image/png');
+        resolve({ dataURL, title: titleText, patternName: pattern.name });
+
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  function downloadImage(dataURL, filename) {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataURL;
+    link.click();
+  }
+
+  // ============================================================
+  // MAIN PROCESS
+  // ============================================================
+
+  async function onGenerate() {
+    const btn = document.getElementById('generateBtn');
+    const loadingDiv = document.getElementById('loadingMsg');
+    const statusDiv = document.getElementById('statusMsg');
+    const badgeDiv = document.getElementById('patternBadge');
+
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    loadingDiv.style.display = 'block';
+    statusDiv.innerHTML = '';
+    badgeDiv.style.display = 'none';
+
+    try {
+      statusDiv.innerHTML = '📡 Mengambil ayat dari API SABDA...';
+      const verseData = await fetchVerseData();
+      console.log('Data dari API:', verseData);
+
+      statusDiv.innerHTML = '🎨 Membuat gambar quote...';
+      const { dataURL, title, patternName } = await generateImageFromVerse(verseData);
+
+      const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const filename = `alkitab_quote_${safeTitle}.png`;
+      downloadImage(dataURL, filename);
+
+      statusDiv.innerHTML = `✅ Sukses! Gambar "${title}" sudah didownload.`;
+      badgeDiv.textContent = `🖼 Pattern: ${patternName}`;
+      badgeDiv.style.display = 'inline-block';
+      loadingDiv.style.display = 'none';
+
+    } catch (error) {
+      console.error('Error:', error);
+      statusDiv.innerHTML = `❌ Gagal: ${error.message}. Coba lagi nanti.`;
+      loadingDiv.style.display = 'none';
+    } finally {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('generateBtn');
+    if (btn) btn.addEventListener('click', onGenerate);
+  });
+</script>
+</body>
+</html>
