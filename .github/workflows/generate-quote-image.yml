@@ -2,15 +2,14 @@ name: Generate Alkitab Quote Image
 
 on:
   schedule:
-    # Jalankan setiap hari jam 00:00 UTC (sesuaikan)
-    - cron: '0 0 * * *'
-  workflow_dispatch:  # Bisa dijalankan manual dari tab Actions
+    - cron: '0 11 * * *'   # Setiap hari jam 11:00 WIB/UTC (sesuaikan zona)
+  workflow_dispatch:         # Tetap bisa di-run manual kapan aja
 
 jobs:
   generate:
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # Untuk push gambar ke repo
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -21,16 +20,26 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Install system dependencies for canvas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libcairo2-dev \
+            libjpeg-dev \
+            libpango1.0-dev \
+            libgif-dev \
+            build-essential
+
+      - name: Install npm packages
         run: npm install canvas axios
 
-      - name: Run quote image generator
+      - name: Generate quote image
         run: node scripts/generate-quote.js
 
-      - name: Commit and push generated image
+      - name: Commit and push to repository
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add generated-images/
-          git diff --quiet && git diff --staged --quiet || git commit -m "Add generated quote image [skip ci]"
+          git config.user.email "github-actions[bot]@users.noreply.github.com"
+          git add vod-image/
+          git diff --quiet && git diff --staged --quiet || git commit -m "📸 Add VOD image for $(date '+%Y-%m-%d %H:%M:%S')"
           git push
