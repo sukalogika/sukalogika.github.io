@@ -1,18 +1,9 @@
-const { createCanvas, registerFont } = require('canvas');
+const { createCanvas } = require('canvas');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-// (Opsional) Daftarkan font Poppins jika ada file .ttf di repo
-// registerFont(path.join(__dirname, '../fonts/Poppins-Regular.ttf'), { family: 'Poppins' });
-// registerFont(path.join(__dirname, '../fonts/Poppins-Bold.ttf'), { family: 'Poppins', weight: 'bold' });
-
-// Fallback font jika Poppins tidak tersedia
-const FONT_TITLE = 'bold 55px "Segoe UI", "Poppins", "Arial"';
-const FONT_QUOTE = '46px "Segoe UI", "Poppins", "Arial"';
-const FONT_WATERMARK = '34px "Segoe UI", "Poppins", "Arial"';
-
-// Background pattern definitions (sama seperti di HTML)
+// Background patterns (sama persis kayak HTML lo)
 const backgroundPatterns = [
   {
     name: 'Dot Grid',
@@ -45,7 +36,54 @@ const backgroundPatterns = [
       }
     }
   },
-  // Tambahkan pattern lainnya dari kode HTML jika diinginkan
+  {
+    name: 'Fine Grid',
+    draw: (ctx, w, h) => {
+      ctx.fillStyle = '#050505';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      const step = 50;
+      for (let x = 0; x <= w; x += step) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y <= h; y += step) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+    }
+  },
+  {
+    name: 'Crosshatch',
+    draw: (ctx, w, h) => {
+      ctx.fillStyle = '#040404';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      const gap = 30;
+      for (let i = -h; i < w + h; i += gap) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + h, h); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i, h); ctx.lineTo(i + h, 0); ctx.stroke();
+      }
+    }
+  },
+  {
+    name: 'Noise Scatter',
+    draw: (ctx, w, h) => {
+      ctx.fillStyle = '#030303';
+      ctx.fillRect(0, 0, w, h);
+      const count = 700;
+      for (let i = 0; i < count; i++) {
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        const r = Math.random() * 2.5 + 0.5;
+        const a = Math.random() * 0.14 + 0.03;
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
 ];
 
 function getRandomPattern() {
@@ -54,10 +92,12 @@ function getRandomPattern() {
 }
 
 function wrapText(ctx, text, maxWidth) {
+  if (!text) return [];
   const words = text.split(' ');
   const lines = [];
   let currentLine = '';
-  for (let word of words) {
+  
+  for (const word of words) {
     const testLine = currentLine + word + ' ';
     const metrics = ctx.measureText(testLine);
     if (metrics.width > maxWidth && currentLine.length > 0) {
@@ -67,96 +107,169 @@ function wrapText(ctx, text, maxWidth) {
       currentLine = testLine;
     }
   }
-  if (currentLine.trim()) lines.push(currentLine.trim());
+  lines.push(currentLine.trim());
   return lines;
 }
 
 function cleanText(text) {
   if (!text) return '';
-  return text.replace(/^"|"$/g, '').replace(/\\"/g, '"').trim();
+  let cleaned = text.replace(/^"|"$/g, '');
+  cleaned = cleaned.replace(/\\"/g, '"');
+  return cleaned.trim();
+}
+
+function getFormattedDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  
+  return {
+    year,
+    month,
+    day,
+    hours,
+    minutes,
+    seconds,
+    fullDate: `${year}-${month}-${day}`,
+    timestamp: `${year}${month}${day}_${hours}${minutes}${seconds}`
+  };
 }
 
 async function fetchVerseData() {
-  const url = 'https://alkitab.sabda.org/api/vod.php?format=json';
-  // API SABDA mungkin perlu header tertentu, gunakan axios langsung (bukan JSONP)
-  const response = await axios.get(url, {
-    headers: { 'Accept': 'application/json' }
-  });
-  // Data mungkin dalam bentuk JSON yang berbeda, sesuaikan
-  // Contoh response dari API SABDA biasanya: { html: { text, passage, abbr, chapter, verse } }
-  return response.data;
-}
-
-async function generateImage() {
   try {
-    console.log('📡 Mengambil ayat dari API SABDA...');
-    const verseData = await fetchVerseData();
+    console.log('  → Mencoba mengambil dari API SABDA...');
+    const response = await axios.get('https://alkitab.sabda.org/api/vod.php?format=json', {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; GitHubAction/1.0)'
+      }
+    });
     
-    let rawText = verseData.html?.text || '';
-    let passage = verseData.html?.passage || 'Alkitab';
-    let bookAbbr = verseData.html?.abbr || '';
-    let chapter = verseData.html?.chapter || '';
-    let verse = verseData.html?.verse || '';
-
-    let cleanVerseText = cleanText(rawText);
-    let titleText = passage || `${bookAbbr} ${chapter}:${verse}`;
-    if (!cleanVerseText) cleanVerseText = "Kamu adalah garam dunia... (Matius 5:13)";
-
-    // Buat canvas 1080x1920
-    const canvas = createCanvas(1080, 1920);
-    const ctx = canvas.getContext('2d');
-
-    // 1. Background pattern acak
-    const pattern = getRandomPattern();
-    pattern.draw(ctx, canvas.width, canvas.height);
-
-    // 2. Vignette
-    const vignette = ctx.createRadialGradient(540, 960, 200, 540, 960, 1100);
-    vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    vignette.addColorStop(1, 'rgba(0,0,0,0.55)');
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 3. Tanda petik besar
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 200px "Segoe UI", "Poppins", "Arial"';
-    ctx.fillText('\u201C', 80, 250);
-
-    // 4. Title (passage)
-    ctx.font = FONT_TITLE;
-    let yPos = 420;
-    let titleLines = wrapText(ctx, titleText, 880);
-    for (let line of titleLines) {
-      ctx.fillText(line, 100, yPos);
-      yPos += 75;
+    if (response.data && response.data.html && response.data.html.text) {
+      console.log('  ✓ Berhasil mengambil dari API');
+      return response.data;
     }
-
-    // 5. Teks ayat
-    ctx.font = FONT_QUOTE;
-    const contentLines = wrapText(ctx, cleanVerseText, 880);
-    yPos += 50;
-    for (let line of contentLines) {
-      ctx.fillText(line, 100, yPos);
-      yPos += 70;
-    }
-
-    // 6. Watermark
-    ctx.font = FONT_WATERMARK;
-    ctx.fillStyle = '#888888';
-    ctx.fillText('@sukalogika', 100, 1820);
-
-    // Simpan sebagai PNG
-    const buffer = canvas.toBuffer('image/png');
-    const outputDir = path.join(__dirname, '../generated-images');
-    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-    const filename = `alkitab_quote_${Date.now()}_${pattern.name.replace(/\s/g, '_')}.png`;
-    const filePath = path.join(outputDir, filename);
-    fs.writeFileSync(filePath, buffer);
-    console.log(`✅ Gambar berhasil disimpan: ${filePath}`);
+    throw new Error('Data tidak lengkap');
   } catch (error) {
-    console.error('❌ Gagal membuat gambar:', error.message);
-    process.exit(1);
+    console.log('  → API gagal, menggunakan data sampel...');
+    // Data sampel kalo API mati
+    return {
+      html: {
+        text: "Janganlah hendaknya kamu kuatir tentang apapun juga, tetapi nyatakanlah dalam segala hal keinginanmu kepada Allah dalam doa dan permohonan dengan ucapan syukur.",
+        passage: "Filipi 4:6",
+        abbr: "Flp",
+        chapter: "4",
+        verse: "6"
+      }
+    };
   }
 }
 
-generateImage();
+async function generateImage() {
+  console.log('\n🚀 START GENERATING IMAGE...\n');
+  
+  // Ambil data ayat
+  console.log('📡 Step 1: Fetching verse data');
+  const verseData = await fetchVerseData();
+  
+  let rawText = verseData.html?.text || '';
+  let passage = verseData.html?.passage || 'Alkitab';
+  let cleanVerseText = cleanText(rawText);
+  let titleText = passage;
+  
+  // Fallback terakhir
+  if (!cleanVerseText) {
+    cleanVerseText = "Tetapi buah Roh ialah: kasih, sukacita, damai sejahtera, kesabaran, kemurahan, kebaikan, kesetiaan.";
+    titleText = "Galatia 5:22";
+  }
+  
+  console.log(`  ✓ Ayat: ${titleText}`);
+  console.log(`  ✓ Teks: ${cleanVerseText.substring(0, 50)}...`);
+  
+  // Buat canvas
+  console.log('\n🎨 Step 2: Creating canvas (1080x1920)');
+  const canvas = createCanvas(1080, 1920);
+  const ctx = canvas.getContext('2d');
+  
+  // Pilih pattern random
+  const pattern = getRandomPattern();
+  console.log(`  ✓ Pattern: ${pattern.name}`);
+  
+  // Draw background pattern
+  console.log('  → Drawing background pattern...');
+  pattern.draw(ctx, canvas.width, canvas.height);
+  
+  // Vignette effect
+  const vignette = ctx.createRadialGradient(540, 960, 200, 540, 960, 1100);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Big quote mark
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 200px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('"', 80, 250);
+  
+  // Title / passage
+  console.log('  → Drawing title...');
+  ctx.font = 'bold 55px "Segoe UI", Arial, sans-serif';
+  let yPos = 420;
+  let titleLines = wrapText(ctx, titleText, 880);
+  for (const line of titleLines) {
+    ctx.fillText(line, 100, yPos);
+    yPos += 75;
+  }
+  
+  // Verse content
+  console.log('  → Drawing verse text...');
+  ctx.font = '46px "Segoe UI", Arial, sans-serif';
+  const contentLines = wrapText(ctx, cleanVerseText, 880);
+  yPos += 50;
+  for (const line of contentLines) {
+    ctx.fillText(line, 100, yPos);
+    yPos += 70;
+  }
+  
+  // Watermark
+  ctx.font = '34px "Segoe UI", Arial, sans-serif';
+  ctx.fillStyle = '#888888';
+  ctx.fillText('@sukalogika', 100, 1820);
+  
+  // Simpan ke file
+  console.log('\n💾 Step 3: Saving image');
+  const buffer = canvas.toBuffer('image/png');
+  
+  const date = getFormattedDate();
+  const dirPath = path.join(__dirname, '../vod-image', date.year, date.month);
+  const filename = `vod-${date.year}-${date.month}-${date.day}-${date.timestamp}.png`;
+  const filePath = path.join(dirPath, filename);
+  
+  // Buat folder kalo belum ada
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+    console.log(`  → Created directory: ${dirPath}`);
+  }
+  
+  // Tulis file
+  fs.writeFileSync(filePath, buffer);
+  
+  console.log('\n✅ SUCCESS!');
+  console.log(`📁 Location: ${filePath}`);
+  console.log(`📄 Filename: ${filename}`);
+  console.log(`🎨 Pattern: ${pattern.name}`);
+  console.log(`📅 Date: ${date.fullDate} ${date.hours}:${date.minutes}:${date.seconds}\n`);
+}
+
+// Eksekusi
+generateImage().catch(error => {
+  console.error('\n❌ ERROR:', error.message);
+  if (error.stack) {
+    console.error('Stack trace:', error.stack);
+  }
+  process.exit(1);
+});
