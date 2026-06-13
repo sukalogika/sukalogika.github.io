@@ -241,22 +241,25 @@ async function generateImage() {
   ctx.fillText('@sukalogika', 100, 1820);
   
   // Simpan ke file
-  console.log('\n💾 Step 3: Saving image');
-  const buffer = canvas.toBuffer('image/png');
-  
-  const date = getFormattedDate();
-  const dirPath = path.join(__dirname, '../vod-image', date.year, date.month);
-  const filename = `vod-${date.year}-${date.month}-${date.day}-${date.timestamp}.png`;
-  const filePath = path.join(dirPath, filename);
-  
-  // Buat folder kalo belum ada
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-    console.log(`  → Created directory: ${dirPath}`);
-  }
-  
-  // Tulis file
-  fs.writeFileSync(filePath, buffer);
+console.log('\n💾 Step 3: Saving image');
+const buffer = canvas.toBuffer('image/png');
+
+const date = getFormattedDate();
+// ✅ FIX: Konversi number ke string pake String() atau template literal
+const yearStr = String(date.year);
+const monthStr = String(date.month).padStart(2, '0'); // biar 01,02,dst
+const dirPath = path.join(__dirname, '../vod-image', yearStr, monthStr);
+const filename = `vod-${yearStr}-${monthStr}-${date.day}-${date.timestamp}.png`;
+const filePath = path.join(dirPath, filename);
+
+// Buat folder kalo belum ada
+if (!fs.existsSync(dirPath)) {
+  fs.mkdirSync(dirPath, { recursive: true });
+  console.log(`  → Created directory: ${dirPath}`);
+}
+
+// Tulis file
+fs.writeFileSync(filePath, buffer);
   
   console.log('\n✅ SUCCESS!');
   console.log(`📁 Location: ${filePath}`);
