@@ -11,32 +11,27 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-
       - name: Install canvas dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential
-
       - name: Install packages
         run: npm install canvas axios
-
       - name: Generate image
         run: node scripts/generate-quote.js
-
       - name: Push image
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --no-rebase || true
           git add vod-image/
-          git commit -m "📸 Daily image $(date '+%Y-%m-%d')" || echo "No changes to commit"
+          git commit -m "📸 Daily image $(date '+%Y-%m-%d')" || echo "No changes"
           git push
 
   generate-video:
@@ -45,34 +40,29 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
       - name: Install packages
         run: npm install axios fluent-ffmpeg
-
       - name: Create video
         run: node scripts/create-video.js
-
       - name: Push video
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --no-rebase || true
           git add videos/
-          git commit -m "🎬 Daily video $(date '+%Y-%m-%d')" || echo "No changes to commit"
+          git commit -m "🎬 Daily video $(date '+%Y-%m-%d')" || echo "No changes"
           git push
-
       - name: Upload video as artifact
         uses: actions/upload-artifact@v4
         with:
           name: daily-video-${{ github.run_id }}
           path: videos/*.mp4
+        if: always()
