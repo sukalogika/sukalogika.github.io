@@ -1,0 +1,285 @@
+name: 🧪 Test Per Step
+
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: 'Step mana yang mau ditest?'
+        required: true
+        type: choice
+        options:
+          - '1 - Generate Image'
+          - '2 - Compose Video'
+          - '3 - Upload Buffer (dry run)'
+          - '3 - Upload Buffer (REAL)'
+      duration:
+        description: 'Durasi video detik (untuk step 2)'
+        required: false
+        default: '15'
+
+env:
+  NODE_VERSION: '22'
+  VOD_DURATION: ${{ github.event.inputs.duration }}
+
+jobs:
+  # ══════════════════════════════════════════════════════════════════════════
+  # STEP 1: Generate Image saja
+  # ══════════════════════════════════════════════════════════════════════════
+  test-step-1:
+    name: 📸 Step 1 - Generate Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: startsWith(github.event.inputs.step, '1')
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install system deps (canvas)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            libcairo2-dev libjpeg-dev libpango1.0-dev \
+            libgif-dev librsvg2-dev build-essential pkg-config
+
+      - name: Install npm packages
+        run: npm install canvas axios
+
+      - name: 🎨 Generate gambar
+        run: node scripts/generate-quote.js
+
+      - name: ✅ Hasil
+        run: |
+          echo "── Output vod-image/ ──"
+          ls -lah vod-image/
+          echo ""
+          echo "── Metadata ──"
+          cat vod-image/latest-meta.json
+
+      # Upload artifact biar bisa didownload & lihat hasilnya
+      - name: 📦 Upload artifact (bisa didownload)
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-step1-image
+          path: vod-image/
+          retention-days: 3
+
+      - name: Commit gambar ke repo (opsional)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add vod-image/
+          git commit -m "🧪 [test] Step 1 image $(date '+%Y-%m-%d %H:%M')" || echo "No changes"
+          git push
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STEP 2: Compose Video saja
+  # (ambil gambar dari repo yg sudah ada, tidak re-generate)
+  # ══════════════════════════════════════════════════════════════════════════
+  test-step-2:
+    name: 🎬 Step 2 - Compose Video
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: startsWith(github.event.inputs.step, '2')
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install npm packages
+        run: npm install axios
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          ffmpeg -version | head -1
+
+      - name: Cek gambar tersedia
+        run: |
+          if [ ! -f vod-image/latest.png ]; then
+            echo "❌ vod-image/latest.png tidak ada!"
+            echo "Jalankan Step 1 dulu, atau push gambar manual ke vod-image/"
+            exit 1
+          fi
+          echo "✅ Gambar ditemukan: $(du -sh vod-image/latest.png | cut -f1)"
+
+      - name: Cek & buat aset dummy jika belum ada
+        run: |
+          mkdir -p assets/background assets/effect assets/music
+
+          if ! ls assets/background/*.mp4 &>/dev/null; then
+            echo "⚠️  Tidak ada background video. Membuat dummy..."
+            ffmpeg -y -f lavfi \
+              -i "gradients=s=1080x1920:c0=0x1a1a2e:c1=0x16213e:x0=0:x1=0:y0=0:y1=1920" \
+              -t ${{ env.VOD_DURATION }} -c:v libx264 -pix_fmt yuv420p \
+              assets/background/dummy_bg.mp4
+          fi
+
+          if ! ls assets/effect/*.mp4 &>/dev/null; then
+            echo "⚠️  Tidak ada effect video. Membuat dummy..."
+            ffmpeg -y -f lavfi \
+              -i "color=c=black:size=1080x1920:rate=30" \
+              -t ${{ env.VOD_DURATION }} -c:v libx264 -pix_fmt yuv420p \
+              assets/effect/dummy_effect.mp4
+          fi
+
+          if ! ls assets/music/*.mp3 &>/dev/null; then
+            echo "⚠️  Tidak ada musik. Membuat dummy sine wave..."
+            ffmpeg -y -f lavfi \
+              -i "sine=frequency=220:duration=${{ env.VOD_DURATION }}" \
+              -c:a libmp3lame assets/music/dummy_music.mp3
+          fi
+
+          echo "── Aset siap ──"
+          ls assets/background/ assets/effect/ assets/music/
+
+      - name: 🎬 Compose video
+        env:
+          VOD_DURATION: ${{ env.VOD_DURATION }}
+        run: node scripts/compose-video.js
+
+      - name: ✅ Hasil
+        run: |
+          echo "── Output vod-video/ ──"
+          ls -lah vod-video/
+          echo ""
+          DURATION=$(ffprobe -v error -show_entries format=duration \
+            -of default=noprint_wrappers=1:nokey=1 vod-video/latest.mp4)
+          echo "Durasi video: ${DURATION}s"
+          echo ""
+          cat vod-video/latest-meta.json
+
+      - name: 📦 Upload artifact (bisa didownload & preview)
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-step2-video
+          path: vod-video/
+          retention-days: 3
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STEP 3: Upload Buffer — DRY RUN (tidak beneran upload)
+  # ══════════════════════════════════════════════════════════════════════════
+  test-step-3-dry:
+    name: 🧪 Step 3 - Upload Buffer (DRY RUN)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event.inputs.step == '3 - Upload Buffer (dry run)'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install npm packages
+        run: npm install axios form-data
+
+      - name: Cek video tersedia
+        run: |
+          if [ ! -f vod-video/latest.mp4 ]; then
+            echo "❌ vod-video/latest.mp4 tidak ada. Jalankan Step 2 dulu."
+            exit 1
+          fi
+          echo "✅ Video: $(du -sh vod-video/latest.mp4 | cut -f1)"
+
+      - name: 🔍 DRY RUN - Cek koneksi Buffer & tampilkan profil
+        env:
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+        run: |
+          node -e "
+          const axios = require('axios');
+          const token = process.env.BUFFER_ACCESS_TOKEN;
+
+          if (!token) {
+            console.log('❌ BUFFER_ACCESS_TOKEN belum di-set di Secrets!');
+            console.log('   Pergi ke: Settings → Secrets → New secret');
+            process.exit(1);
+          }
+
+          console.log('✅ Token ditemukan (', token.slice(0,8) + '...' + token.slice(-4), ')');
+          console.log('📡 Mengambil daftar profil Buffer...\n');
+
+          axios.get('https://api.bufferapp.com/1/profiles.json', {
+            params: { access_token: token }
+          }).then(res => {
+            const profiles = res.data;
+            console.log('Profil yang terhubung ke akun Buffer Anda:\n');
+            profiles.forEach((p, i) => {
+              console.log(\`[\${i+1}] ID       : \${p.id}\`);
+              console.log(\`    Platform : \${p.service}\`);
+              console.log(\`    Username : \${p.service_username}\`);
+              console.log(\`    Timezone : \${p.timezone}\`);
+              console.log('');
+            });
+            console.log('─────────────────────────────────────────');
+            console.log('Copy salah satu ID di atas ke Secret: BUFFER_PROFILE_IDS');
+            console.log('Pisah koma jika lebih dari satu, contoh: abc123,def456');
+          }).catch(err => {
+            const msg = err.response?.data?.message || err.message;
+            console.error('❌ Gagal koneksi ke Buffer:', msg);
+            process.exit(1);
+          });
+          "
+
+      - name: 📋 Preview apa yang akan dipost
+        run: |
+          echo "── Video yang akan diupload ──"
+          ls -lah vod-video/latest.mp4
+          echo ""
+          echo "── Metadata ──"
+          cat vod-video/latest-meta.json || echo "(tidak ada meta)"
+          echo ""
+          echo "── Caption yang akan digunakan ──"
+          node -e "
+          const fs = require('fs');
+          let meta = {};
+          try { meta = JSON.parse(fs.readFileSync('vod-video/latest-meta.json')); } catch {}
+          const today = new Date().toISOString().slice(0,10);
+          const caption = \`✨ Ayat Hari Ini ✨\n\n\${meta.passage||'Alkitab'}\n\n#alkitab #firmanTuhan #sukalogika\`;
+          console.log(caption);
+          "
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STEP 3: Upload Buffer — REAL (beneran upload)
+  # ══════════════════════════════════════════════════════════════════════════
+  test-step-3-real:
+    name: 🚀 Step 3 - Upload Buffer (REAL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.inputs.step == '3 - Upload Buffer (REAL)'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install npm packages
+        run: npm install axios form-data
+
+      - name: Cek video tersedia
+        run: |
+          if [ ! -f vod-video/latest.mp4 ]; then
+            echo "❌ vod-video/latest.mp4 tidak ada. Jalankan Step 2 dulu."
+            exit 1
+          fi
+          echo "✅ Video siap: $(du -sh vod-video/latest.mp4 | cut -f1)"
+
+      - name: 📤 Upload ke Buffer (BENERAN)
+        env:
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          BUFFER_PROFILE_IDS:  ${{ secrets.BUFFER_PROFILE_IDS }}
+        run: node scripts/upload-buffer.js
