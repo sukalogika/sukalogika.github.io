@@ -1,10 +1,8 @@
-// scripts/create-video-direct.js
+// scripts/create-video-direct.js (dengan debug)
 const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 
-// Utility: Ambil tanggal sekarang
 function getDateInfo() {
   const now = new Date();
   const year = now.getFullYear();
@@ -13,37 +11,19 @@ function getDateInfo() {
   return { year, month, day };
 }
 
-// Utility: Path gambar
 function getImagePath() {
   const { year, month, day } = getDateInfo();
   return path.join(__dirname, '..', 'vod-image', String(year), month, `vod-${day}.png`);
 }
 
-// Pilih background berdasarkan hari
-function getBackgroundByDay() {
-  const today = new Date().getDay();
-  const bgMap = {
-    0: 'sunday-worship.mp4',
-    1: 'monday-nature.mp4',
-    2: 'tuesday-ocean.mp4',
-    3: 'wednesday-mountain.mp4',
-    4: 'thursday-forest.mp4',
-    5: 'friday-sunset.mp4',
-    6: 'saturday-clouds.mp4'
-  };
-  
-  const bgFile = bgMap[today];
-  const bgPath = path.join(__dirname, '..', 'assets', 'backgrounds', bgFile);
-  
-  if (!fs.existsSync(bgPath)) {
-    const bgDir = path.join(__dirname, '..', 'assets', 'backgrounds');
-    const bgFiles = fs.readdirSync(bgDir).filter(f => f.endsWith('.mp4'));
-    return path.join(bgDir, bgFiles[0]);
-  }
-  return bgPath;
+function getBackground() {
+  const bgDir = path.join(__dirname, '..', 'assets', 'backgrounds');
+  if (!fs.existsSync(bgDir)) return null;
+  const bgFiles = fs.readdirSync(bgDir).filter(f => f.endsWith('.mp4'));
+  if (bgFiles.length === 0) return null;
+  return path.join(bgDir, bgFiles[0]);
 }
 
-// Pilih musik
 function getMusic() {
   const musicDir = path.join(__dirname, '..', 'assets', 'music');
   if (!fs.existsSync(musicDir)) return null;
@@ -53,38 +33,49 @@ function getMusic() {
 }
 
 async function createVideoDirect() {
-  console.log('\n🎬 START: GAMBAR → VIDEO + BACKGROUND (MUTE) + MUSIK\n');
+  console.log('\n🎬 START CREATING VIDEO...\n');
   
+  // 1. Cek gambar
   const imagePath = getImagePath();
+  console.log(`📷 Cek gambar: ${imagePath}`);
   if (!fs.existsSync(imagePath)) {
-    console.error(`❌ Gambar tidak ditemukan: ${imagePath}`);
+    console.error(`❌ Gambar tidak ditemukan!`);
     process.exit(1);
   }
-  console.log(`🖼️  Gambar: ${path.basename(imagePath)}`);
+  console.log(`✅ Gambar OK: ${path.basename(imagePath)}`);
   
-  const bgVideo = getBackgroundByDay();
-  console.log(`🎨 Background: ${path.basename(bgVideo)} (MUTE - suara dimatikan)`);
+  // 2. Cek background
+  const bgVideo = getBackground();
+  if (!bgVideo) {
+    console.error(`❌ Background tidak ditemukan!`);
+    process.exit(1);
+  }
+  console.log(`✅ Background OK: ${path.basename(bgVideo)}`);
   
+  // 3. Cek musik (opsional)
   const musicFile = getMusic();
   if (musicFile) {
-    console.log(`🎵 Musik: ${path.basename(musicFile)}`);
+    console.log(`✅ Musik OK: ${path.basename(musicFile)}`);
   } else {
-    console.log(`🎵 Musik: Tidak ada (video tanpa suara)`);
+    console.log(`⚠️ Musik tidak ditemukan, video tanpa suara`);
   }
   
+  // 4. Siapkan output
   const { year, month, day } = getDateInfo();
   const outputDir = path.join(__dirname, '..', 'videos');
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
+    console.log(`📁 Folder videos dibuat`);
   }
   const outputPath = path.join(outputDir, `daily-verse-${year}-${month}-${day}.mp4`);
+  console.log(`📁 Output: ${outputPath}`);
   
-  console.log('\n🎥 Rendering video...');
+  console.log('\n🎥 Memulai rendering...');
   
   return new Promise((resolve, reject) => {
     let command = ffmpeg();
     
-    // 🔥 INPUT BACKGROUND: MUTE (suara dimatikan)
+    // Input background (mute)
     command = command.input(bgVideo).inputOptions(['-stream_loop', '-1', '-an']);
     
     // Input gambar
@@ -110,24 +101,48 @@ async function createVideoDirect() {
         '-c:v libx264',
         '-preset fast',
         '-crf 23',
-        '-pix_fmt yuv420p',
-        '-c:a aac'
+        '-pix_fmt yuv420p'
       ]);
     
     if (musicFile) {
-      command = command.outputOptions(['-shortest']);
+      command = command.outputOptions(['-c:a aac', '-shortest']);
+    } else {
+      command = command.outputOptions(['-an']); // no audio
     }
     
     command
-      .on('start', () => console.log('   Processing...'))
-      .on('progress', (p) => { if (p.percent) process.stdout.write(`   Progress: ${Math.floor(p.percent)}%\r`); })
-      .on('end', () => {
-        console.log('\n   ✅ Video selesai! (Background MUTE, Musik tetap jalan)');
-        resolve(outputPath);
+      .on('start', (cmd) => {
+        console.log(`🔧 Command: ${cmd.substring(0, 200)}...`);
       })
-      .on('error', reject)
+      .on('progress', (progress) => {
+        if (progress.percent) {
+          process.stdout.write(`   Progress: ${Math.floor(progress.percent)}%\r`);
+        }
+      })
+      .on('end', () => {
+        console.log('\n   ✅ Video selesai!');
+        
+        // Cek apakah file beneran ada
+        if (fs.existsSync(outputPath)) {
+          const stats = fs.statSync(outputPath);
+          const fileSizeMB = stats.size / (1024 * 1024);
+          console.log(`   📦 Ukuran file: ${fileSizeMB.toFixed(2)} MB`);
+          console.log(`   📁 Lokasi: ${outputPath}`);
+          resolve(outputPath);
+        } else {
+          console.error(`   ❌ File video tidak ditemukan setelah render!`);
+          reject(new Error('Video file not found'));
+        }
+      })
+      .on('error', (err) => {
+        console.error('\n   ❌ FFmpeg Error:', err.message);
+        reject(err);
+      })
       .run();
   });
 }
 
-createVideoDirect().catch(console.error);
+createVideoDirect().catch(error => {
+  console.error('\n❌ GAGAL:', error.message);
+  process.exit(1);
+});
