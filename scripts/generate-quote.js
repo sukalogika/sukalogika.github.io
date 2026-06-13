@@ -240,33 +240,36 @@ async function generateImage() {
   ctx.fillStyle = '#888888';
   ctx.fillText('@sukalogika', 100, 1820);
   
-  // Simpan ke file
+// Step 3: Saving image
 console.log('\n💾 Step 3: Saving image');
 const buffer = canvas.toBuffer('image/png');
 
 const date = getFormattedDate();
-// ✅ FIX: Konversi number ke string pake String() atau template literal
 const yearStr = String(date.year);
-const monthStr = String(date.month).padStart(2, '0'); // biar 01,02,dst
-const dirPath = path.join(__dirname, '../vod-image', yearStr, monthStr);
-const filename = `vod-${yearStr}-${monthStr}-${date.day}-${date.timestamp}.png`;
-const filePath = path.join(dirPath, filename);
+const monthStr = String(date.month).padStart(2, '0');
+const dayStr = String(date.day).padStart(2, '0');
 
-// Buat folder kalo belum ada
+// Folder: vod-image/2026/06/
+const dirPath = path.join(__dirname, '../vod-image', yearStr, monthStr);
+
+// Buat folder kalau belum ada
 if (!fs.existsSync(dirPath)) {
   fs.mkdirSync(dirPath, { recursive: true });
   console.log(`  → Created directory: ${dirPath}`);
 }
 
-// Tulis file
+// Nama file berdasarkan TANGGAL (bukan nomor urut)
+const filename = `vod-${dayStr}.png`;  // vod-13.png, vod-14.png, dst
+const filePath = path.join(dirPath, filename);
+
+// Kalau sudah ada, bakal KETIMPA (tapi karena lo run sekali sehari, gak masalah)
 fs.writeFileSync(filePath, buffer);
-  
-  console.log('\n✅ SUCCESS!');
-  console.log(`📁 Location: ${filePath}`);
-  console.log(`📄 Filename: ${filename}`);
-  console.log(`🎨 Pattern: ${pattern.name}`);
-  console.log(`📅 Date: ${date.fullDate} ${date.hours}:${date.minutes}:${date.seconds}\n`);
-}
+
+console.log('\n✅ SUCCESS!');
+console.log(`📁 Location: ${dirPath}`);
+console.log(`📄 Filename: ${filename}`);
+console.log(`🎨 Pattern: ${pattern.name}`);
+console.log(`📅 Date: ${date.fullDate} ${date.hours}:${date.minutes}:${date.seconds}\n`);
 
 // Eksekusi
 generateImage().catch(error => {
