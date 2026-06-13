@@ -2,7 +2,7 @@ name: Generate Alkitab Quote Image
 
 on:
   schedule:
-    - cron: '0 11 * * *'   # Setiap hari jam 11:00 WIB/UTC (sesuaikan zona)
+    - cron: '0 0 * * *'   # UTC . jadijam 7 wib
   workflow_dispatch:         # Tetap bisa di-run manual kapan aja
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install system dependencies for canvas
         run: |
