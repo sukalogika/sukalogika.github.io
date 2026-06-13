@@ -240,38 +240,38 @@ async function generateImage() {
   ctx.fillStyle = '#888888';
   ctx.fillText('@sukalogika', 100, 1820);
   
-// Step 3: Saving image
-console.log('\n💾 Step 3: Saving image');
-const buffer = canvas.toBuffer('image/png');
+  // Step 3: Saving image
+  console.log('\n💾 Step 3: Saving image');
+  const buffer = canvas.toBuffer('image/png');
 
-const date = getFormattedDate();
-const yearStr = String(date.year);
-const monthStr = String(date.month).padStart(2, '0');
-const dayStr = String(date.day).padStart(2, '0');
+  const date = getFormattedDate();
+  const yearStr = String(date.year);
+  const monthStr = String(date.month).padStart(2, '0');
+  const dayStr = String(date.day).padStart(2, '0');
 
-// Folder: vod-image/2026/06/
-const dirPath = path.join(__dirname, '../vod-image', yearStr, monthStr);
+  // Folder: vod-image/2026/06/
+  const dirPath = path.join(__dirname, '../vod-image', yearStr, monthStr);
 
-// Buat folder kalau belum ada
-if (!fs.existsSync(dirPath)) {
-  fs.mkdirSync(dirPath, { recursive: true });
-  console.log(`  → Created directory: ${dirPath}`);
+  // Buat folder kalau belum ada
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+    console.log(`  → Created directory: ${dirPath}`);
+  }
+
+  // Nama file berdasarkan TANGGAL
+  const filename = `vod-${dayStr}.png`;
+  const filePath = path.join(dirPath, filename);
+
+  fs.writeFileSync(filePath, buffer);
+
+  console.log('\n✅ SUCCESS!');
+  console.log(`📁 Location: ${dirPath}`);
+  console.log(`📄 Filename: ${filename}`);
+  console.log(`🎨 Pattern: ${pattern.name}`);
+  console.log(`📅 Date: ${date.fullDate} ${date.hours}:${date.minutes}:${date.seconds}\n`);
 }
 
-// Nama file berdasarkan TANGGAL (bukan nomor urut)
-const filename = `vod-${dayStr}.png`;  // vod-13.png, vod-14.png, dst
-const filePath = path.join(dirPath, filename);
-
-// Kalau sudah ada, bakal KETIMPA (tapi karena lo run sekali sehari, gak masalah)
-fs.writeFileSync(filePath, buffer);
-
-console.log('\n✅ SUCCESS!');
-console.log(`📁 Location: ${dirPath}`);
-console.log(`📄 Filename: ${filename}`);
-console.log(`🎨 Pattern: ${pattern.name}`);
-console.log(`📅 Date: ${date.fullDate} ${date.hours}:${date.minutes}:${date.seconds}\n`);
-
-// Eksekusi
+// ⚠️ EKSEKUSI CUKUP SEKALI DI LUAR FUNGSI:
 generateImage().catch(error => {
   console.error('\n❌ ERROR:', error.message);
   if (error.stack) {
