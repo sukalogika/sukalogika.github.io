@@ -1,4 +1,4 @@
-// scripts/create-video-direct.js (dengan background berdasarkan hari)
+// scripts/create-video-direct.js
 const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
@@ -13,57 +13,48 @@ function getDateInfo() {
   return { year, month, day };
 }
 
-// Utility: Path gambar yang udah digenerate
+// Utility: Path gambar
 function getImagePath() {
   const { year, month, day } = getDateInfo();
   return path.join(__dirname, '..', 'vod-image', String(year), month, `vod-${day}.png`);
 }
 
-// 🔥 Pilih background berdasarkan HARI (0=Minggu, 1=Senin, ..., 6=Sabtu)
+// Pilih background berdasarkan hari
 function getBackgroundByDay() {
   const today = new Date().getDay();
-  
-  // Nama file background yang sesuai (lo sesuaikan dengan file lo)
   const bgMap = {
-    0: 'sunday-worship.mp4',     // Minggu
-    1: 'monday-nature.mp4',      // Senin
-    2: 'tuesday-ocean.mp4',      // Selasa
-    3: 'wednesday-mountain.mp4',  // Rabu
-    4: 'thursday-forest.mp4',    // Kamis
-    5: 'friday-sunset.mp4',      // Jumat
-    6: 'saturday-clouds.mp4'     // Sabtu
+    0: 'sunday-worship.mp4',
+    1: 'monday-nature.mp4',
+    2: 'tuesday-ocean.mp4',
+    3: 'wednesday-mountain.mp4',
+    4: 'thursday-forest.mp4',
+    5: 'friday-sunset.mp4',
+    6: 'saturday-clouds.mp4'
   };
   
   const bgFile = bgMap[today];
   const bgPath = path.join(__dirname, '..', 'assets', 'backgrounds', bgFile);
   
-  // Kalau file gak ada, fallback ke file background pertama yang ditemukan
   if (!fs.existsSync(bgPath)) {
-    console.warn(`⚠️  Background untuk hari ini (${bgFile}) tidak ditemukan, cari random...`);
     const bgDir = path.join(__dirname, '..', 'assets', 'backgrounds');
     const bgFiles = fs.readdirSync(bgDir).filter(f => f.endsWith('.mp4'));
     return path.join(bgDir, bgFiles[0]);
   }
-  
   return bgPath;
 }
 
-// Pilih musik (bisa random atau tetap)
+// Pilih musik
 function getMusic() {
   const musicDir = path.join(__dirname, '..', 'assets', 'music');
   if (!fs.existsSync(musicDir)) return null;
-  
   const musicFiles = fs.readdirSync(musicDir).filter(f => f.endsWith('.mp3'));
   if (musicFiles.length === 0) return null;
-  
-  // Pake yang pertama aja (atau bisa random)
   return path.join(musicDir, musicFiles[0]);
 }
 
 async function createVideoDirect() {
-  console.log('\n🎬 START: GAMBAR → VIDEO + BACKGROUND + MUSIK\n');
+  console.log('\n🎬 START: GAMBAR → VIDEO + BACKGROUND (MUTE) + MUSIK\n');
   
-  // 1. Cek gambar
   const imagePath = getImagePath();
   if (!fs.existsSync(imagePath)) {
     console.error(`❌ Gambar tidak ditemukan: ${imagePath}`);
@@ -71,11 +62,9 @@ async function createVideoDirect() {
   }
   console.log(`🖼️  Gambar: ${path.basename(imagePath)}`);
   
-  // 2. Pilih background berdasarkan HARI
   const bgVideo = getBackgroundByDay();
-  console.log(`🎨 Background: ${path.basename(bgVideo)} (${['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][new Date().getDay()]})`);
+  console.log(`🎨 Background: ${path.basename(bgVideo)} (MUTE - suara dimatikan)`);
   
-  // 3. Pilih musik
   const musicFile = getMusic();
   if (musicFile) {
     console.log(`🎵 Musik: ${path.basename(musicFile)}`);
@@ -83,7 +72,6 @@ async function createVideoDirect() {
     console.log(`🎵 Musik: Tidak ada (video tanpa suara)`);
   }
   
-  // 4. Output
   const { year, month, day } = getDateInfo();
   const outputDir = path.join(__dirname, '..', 'videos');
   if (!fs.existsSync(outputDir)) {
@@ -96,18 +84,18 @@ async function createVideoDirect() {
   return new Promise((resolve, reject) => {
     let command = ffmpeg();
     
-    // Background (dengan loop)
-    command = command.input(bgVideo).inputOptions(['-stream_loop', '-1']);
+    // 🔥 INPUT BACKGROUND: MUTE (suara dimatikan)
+    command = command.input(bgVideo).inputOptions(['-stream_loop', '-1', '-an']);
     
-    // Gambar
+    // Input gambar
     command = command.input(imagePath);
     
-    // Musik
+    // Input musik (opsional)
     if (musicFile) {
       command = command.input(musicFile);
     }
     
-    // Filter
+    // Filter complex
     const filters = [
       '[0:v]scale=1080:1920:force_original_aspect_ratio=1,pad=1080:1920:(ow-iw)/2:(oh-ih)/2[bg]',
       '[1:v]scale=864:-1:force_original_aspect_ratio=1[img]',
@@ -134,7 +122,7 @@ async function createVideoDirect() {
       .on('start', () => console.log('   Processing...'))
       .on('progress', (p) => { if (p.percent) process.stdout.write(`   Progress: ${Math.floor(p.percent)}%\r`); })
       .on('end', () => {
-        console.log('\n   ✅ Video selesai!');
+        console.log('\n   ✅ Video selesai! (Background MUTE, Musik tetap jalan)');
         resolve(outputPath);
       })
       .on('error', reject)
