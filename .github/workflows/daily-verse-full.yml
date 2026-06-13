@@ -1,0 +1,88 @@
+name: Daily Verse Full Pipeline
+
+on:
+  schedule:
+    - cron: '0 23 * * *'   # 23:00 UTC = 06:00 WIB (biar siap sebelum jam 7)
+  workflow_dispatch:         # Bisa di-run manual kapan aja
+
+jobs:
+  # ============================================================
+  # JOB 1: Generate Image (dengan desain keren)
+  # ============================================================
+  generate-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install system dependencies for canvas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libcairo2-dev \
+            libjpeg-dev \
+            libpango1.0-dev \
+            libgif-dev \
+            build-essential
+
+      - name: Install npm packages
+        run: npm install canvas axios
+
+      - name: Generate quote image
+        run: node scripts/generate-quote.js
+
+      - name: Commit and push image
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add vod-image/
+          git diff --quiet && git diff --staged --quiet || git commit -m "📸 Generate image $(date '+%Y-%m-%d')"
+          git push
+
+  # ============================================================
+  # JOB 2: Create Video (gambar + background + musik)
+  # WAJIB TUNGGU JOB 1 SELESAI (needs: generate-image)
+  # ============================================================
+  create-video:
+    needs: generate-image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install npm packages
+        run: npm install axios fluent-ffmpeg
+
+      - name: Create video from image
+        run: node scripts/create-video-direct.js
+
+      - name: Commit and push video
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add videos/
+          git diff --quiet && git diff --staged --quiet || git commit -m "🎬 Generate video $(date '+%Y-%m-%d')"
+          git push
