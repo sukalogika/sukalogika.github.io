@@ -117,12 +117,26 @@ async function getVideoUrl(videoPath) {
   );
 }
 
+// ─── Ambil info channel (untuk tahu platformnya) ─────────────────────────────
+async function getChannelInfo(channelId, orgId) {
+  const res = await axios.post('https://api.buffer.com', {
+    query: `query { channels(input: { organizationId: "${orgId}" }) { id service displayName } }`
+  }, {
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` }
+  });
+  const channels = res.data.data?.channels || [];
+  return channels.find(c => c.id === channelId);
+}
+
 // ─── Post ke Buffer ───────────────────────────────────────────────────────────
-// Pakai inline query tanpa variables (persis seperti dokumentasi Buffer)
-async function createPost(channelId, videoUrl, caption) {
-  // Escape teks caption untuk inline GraphQL
-  const safeText = caption.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
-  const safeUrl  = videoUrl.trim();
+async function createPost(channelId, videoUrl, caption, platform) {
+  const safeText  = caption.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+  const safeUrl   = videoUrl.trim();
+
+  // YouTube butuh title + category — platform lain tidak
+  const isYouTube = platform === 'youtube';
+  const titleLine = isYouTube ? `title: "${safeText.split('\\n')[0]}"` : '';
+  const catLine   = isYouTube ? `youtubeOptions: { category: "22" }` : '';  // 22 = People & Blogs
 
   const query = `
     mutation CreatePost {
@@ -132,15 +146,13 @@ async function createPost(channelId, videoUrl, caption) {
           channelId: "${channelId}"
           schedulingType: automatic
           mode: addToQueue
+          ${titleLine}
+          ${catLine}
           assets: [{ video: { url: "${safeUrl}" } }]
         }
       ) {
         ... on PostActionSuccess {
-          post {
-            id
-            text
-            assets { source }
-          }
+          post { id text assets { source } }
         }
         ... on MutationError {
           message
@@ -153,8 +165,6 @@ async function createPost(channelId, videoUrl, caption) {
     { query },
     { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` }, timeout: 30000 }
   );
-
-  console.log('Raw response:', JSON.stringify(res.data, null, 2));
 
   if (res.data.errors) throw new Error(res.data.errors.map(e => e.message).join(', '));
 
@@ -186,15 +196,27 @@ async function main() {
 
   const videoUrl = await getVideoUrl(VIDEO_PATH);
 
+  // Ambil orgId untuk lookup platform per channel
+  const accData = await gql(`query { account { organizations { id name } } }`);
+  const orgId   = accData.account.organizations[0]?.id;
+
   const results = [];
   for (const channelId of CHANNEL_IDS) {
-    console.log(`\n📨 Posting ke channel: ${channelId}`);
+    // Deteksi platform channel
+    let platform = 'unknown';
+    let displayName = channelId;
     try {
-      const post = await createPost(channelId, videoUrl, caption);
-      console.log(`✅ Sukses! Post ID: ${post.id}, status: ${post.status}`);
+      const info = await getChannelInfo(channelId, orgId);
+      platform    = info?.service?.toLowerCase() || 'unknown';
+      displayName = info?.displayName || channelId;
+    } catch {}
+    console.log(`\n📨 Posting ke: ${displayName} (${platform}) — ${channelId}`);
+
+    try {
+      const post = await createPost(channelId, videoUrl, caption, platform);
+      console.log(`✅ Sukses! Post ID: ${post.id}`);
       results.push({ channelId, success: true });
     } catch (err) {
-      // Tampilkan detail error dari response Buffer jika ada
       const detail = err.response?.data ? JSON.stringify(err.response.data, null, 2) : '';
       console.error(`❌ Gagal: ${err.message}`);
       if (detail) console.error(`   Detail: ${detail}`);
