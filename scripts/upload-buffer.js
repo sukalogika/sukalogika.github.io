@@ -51,31 +51,70 @@ async function getOrganizationId() {
   return orgs[0].id;
 }
 
-// ─── Upload video ke hosting sementara (0x0.st) ───────────────────────────────
-async function getVideoUrl(videoPath) {
-  if (process.env.BUFFER_VIDEO_URL) {
-    console.log('📎 Pakai BUFFER_VIDEO_URL dari env: ' + process.env.BUFFER_VIDEO_URL);
-    return process.env.BUFFER_VIDEO_URL;
-  }
-
-  console.log('📤 Upload video ke 0x0.st (hosting sementara, gratis)...');
+// ─── Upload video ke hosting sementara ───────────────────────────────────────
+// Coba beberapa host secara berurutan (fallback jika satu down)
+async function uploadTo0x0(videoPath) {
   const form = new FormData();
   form.append('file', fs.createReadStream(videoPath), {
     filename: path.basename(videoPath),
     contentType: 'video/mp4',
   });
-
   const res = await axios.post('https://0x0.st', form, {
     headers: form.getHeaders(),
-    maxContentLength: Infinity,
-    maxBodyLength: Infinity,
-    timeout: 120000,
+    maxContentLength: Infinity, maxBodyLength: Infinity, timeout: 120000,
   });
-
   const url = res.data.trim();
-  if (!url.startsWith('http')) throw new Error('Upload ke 0x0.st gagal: ' + url);
-  console.log('✅ Video URL: ' + url);
+  if (!url.startsWith('http')) throw new Error('Respons tidak valid: ' + url);
   return url;
+}
+
+async function uploadToTmpFiles(videoPath) {
+  const form = new FormData();
+  form.append('file', fs.createReadStream(videoPath), {
+    filename: path.basename(videoPath),
+    contentType: 'video/mp4',
+  });
+  const res = await axios.post('https://tmpfiles.org/api/v1/upload', form, {
+    headers: form.getHeaders(),
+    maxContentLength: Infinity, maxBodyLength: Infinity, timeout: 120000,
+  });
+  // tmpfiles.org returns { data: { url: "https://tmpfiles.org/..." } }
+  const pageUrl = res.data?.data?.url;
+  if (!pageUrl) throw new Error('Respons tmpfiles tidak valid');
+  // Convert page URL ke direct download URL
+  // https://tmpfiles.org/1234/file.mp4 -> https://tmpfiles.org/dl/1234/file.mp4
+  const url = pageUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+  return url;
+}
+
+async function getVideoUrl(videoPath) {
+  // Prioritas: env var > coba upload ke beberapa host
+  if (process.env.BUFFER_VIDEO_URL) {
+    console.log('📎 Pakai BUFFER_VIDEO_URL dari env: ' + process.env.BUFFER_VIDEO_URL);
+    return process.env.BUFFER_VIDEO_URL;
+  }
+
+  const hosts = [
+    { name: '0x0.st',       fn: () => uploadTo0x0(videoPath) },
+    { name: 'tmpfiles.org', fn: () => uploadToTmpFiles(videoPath) },
+  ];
+
+  for (const host of hosts) {
+    try {
+      console.log(`📤 Upload video ke ${host.name}...`);
+      const url = await host.fn();
+      console.log(`✅ Video URL: ${url}`);
+      return url;
+    } catch (err) {
+      console.warn(`⚠️  ${host.name} gagal: ${err.message} — coba host berikutnya...`);
+    }
+  }
+
+  throw new Error(
+    'Semua hosting sementara gagal.\n' +
+    'Solusi: upload video ke tempat lain (Google Drive, S3, Cloudinary, dll)\n' +
+    'lalu set env var BUFFER_VIDEO_URL=https://... di workflow.'
+  );
 }
 
 // ─── Post ke Buffer ───────────────────────────────────────────────────────────
