@@ -219,7 +219,7 @@ jobs:
           fi
           echo "✅ Video ditemukan: $(du -sh vod-video/latest.mp4 | cut -f1)"
 
-      - name: 🔍 Cek token & tampilkan daftar profil Buffer
+      - name: 🔍 Cek token & tampilkan daftar channel Buffer (GraphQL)
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
         run: |
@@ -234,32 +234,42 @@ jobs:
           }
 
           console.log('✅ Token ditemukan (' + token.slice(0,8) + '...' + token.slice(-4) + ')');
-          console.log('📡 Mengambil daftar profil Buffer...\n');
+          console.log('📡 Mengambil daftar channel via GraphQL API...\n');
 
-          axios.get('https://api.bufferapp.com/1/profiles.json', {
-            params: { access_token: token }
+          axios.post('https://api.buffer.com', {
+            query: \`query { channels { id name service serviceId timezone } }\`
+          }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token,
+            }
           }).then(res => {
-            const profiles = res.data;
-            if (!profiles.length) {
-              console.log('⚠️  Tidak ada profil terhubung ke akun Buffer ini.');
+            if (res.data.errors) {
+              console.error('❌ GraphQL error:', res.data.errors.map(e=>e.message).join(', '));
+              process.exit(1);
+            }
+            const channels = res.data.data.channels || [];
+            if (!channels.length) {
+              console.log('⚠️  Tidak ada channel terhubung ke akun Buffer ini.');
               return;
             }
-            console.log('Profil yang terhubung:\n');
-            profiles.forEach((p, i) => {
-              console.log('[' + (i+1) + '] ID       : ' + p.id);
-              console.log('    Platform : ' + p.service);
-              console.log('    Username : ' + p.service_username);
-              console.log('    Timezone : ' + p.timezone);
+            console.log('Channel yang terhubung:\n');
+            channels.forEach((c, i) => {
+              console.log('[' + (i+1) + '] ID       : ' + c.id);
+              console.log('    Nama     : ' + c.name);
+              console.log('    Platform : ' + c.service);
+              console.log('    Timezone : ' + c.timezone);
               console.log('');
             });
             console.log('─────────────────────────────────────────────────');
-            console.log('Copy ID di atas ke Secret: BUFFER_PROFILE_IDS');
+            console.log('Copy ID di atas ke Secret: BUFFER_CHANNEL_IDS');
             console.log('Pisah koma jika lebih dari satu: abc123,def456');
           }).catch(err => {
-            const msg = err.response?.data?.message || err.message;
-            console.error('❌ Gagal koneksi ke Buffer:', msg);
+            const msg = err.response?.data || err.message;
+            console.error('❌ Gagal koneksi ke Buffer:', JSON.stringify(msg));
             if (err.response?.status === 401) {
               console.error('   → Token tidak valid atau sudah expired.');
+              console.error('   → Buat token baru di: https://buffer.com/developers/apps');
             }
             process.exit(1);
           });
@@ -322,7 +332,7 @@ jobs:
       - name: 📤 Upload ke Buffer
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
-          BUFFER_PROFILE_IDS:  ${{ secrets.BUFFER_PROFILE_IDS }}
+          BUFFER_CHANNEL_IDS:  ${{ secrets.BUFFER_CHANNEL_IDS }}
         run: node scripts/upload-buffer.js
 
       - name: 🎉 Summary
