@@ -118,31 +118,49 @@ async function getVideoUrl(videoPath) {
 }
 
 // ─── Post ke Buffer ───────────────────────────────────────────────────────────
+// Pakai inline query tanpa variables (persis seperti dokumentasi Buffer)
 async function createPost(channelId, videoUrl, caption) {
-  const data = await gql(`
-    mutation CreatePost($input: CreatePostInput!) {
-      createPost(input: $input) {
+  // Escape teks caption untuk inline GraphQL
+  const safeText = caption.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+  const safeUrl  = videoUrl.trim();
+
+  const query = `
+    mutation CreatePost {
+      createPost(
+        input: {
+          text: "${safeText}"
+          channelId: "${channelId}"
+          schedulingType: automatic
+          mode: addToQueue
+          assets: [{ video: { url: "${safeUrl}" } }]
+        }
+      ) {
         ... on PostActionSuccess {
-          post { id text status scheduledAt }
+          post {
+            id
+            text
+            assets { source }
+          }
         }
         ... on MutationError {
           message
-          type
         }
       }
     }
-  `, {
-    input: {
-      text: caption,
-      channelId,
-      schedulingType: 'automatic',
-      mode: 'addToQueue',
-      assets: [{ video: { url: videoUrl } }],
-    }
-  });
+  `;
 
-  const result = data.createPost;
-  if (result.message) throw new Error(`Buffer: ${result.message} (${result.type || ''})`);
+  const res = await axios.post('https://api.buffer.com',
+    { query },
+    { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` }, timeout: 30000 }
+  );
+
+  console.log('Raw response:', JSON.stringify(res.data, null, 2));
+
+  if (res.data.errors) throw new Error(res.data.errors.map(e => e.message).join(', '));
+
+  const result = res.data.data?.createPost;
+  if (!result) throw new Error('Respons tidak dikenal: ' + JSON.stringify(res.data));
+  if (result.message) throw new Error(`Buffer error: ${result.message}`);
   return result.post;
 }
 
@@ -176,7 +194,10 @@ async function main() {
       console.log(`✅ Sukses! Post ID: ${post.id}, status: ${post.status}`);
       results.push({ channelId, success: true });
     } catch (err) {
+      // Tampilkan detail error dari response Buffer jika ada
+      const detail = err.response?.data ? JSON.stringify(err.response.data, null, 2) : '';
       console.error(`❌ Gagal: ${err.message}`);
+      if (detail) console.error(`   Detail: ${detail}`);
       results.push({ channelId, success: false, error: err.message });
     }
   }
