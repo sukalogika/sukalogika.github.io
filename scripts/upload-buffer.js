@@ -133,10 +133,12 @@ async function createPost(channelId, videoUrl, caption, platform) {
   const safeText  = caption.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
   const safeUrl   = videoUrl.trim();
 
-  // YouTube butuh title + category — platform lain tidak
-  const isYouTube = platform === 'youtube';
-  const titleLine = isYouTube ? `title: "${safeText.split('\\n')[0]}"` : '';
-  const catLine   = isYouTube ? `youtubeOptions: { category: "22" }` : '';  // 22 = People & Blogs
+  // YouTube butuh metadata.youtube { title, categoryId } — platform lain tidak
+  const isYouTube  = platform === 'youtube';
+  const youtubeTitle = safeText.split('\\n')[0].slice(0, 100); // max 100 char
+  const metaBlock  = isYouTube
+    ? `metadata: { youtube: { title: "${youtubeTitle}", categoryId: "27" } }`
+    : '';
 
   const query = `
     mutation CreatePost {
@@ -146,8 +148,7 @@ async function createPost(channelId, videoUrl, caption, platform) {
           channelId: "${channelId}"
           schedulingType: automatic
           mode: addToQueue
-          ${titleLine}
-          ${catLine}
+          ${metaBlock}
           assets: [{ video: { url: "${safeUrl}" } }]
         }
       ) {
