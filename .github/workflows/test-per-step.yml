@@ -24,6 +24,7 @@ env:
 jobs:
   # ══════════════════════════════════════════════════════════════════════════
   # STEP 1: Generate Image saja
+  # Output: di-commit ke repo (vod-image/latest.png)
   # ══════════════════════════════════════════════════════════════════════════
   test-step-1:
     name: 📸 Step 1 - Generate Image
@@ -61,15 +62,8 @@ jobs:
           echo "── Metadata ──"
           cat vod-image/latest-meta.json
 
-      # Upload artifact biar bisa didownload & lihat hasilnya
-      - name: 📦 Upload artifact (bisa didownload)
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-step1-image
-          path: vod-image/
-          retention-days: 3
-
-      - name: Commit gambar ke repo (opsional)
+      # ⬇️ Commit ke repo supaya Step 2 & 3 bisa pakai langsung
+      - name: 💾 Commit gambar ke repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -77,9 +71,18 @@ jobs:
           git commit -m "🧪 [test] Step 1 image $(date '+%Y-%m-%d %H:%M')" || echo "No changes"
           git push
 
+      # Upload artifact juga biar bisa didownload & preview langsung di Actions
+      - name: 📦 Upload artifact (preview di Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-step1-image
+          path: vod-image/
+          retention-days: 3
+
   # ══════════════════════════════════════════════════════════════════════════
   # STEP 2: Compose Video saja
-  # (ambil gambar dari repo yg sudah ada, tidak re-generate)
+  # Syarat: vod-image/latest.png sudah ada di repo (jalankan Step 1 dulu)
+  # Output: di-commit ke repo (vod-video/latest.mp4)
   # ══════════════════════════════════════════════════════════════════════════
   test-step-2:
     name: 🎬 Step 2 - Compose Video
@@ -105,43 +108,49 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
 
-      - name: Cek gambar tersedia
+      # Step 2 baca gambar langsung dari repo — tidak perlu Step 1 dijalankan di run yang sama
+      - name: Cek gambar tersedia di repo
         run: |
           if [ ! -f vod-image/latest.png ]; then
-            echo "❌ vod-image/latest.png tidak ada!"
-            echo "Jalankan Step 1 dulu, atau push gambar manual ke vod-image/"
+            echo "❌ vod-image/latest.png belum ada di repo!"
+            echo ""
+            echo "Solusi: jalankan Step 1 terlebih dahulu (sekali saja),"
+            echo "gambar akan tersimpan di repo dan bisa dipakai Step 2 kapan pun."
             exit 1
           fi
           echo "✅ Gambar ditemukan: $(du -sh vod-image/latest.png | cut -f1)"
+          echo "── Meta ──"
+          cat vod-image/latest-meta.json 2>/dev/null || echo "(tidak ada meta)"
 
       - name: Cek & buat aset dummy jika belum ada
         run: |
           mkdir -p assets/background assets/effect assets/music
 
           if ! ls assets/background/*.mp4 &>/dev/null; then
-            echo "⚠️  Tidak ada background video. Membuat dummy..."
+            echo "⚠️  Tidak ada background video → buat dummy gradient..."
             ffmpeg -y -f lavfi \
-              -i "gradients=s=1080x1920:c0=0x1a1a2e:c1=0x16213e:x0=0:x1=0:y0=0:y1=1920" \
+              -i "color=c=0x1a1a2e:size=1080x1920:rate=30" \
               -t ${{ env.VOD_DURATION }} -c:v libx264 -pix_fmt yuv420p \
-              assets/background/dummy_bg.mp4
+              assets/background/dummy_bg.mp4 -loglevel warning
           fi
 
           if ! ls assets/effect/*.mp4 &>/dev/null; then
-            echo "⚠️  Tidak ada effect video. Membuat dummy..."
+            echo "⚠️  Tidak ada effect video → buat dummy hitam 30%..."
             ffmpeg -y -f lavfi \
               -i "color=c=black:size=1080x1920:rate=30" \
               -t ${{ env.VOD_DURATION }} -c:v libx264 -pix_fmt yuv420p \
-              assets/effect/dummy_effect.mp4
+              assets/effect/dummy_effect.mp4 -loglevel warning
           fi
 
           if ! ls assets/music/*.mp3 &>/dev/null; then
-            echo "⚠️  Tidak ada musik. Membuat dummy sine wave..."
+            echo "⚠️  Tidak ada musik → buat dummy sine wave..."
             ffmpeg -y -f lavfi \
               -i "sine=frequency=220:duration=${{ env.VOD_DURATION }}" \
-              -c:a libmp3lame assets/music/dummy_music.mp3
+              -c:a libmp3lame assets/music/dummy_music.mp3 -loglevel warning
           fi
 
-          echo "── Aset siap ──"
+          echo ""
+          echo "── Aset yang dipakai ──"
           ls assets/background/ assets/effect/ assets/music/
 
       - name: 🎬 Compose video
@@ -156,11 +165,22 @@ jobs:
           echo ""
           DURATION=$(ffprobe -v error -show_entries format=duration \
             -of default=noprint_wrappers=1:nokey=1 vod-video/latest.mp4)
-          echo "Durasi video: ${DURATION}s"
+          echo "Durasi video : ${DURATION}s"
+          SIZE=$(du -sh vod-video/latest.mp4 | cut -f1)
+          echo "Ukuran file  : ${SIZE}"
           echo ""
           cat vod-video/latest-meta.json
 
-      - name: 📦 Upload artifact (bisa didownload & preview)
+      # ⬇️ Commit ke repo supaya Step 3 bisa pakai langsung tanpa artifact
+      - name: 💾 Commit video ke repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add vod-video/
+          git commit -m "🧪 [test] Step 2 video $(date '+%Y-%m-%d %H:%M')" || echo "No changes"
+          git push
+
+      - name: 📦 Upload artifact (download di Actions)
         uses: actions/upload-artifact@v4
         with:
           name: test-step2-video
@@ -168,10 +188,11 @@ jobs:
           retention-days: 3
 
   # ══════════════════════════════════════════════════════════════════════════
-  # STEP 3: Upload Buffer — DRY RUN (tidak beneran upload)
+  # STEP 3 DRY RUN: Cek token + lihat profil, TIDAK upload
+  # Syarat: vod-video/latest.mp4 sudah ada di repo (jalankan Step 2 dulu)
   # ══════════════════════════════════════════════════════════════════════════
   test-step-3-dry:
-    name: 🧪 Step 3 - Upload Buffer (DRY RUN)
+    name: 🔍 Step 3 - Upload Buffer (DRY RUN)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: github.event.inputs.step == '3 - Upload Buffer (dry run)'
@@ -186,15 +207,19 @@ jobs:
       - name: Install npm packages
         run: npm install axios form-data
 
-      - name: Cek video tersedia
+      # Step 3 baca video langsung dari repo — tidak perlu Step 2 di run yang sama
+      - name: Cek video tersedia di repo
         run: |
           if [ ! -f vod-video/latest.mp4 ]; then
-            echo "❌ vod-video/latest.mp4 tidak ada. Jalankan Step 2 dulu."
+            echo "❌ vod-video/latest.mp4 belum ada di repo!"
+            echo ""
+            echo "Solusi: jalankan Step 2 terlebih dahulu (sekali saja),"
+            echo "video akan tersimpan di repo dan bisa dipakai Step 3 kapan pun."
             exit 1
           fi
-          echo "✅ Video: $(du -sh vod-video/latest.mp4 | cut -f1)"
+          echo "✅ Video ditemukan: $(du -sh vod-video/latest.mp4 | cut -f1)"
 
-      - name: 🔍 DRY RUN - Cek koneksi Buffer & tampilkan profil
+      - name: 🔍 Cek token & tampilkan daftar profil Buffer
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
         run: |
@@ -203,43 +228,50 @@ jobs:
           const token = process.env.BUFFER_ACCESS_TOKEN;
 
           if (!token) {
-            console.log('❌ BUFFER_ACCESS_TOKEN belum di-set di Secrets!');
-            console.log('   Pergi ke: Settings → Secrets → New secret');
+            console.log('❌ BUFFER_ACCESS_TOKEN belum di-set!');
+            console.log('   Pergi ke: Settings → Secrets and variables → Actions → New secret');
             process.exit(1);
           }
 
-          console.log('✅ Token ditemukan (', token.slice(0,8) + '...' + token.slice(-4), ')');
+          console.log('✅ Token ditemukan (' + token.slice(0,8) + '...' + token.slice(-4) + ')');
           console.log('📡 Mengambil daftar profil Buffer...\n');
 
           axios.get('https://api.bufferapp.com/1/profiles.json', {
             params: { access_token: token }
           }).then(res => {
             const profiles = res.data;
-            console.log('Profil yang terhubung ke akun Buffer Anda:\n');
+            if (!profiles.length) {
+              console.log('⚠️  Tidak ada profil terhubung ke akun Buffer ini.');
+              return;
+            }
+            console.log('Profil yang terhubung:\n');
             profiles.forEach((p, i) => {
-              console.log(\`[\${i+1}] ID       : \${p.id}\`);
-              console.log(\`    Platform : \${p.service}\`);
-              console.log(\`    Username : \${p.service_username}\`);
-              console.log(\`    Timezone : \${p.timezone}\`);
+              console.log('[' + (i+1) + '] ID       : ' + p.id);
+              console.log('    Platform : ' + p.service);
+              console.log('    Username : ' + p.service_username);
+              console.log('    Timezone : ' + p.timezone);
               console.log('');
             });
-            console.log('─────────────────────────────────────────');
-            console.log('Copy salah satu ID di atas ke Secret: BUFFER_PROFILE_IDS');
-            console.log('Pisah koma jika lebih dari satu, contoh: abc123,def456');
+            console.log('─────────────────────────────────────────────────');
+            console.log('Copy ID di atas ke Secret: BUFFER_PROFILE_IDS');
+            console.log('Pisah koma jika lebih dari satu: abc123,def456');
           }).catch(err => {
             const msg = err.response?.data?.message || err.message;
             console.error('❌ Gagal koneksi ke Buffer:', msg);
+            if (err.response?.status === 401) {
+              console.error('   → Token tidak valid atau sudah expired.');
+            }
             process.exit(1);
           });
           "
 
-      - name: 📋 Preview apa yang akan dipost
+      - name: 📋 Preview apa yang akan dipost ke Buffer
         run: |
           echo "── Video yang akan diupload ──"
           ls -lah vod-video/latest.mp4
           echo ""
           echo "── Metadata ──"
-          cat vod-video/latest-meta.json || echo "(tidak ada meta)"
+          cat vod-video/latest-meta.json 2>/dev/null || echo "(tidak ada meta)"
           echo ""
           echo "── Caption yang akan digunakan ──"
           node -e "
@@ -247,12 +279,16 @@ jobs:
           let meta = {};
           try { meta = JSON.parse(fs.readFileSync('vod-video/latest-meta.json')); } catch {}
           const today = new Date().toISOString().slice(0,10);
-          const caption = \`✨ Ayat Hari Ini ✨\n\n\${meta.passage||'Alkitab'}\n\n#alkitab #firmanTuhan #sukalogika\`;
+          const caption = '✨ Ayat Hari Ini ✨\n\n' + (meta.passage||'Alkitab') + '\n\n#alkitab #firmanTuhan #sukalogika #devotional';
           console.log(caption);
           "
+          echo ""
+          echo "✅ DRY RUN selesai. Tidak ada yang diupload."
+          echo "   Kalau semua terlihat benar, jalankan: '3 - Upload Buffer (REAL)'"
 
   # ══════════════════════════════════════════════════════════════════════════
-  # STEP 3: Upload Buffer — REAL (beneran upload)
+  # STEP 3 REAL: Upload beneran ke Buffer
+  # Syarat: vod-video/latest.mp4 sudah ada di repo (jalankan Step 2 dulu)
   # ══════════════════════════════════════════════════════════════════════════
   test-step-3-real:
     name: 🚀 Step 3 - Upload Buffer (REAL)
@@ -270,16 +306,34 @@ jobs:
       - name: Install npm packages
         run: npm install axios form-data
 
-      - name: Cek video tersedia
+      # Baca video dari repo — tidak perlu Step 2 dijalankan di run yang sama
+      - name: Cek video tersedia di repo
         run: |
           if [ ! -f vod-video/latest.mp4 ]; then
-            echo "❌ vod-video/latest.mp4 tidak ada. Jalankan Step 2 dulu."
+            echo "❌ vod-video/latest.mp4 belum ada di repo!"
+            echo ""
+            echo "Solusi: jalankan Step 2 terlebih dahulu (sekali saja),"
+            echo "video akan tersimpan di repo dan bisa dipakai Step 3 kapan pun."
             exit 1
           fi
           echo "✅ Video siap: $(du -sh vod-video/latest.mp4 | cut -f1)"
+          cat vod-video/latest-meta.json 2>/dev/null || true
 
-      - name: 📤 Upload ke Buffer (BENERAN)
+      - name: 📤 Upload ke Buffer
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           BUFFER_PROFILE_IDS:  ${{ secrets.BUFFER_PROFILE_IDS }}
         run: node scripts/upload-buffer.js
+
+      - name: 🎉 Summary
+        run: |
+          echo "## ✅ Upload ke Buffer berhasil!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat vod-video/latest-meta.json 2>/dev/null | node -e "
+          const fs = require('fs');
+          let meta = {};
+          try { meta = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')); } catch {}
+          console.log('| Key | Value |');
+          console.log('|-----|-------|');
+          Object.entries(meta).forEach(([k,v]) => console.log('| ' + k + ' | ' + v + ' |'));
+          " >> $GITHUB_STEP_SUMMARY || true
