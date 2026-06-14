@@ -1,142 +1,149 @@
 /**
  * upload-buffer.js
- * Upload video hasil compose ke Buffer (social media scheduler).
+ * Upload video ke Buffer menggunakan GraphQL API (api.buffer.com)
  *
- * Env vars yang dibutuhkan (set di GitHub Secrets):
- *   BUFFER_ACCESS_TOKEN   - Personal access token dari Buffer
- *   BUFFER_PROFILE_IDS    - Comma-separated profile IDs, misal: "abc123,def456"
- *                           (dapatkan dari: GET https://api.bufferapp.com/1/profiles.json)
+ * Env vars (set di GitHub Secrets):
+ *   BUFFER_ACCESS_TOKEN  - Bearer token dari Buffer
+ *   BUFFER_CHANNEL_IDS   - Comma-separated channel IDs
+ *                          (dapatkan dari script list-channels di bawah)
  *
  * Opsional:
- *   BUFFER_SCHEDULE_AT    - ISO 8601 datetime untuk jadwal posting.
- *                           Kosongkan = tambah ke queue Buffer.
- *   VOD_CAPTION           - Caption custom. Default = passage dari meta.
+ *   VOD_CAPTION          - Caption custom
+ *   BUFFER_VIDEO_URL     - URL publik video (jika tidak mau upload file langsung)
  */
 
-const fs   = require('fs');
-const path = require('path');
+const fs      = require('fs');
+const path    = require('path');
+const axios   = require('axios');
 const FormData = require('form-data');
-const axios = require('axios');
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 const ROOT       = path.join(__dirname, '..');
 const VIDEO_PATH = path.join(ROOT, 'vod-video', 'latest.mp4');
 const META_PATH  = path.join(ROOT, 'vod-video', 'latest-meta.json');
 
-// ─── Config dari env ──────────────────────────────────────────────────────────
-const BUFFER_TOKEN   = process.env.BUFFER_ACCESS_TOKEN;
-const PROFILE_IDS    = (process.env.BUFFER_PROFILE_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
-const SCHEDULE_AT    = process.env.BUFFER_SCHEDULE_AT || '';
-const CUSTOM_CAPTION = process.env.VOD_CAPTION || '';
+// ─── Config ───────────────────────────────────────────────────────────────────
+const TOKEN      = process.env.BUFFER_ACCESS_TOKEN;
+const CHANNEL_IDS = (process.env.BUFFER_CHANNEL_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
+const CAPTION    = process.env.VOD_CAPTION || '';
+const GQL_URL    = 'https://api.buffer.com';
 
-const BASE_URL = 'https://api.bufferapp.com/1';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function requireEnv(name) {
-  const val = process.env[name];
-  if (!val) throw new Error(`Environment variable ${name} tidak di-set. Tambahkan ke GitHub Secrets.`);
-  return val;
-}
-
-async function getProfiles() {
-  const res = await axios.get(`${BASE_URL}/profiles.json`, {
-    params: { access_token: BUFFER_TOKEN },
+// ─── GraphQL helper ───────────────────────────────────────────────────────────
+async function gql(query, variables = {}) {
+  const res = await axios.post(GQL_URL, { query, variables }, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${TOKEN}`,
+    },
+    timeout: 30000,
   });
-  return res.data;
+
+  if (res.data.errors) {
+    const msg = res.data.errors.map(e => e.message).join(', ');
+    throw new Error(`GraphQL error: ${msg}`);
+  }
+  return res.data.data;
 }
 
-/**
- * Upload video ke Buffer menggunakan endpoint media upload.
- * Buffer API v1 mendukung upload video untuk Instagram & TikTok melalui media endpoint.
- *
- * Dokumentasi: https://buffer.com/developers/api/updates
- */
-async function uploadMedia(videoPath) {
-  console.log('📤 Mengupload video ke Buffer media server...');
+// ─── List channels (untuk cari channel ID) ───────────────────────────────────
+async function listChannels() {
+  const data = await gql(`
+    query {
+      channels {
+        id
+        name
+        service
+        serviceId
+        timezone
+      }
+    }
+  `);
+  return data.channels || [];
+}
 
+// ─── Upload video file dan dapat URL ─────────────────────────────────────────
+// Buffer GraphQL butuh URL video yang accessible publik.
+// Opsi 1: upload ke tempat sementara (0x0.st / file.io)
+// Opsi 2: pakai GitHub raw URL jika video sudah di-commit ke repo
+// Opsi 3: pakai BUFFER_VIDEO_URL jika sudah ada di CDN sendiri
+async function getVideoUrl(videoPath) {
+  // Jika ada env var URL langsung, pakai itu
+  if (process.env.BUFFER_VIDEO_URL) {
+    console.log('📎 Pakai URL dari env: ' + process.env.BUFFER_VIDEO_URL);
+    return process.env.BUFFER_VIDEO_URL;
+  }
+
+  // Upload ke 0x0.st (free, file bertahan 30 hari)
+  console.log('📤 Upload video ke hosting sementara (0x0.st)...');
   const form = new FormData();
-  form.append('access_token', BUFFER_TOKEN);
-  form.append('media', fs.createReadStream(videoPath), {
+  form.append('file', fs.createReadStream(videoPath), {
     filename: path.basename(videoPath),
     contentType: 'video/mp4',
   });
 
-  const res = await axios.post(`${BASE_URL}/media/upload.json`, form, {
+  const res = await axios.post('https://0x0.st', form, {
     headers: form.getHeaders(),
     maxContentLength: Infinity,
     maxBodyLength: Infinity,
     timeout: 120000,
   });
 
-  if (!res.data || !res.data.id) {
-    throw new Error(`Upload media gagal: ${JSON.stringify(res.data)}`);
-  }
-
-  console.log(`✅ Media uploaded, ID: ${res.data.id}`);
-  return res.data.id;
+  const url = res.data.trim();
+  if (!url.startsWith('http')) throw new Error('Upload ke 0x0.st gagal: ' + url);
+  console.log('✅ Video tersedia di: ' + url);
+  return url;
 }
 
-/**
- * Buat update/post di Buffer untuk satu profile.
- */
-async function createUpdate(profileId, mediaId, caption) {
-  const payload = {
-    access_token: BUFFER_TOKEN,
-    profile_ids: [profileId],
-    text: caption,
-    media: { video: { id: mediaId } },
-  };
-
-  if (SCHEDULE_AT) {
-    payload.scheduled_at = SCHEDULE_AT;
-  } else {
-    payload.now = false; // tambah ke queue
-  }
-
-  const res = await axios.post(`${BASE_URL}/updates/create.json`, payload, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    // Buffer API v1 menggunakan form-encoded
-    transformRequest: [(data) => {
-      const params = new URLSearchParams();
-      for (const [k, v] of Object.entries(data)) {
-        if (Array.isArray(v)) {
-          v.forEach(item => params.append(`${k}[]`, item));
-        } else if (typeof v === 'object') {
-          for (const [sk, sv] of Object.entries(v)) {
-            if (typeof sv === 'object') {
-              for (const [ssk, ssv] of Object.entries(sv)) {
-                params.append(`${k}[${sk}][${ssk}]`, ssv);
-              }
-            } else {
-              params.append(`${k}[${sk}]`, sv);
-            }
+// ─── Buat post di Buffer ──────────────────────────────────────────────────────
+async function createPost(channelId, videoUrl, caption) {
+  const data = await gql(`
+    mutation CreatePost($input: CreatePostInput!) {
+      createPost(input: $input) {
+        ... on PostActionSuccess {
+          post {
+            id
+            text
+            status
+            scheduledAt
           }
-        } else {
-          params.append(k, v);
+        }
+        ... on MutationError {
+          message
+          type
         }
       }
-      return params.toString();
-    }],
+    }
+  `, {
+    input: {
+      text: caption,
+      channelId: channelId,
+      schedulingType: 'automatic',
+      mode: 'addToQueue',
+      assets: [{ video: { url: videoUrl } }],
+    }
   });
 
-  return res.data;
+  const result = data.createPost;
+
+  // Cek apakah sukses atau error
+  if (result.message) {
+    throw new Error(`Buffer error: ${result.message} (${result.type || ''})`);
+  }
+  return result.post;
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
-  // Validasi env
-  requireEnv('BUFFER_ACCESS_TOKEN');
-  if (PROFILE_IDS.length === 0) {
-    throw new Error('BUFFER_PROFILE_IDS tidak di-set atau kosong. Isi dengan ID profil Buffer Anda (pisah koma untuk beberapa profil).');
-  }
+  // Validasi
+  if (!TOKEN) throw new Error('BUFFER_ACCESS_TOKEN belum di-set di GitHub Secrets!');
+  if (CHANNEL_IDS.length === 0) throw new Error('BUFFER_CHANNEL_IDS belum di-set! Jalankan dry run dulu untuk lihat channel IDs.');
 
-  // Validasi file
   if (!fs.existsSync(VIDEO_PATH)) {
-    throw new Error(`Video tidak ditemukan: ${VIDEO_PATH}\nJalankan compose-video.js terlebih dulu.`);
+    throw new Error(`Video tidak ditemukan: ${VIDEO_PATH}\nJalankan Step 2 dulu.`);
   }
 
-  // Ambil metadata
-  let caption = CUSTOM_CAPTION;
+  // Baca metadata
+  let caption = CAPTION;
   if (!caption && fs.existsSync(META_PATH)) {
     try {
       const meta = JSON.parse(fs.readFileSync(META_PATH, 'utf8'));
@@ -144,55 +151,40 @@ async function main() {
       caption = `✨ Ayat Hari Ini ✨\n\n${meta.passage || 'Alkitab'}\n\n#alkitab #firmanTuhan #sukalogika #devotional #${today.replace(/-/g, '')}`;
     } catch {}
   }
-  if (!caption) caption = `✨ Ayat Hari Ini | @sukalogika`;
+  if (!caption) caption = '✨ Ayat Hari Ini | @sukalogika';
 
   console.log(`📋 Caption:\n${caption}\n`);
+  console.log(`📦 Video: ${VIDEO_PATH} (${(fs.statSync(VIDEO_PATH).size / 1024 / 1024).toFixed(2)} MB)\n`);
 
-  // Tampilkan profile list
-  console.log('🔍 Mengambil daftar profil Buffer...');
-  let profiles;
-  try {
-    profiles = await getProfiles();
-    console.log('Profil tersedia:');
-    profiles.forEach(p => console.log(`  - [${p.id}] ${p.service} / ${p.service_username}`));
-  } catch (err) {
-    console.warn('⚠️  Tidak bisa fetch profil (lanjut upload):', err.message);
-  }
+  // Upload video → dapat URL
+  const videoUrl = await getVideoUrl(VIDEO_PATH);
 
-  // Upload media sekali, pakai di semua profil
-  const mediaId = await uploadMedia(VIDEO_PATH);
-
-  // Post ke setiap profil
+  // Post ke tiap channel
   const results = [];
-  for (const profileId of PROFILE_IDS) {
-    console.log(`\n📨 Posting ke profil: ${profileId}`);
+  for (const channelId of CHANNEL_IDS) {
+    console.log(`\n📨 Posting ke channel: ${channelId}`);
     try {
-      const result = await createUpdate(profileId, mediaId, caption);
-      console.log(`✅ Sukses! Update ID: ${result?.updates?.[0]?.id || 'N/A'}`);
-      results.push({ profileId, success: true, result });
+      const post = await createPost(channelId, videoUrl, caption);
+      console.log(`✅ Sukses! Post ID: ${post.id}, status: ${post.status}`);
+      if (post.scheduledAt) console.log(`   Dijadwalkan: ${post.scheduledAt}`);
+      results.push({ channelId, success: true, post });
     } catch (err) {
-      const msg = err.response?.data || err.message;
-      console.error(`❌ Gagal untuk profil ${profileId}:`, JSON.stringify(msg));
-      results.push({ profileId, success: false, error: msg });
+      console.error(`❌ Gagal: ${err.message}`);
+      results.push({ channelId, success: false, error: err.message });
     }
   }
 
   // Summary
   console.log('\n─── Summary ───────────────────────────────');
-  results.forEach(r => {
-    const status = r.success ? '✅' : '❌';
-    console.log(`${status} Profile ${r.profileId}`);
-  });
+  results.forEach(r => console.log(`${r.success ? '✅' : '❌'} Channel ${r.channelId}`));
 
   const failed = results.filter(r => !r.success);
-  if (failed.length > 0) {
-    throw new Error(`${failed.length} profil gagal diupload.`);
-  }
+  if (failed.length > 0) throw new Error(`${failed.length} channel gagal.`);
 
-  console.log('\n🎉 Semua profil berhasil diupdate di Buffer!');
+  console.log('\n🎉 Semua channel berhasil dipost ke Buffer!');
 }
 
-main().catch((err) => {
-  console.error('\n❌ Fatal error:', err.message);
+main().catch(err => {
+  console.error('\n❌ Fatal:', err.message);
   process.exit(1);
 });
