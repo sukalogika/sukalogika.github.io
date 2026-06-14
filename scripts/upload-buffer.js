@@ -5,76 +5,60 @@
  * Env vars (set di GitHub Secrets):
  *   BUFFER_ACCESS_TOKEN  - Bearer token dari Buffer
  *   BUFFER_CHANNEL_IDS   - Comma-separated channel IDs
- *                          (dapatkan dari script list-channels di bawah)
- *
+ *                          (jalankan dry run dulu untuk lihat IDs)
  * Opsional:
  *   VOD_CAPTION          - Caption custom
- *   BUFFER_VIDEO_URL     - URL publik video (jika tidak mau upload file langsung)
+ *   BUFFER_VIDEO_URL     - URL publik video (skip upload ke 0x0.st)
  */
 
-const fs      = require('fs');
-const path    = require('path');
-const axios   = require('axios');
+const fs       = require('fs');
+const path     = require('path');
+const axios    = require('axios');
 const FormData = require('form-data');
 
-// ─── Paths ────────────────────────────────────────────────────────────────────
-const ROOT       = path.join(__dirname, '..');
-const VIDEO_PATH = path.join(ROOT, 'vod-video', 'latest.mp4');
-const META_PATH  = path.join(ROOT, 'vod-video', 'latest-meta.json');
-
-// ─── Config ───────────────────────────────────────────────────────────────────
-const TOKEN      = process.env.BUFFER_ACCESS_TOKEN;
+const ROOT        = path.join(__dirname, '..');
+const VIDEO_PATH  = path.join(ROOT, 'vod-video', 'latest.mp4');
+const META_PATH   = path.join(ROOT, 'vod-video', 'latest-meta.json');
+const TOKEN       = process.env.BUFFER_ACCESS_TOKEN;
 const CHANNEL_IDS = (process.env.BUFFER_CHANNEL_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
-const CAPTION    = process.env.VOD_CAPTION || '';
-const GQL_URL    = 'https://api.buffer.com';
+const GQL_URL     = 'https://api.buffer.com';
 
 // ─── GraphQL helper ───────────────────────────────────────────────────────────
 async function gql(query, variables = {}) {
-  const res = await axios.post(GQL_URL, { query, variables }, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${TOKEN}`,
-    },
-    timeout: 30000,
-  });
-
-  if (res.data.errors) {
-    const msg = res.data.errors.map(e => e.message).join(', ');
-    throw new Error(`GraphQL error: ${msg}`);
-  }
+  const res = await axios.post(GQL_URL,
+    { query, variables },
+    { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` }, timeout: 30000 }
+  );
+  if (res.data.errors) throw new Error(res.data.errors.map(e => e.message).join(', '));
   return res.data.data;
 }
 
-// ─── List channels (untuk cari channel ID) ───────────────────────────────────
-async function listChannels() {
+// ─── Step A: Dapat organizationId dari account ────────────────────────────────
+async function getOrganizationId() {
   const data = await gql(`
     query {
-      channels {
-        id
-        name
-        service
-        serviceId
-        timezone
+      account {
+        organizations {
+          id
+          name
+        }
       }
     }
   `);
-  return data.channels || [];
+  const orgs = data.account.organizations;
+  if (!orgs.length) throw new Error('Tidak ada organisasi di akun Buffer ini.');
+  console.log(`🏢 Organisasi: ${orgs[0].name} (ID: ${orgs[0].id})`);
+  return orgs[0].id;
 }
 
-// ─── Upload video file dan dapat URL ─────────────────────────────────────────
-// Buffer GraphQL butuh URL video yang accessible publik.
-// Opsi 1: upload ke tempat sementara (0x0.st / file.io)
-// Opsi 2: pakai GitHub raw URL jika video sudah di-commit ke repo
-// Opsi 3: pakai BUFFER_VIDEO_URL jika sudah ada di CDN sendiri
+// ─── Upload video ke hosting sementara (0x0.st) ───────────────────────────────
 async function getVideoUrl(videoPath) {
-  // Jika ada env var URL langsung, pakai itu
   if (process.env.BUFFER_VIDEO_URL) {
-    console.log('📎 Pakai URL dari env: ' + process.env.BUFFER_VIDEO_URL);
+    console.log('📎 Pakai BUFFER_VIDEO_URL dari env: ' + process.env.BUFFER_VIDEO_URL);
     return process.env.BUFFER_VIDEO_URL;
   }
 
-  // Upload ke 0x0.st (free, file bertahan 30 hari)
-  console.log('📤 Upload video ke hosting sementara (0x0.st)...');
+  console.log('📤 Upload video ke 0x0.st (hosting sementara, gratis)...');
   const form = new FormData();
   form.append('file', fs.createReadStream(videoPath), {
     filename: path.basename(videoPath),
@@ -90,22 +74,17 @@ async function getVideoUrl(videoPath) {
 
   const url = res.data.trim();
   if (!url.startsWith('http')) throw new Error('Upload ke 0x0.st gagal: ' + url);
-  console.log('✅ Video tersedia di: ' + url);
+  console.log('✅ Video URL: ' + url);
   return url;
 }
 
-// ─── Buat post di Buffer ──────────────────────────────────────────────────────
+// ─── Post ke Buffer ───────────────────────────────────────────────────────────
 async function createPost(channelId, videoUrl, caption) {
   const data = await gql(`
     mutation CreatePost($input: CreatePostInput!) {
       createPost(input: $input) {
         ... on PostActionSuccess {
-          post {
-            id
-            text
-            status
-            scheduledAt
-          }
+          post { id text status scheduledAt }
         }
         ... on MutationError {
           message
@@ -116,7 +95,7 @@ async function createPost(channelId, videoUrl, caption) {
   `, {
     input: {
       text: caption,
-      channelId: channelId,
+      channelId,
       schedulingType: 'automatic',
       mode: 'addToQueue',
       assets: [{ video: { url: videoUrl } }],
@@ -124,26 +103,18 @@ async function createPost(channelId, videoUrl, caption) {
   });
 
   const result = data.createPost;
-
-  // Cek apakah sukses atau error
-  if (result.message) {
-    throw new Error(`Buffer error: ${result.message} (${result.type || ''})`);
-  }
+  if (result.message) throw new Error(`Buffer: ${result.message} (${result.type || ''})`);
   return result.post;
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
-  // Validasi
   if (!TOKEN) throw new Error('BUFFER_ACCESS_TOKEN belum di-set di GitHub Secrets!');
-  if (CHANNEL_IDS.length === 0) throw new Error('BUFFER_CHANNEL_IDS belum di-set! Jalankan dry run dulu untuk lihat channel IDs.');
+  if (!CHANNEL_IDS.length) throw new Error('BUFFER_CHANNEL_IDS belum di-set! Jalankan dry run dulu.');
+  if (!fs.existsSync(VIDEO_PATH)) throw new Error(`Video tidak ditemukan: ${VIDEO_PATH}`);
 
-  if (!fs.existsSync(VIDEO_PATH)) {
-    throw new Error(`Video tidak ditemukan: ${VIDEO_PATH}\nJalankan Step 2 dulu.`);
-  }
-
-  // Baca metadata
-  let caption = CAPTION;
+  // Baca caption dari metadata
+  let caption = process.env.VOD_CAPTION || '';
   if (!caption && fs.existsSync(META_PATH)) {
     try {
       const meta = JSON.parse(fs.readFileSync(META_PATH, 'utf8'));
@@ -154,37 +125,27 @@ async function main() {
   if (!caption) caption = '✨ Ayat Hari Ini | @sukalogika';
 
   console.log(`📋 Caption:\n${caption}\n`);
-  console.log(`📦 Video: ${VIDEO_PATH} (${(fs.statSync(VIDEO_PATH).size / 1024 / 1024).toFixed(2)} MB)\n`);
+  console.log(`📦 Video: ${(fs.statSync(VIDEO_PATH).size / 1024 / 1024).toFixed(2)} MB\n`);
 
-  // Upload video → dapat URL
   const videoUrl = await getVideoUrl(VIDEO_PATH);
 
-  // Post ke tiap channel
   const results = [];
   for (const channelId of CHANNEL_IDS) {
     console.log(`\n📨 Posting ke channel: ${channelId}`);
     try {
       const post = await createPost(channelId, videoUrl, caption);
       console.log(`✅ Sukses! Post ID: ${post.id}, status: ${post.status}`);
-      if (post.scheduledAt) console.log(`   Dijadwalkan: ${post.scheduledAt}`);
-      results.push({ channelId, success: true, post });
+      results.push({ channelId, success: true });
     } catch (err) {
       console.error(`❌ Gagal: ${err.message}`);
       results.push({ channelId, success: false, error: err.message });
     }
   }
 
-  // Summary
   console.log('\n─── Summary ───────────────────────────────');
   results.forEach(r => console.log(`${r.success ? '✅' : '❌'} Channel ${r.channelId}`));
-
-  const failed = results.filter(r => !r.success);
-  if (failed.length > 0) throw new Error(`${failed.length} channel gagal.`);
-
-  console.log('\n🎉 Semua channel berhasil dipost ke Buffer!');
+  if (results.some(r => !r.success)) throw new Error('Ada channel yang gagal.');
+  console.log('\n🎉 Semua berhasil dipost ke Buffer!');
 }
 
-main().catch(err => {
-  console.error('\n❌ Fatal:', err.message);
-  process.exit(1);
-});
+main().catch(err => { console.error('\n❌ Fatal:', err.message); process.exit(1); });
