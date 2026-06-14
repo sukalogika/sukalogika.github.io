@@ -77,26 +77,65 @@ function cleanText(text) {
   return text.replace(/^"|"$/g, '').replace(/\\"/g, '"').trim();
 }
 
-// ─── Fetch Verse ─────────────────────────────────────────────────────────────
+// ─── Ayat fallback jika API SABDA tidak bisa diakses ─────────────────────────
+const FALLBACK_VERSES = [
+  { passage: 'Yoh 3:16',  text: 'Karena begitu besar kasih Allah akan dunia ini, sehingga Ia telah mengaruniakan Anak-Nya yang tunggal, supaya setiap orang yang percaya kepada-Nya tidak binasa, melainkan beroleh hidup yang kekal.' },
+  { passage: 'Fil 4:13',  text: 'Segala perkara dapat kutanggung di dalam Dia yang memberi kekuatan kepadaku.' },
+  { passage: 'Yer 29:11', text: 'Sebab Aku ini mengetahui rancangan-rancangan apa yang ada pada-Ku mengenai kamu, demikianlah firman TUHAN, yaitu rancangan damai sejahtera dan bukan rancangan kecelakaan, untuk memberikan kepadamu hari depan yang penuh harapan.' },
+  { passage: 'Mat 6:33',  text: 'Tetapi carilah dahulu Kerajaan Allah dan kebenarannya, maka semuanya itu akan ditambahkan kepadamu.' },
+  { passage: 'Mzm 23:1',  text: 'TUHAN adalah gembalaku, takkan kekurangan aku.' },
+  { passage: 'Ams 3:5-6', text: 'Percayalah kepada TUHAN dengan segenap hatimu, dan janganlah bersandar kepada pengertianmu sendiri. Akuilah Dia dalam segala lakumu, maka Ia akan meluruskan jalanmu.' },
+  { passage: 'Yes 40:31', text: 'Tetapi orang-orang yang menanti-nantikan TUHAN mendapat kekuatan baru: mereka seumpama rajawali yang naik terbang dengan kekuatan sayapnya; mereka berlari dan tidak menjadi lesu, mereka berjalan dan tidak menjadi lelah.' },
+  { passage: 'Rm 8:28',   text: 'Kita tahu sekarang, bahwa Allah turut bekerja dalam segala sesuatu untuk mendatangkan kebaikan bagi mereka yang mengasihi Dia, yaitu bagi mereka yang terpanggil sesuai dengan rencana Allah.' },
+  { passage: 'Gal 2:20',  text: 'Namun aku hidup, tetapi bukan lagi aku sendiri yang hidup, melainkan Kristus yang hidup di dalam aku.' },
+  { passage: 'Ibr 11:1',  text: 'Iman adalah dasar dari segala sesuatu yang kita harapkan dan bukti dari segala sesuatu yang tidak kita lihat.' },
+];
+
+function getFallbackVerse() {
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+  const verse = FALLBACK_VERSES[dayOfYear % FALLBACK_VERSES.length];
+  console.log(`  Fallback: ${verse.passage}`);
+  return { html: { passage: verse.passage, text: verse.text } };
+}
+
+// ─── Fetch Verse dengan retry ─────────────────────────────────────────────────
 async function fetchVerse() {
-  // SABDA API tidak support CORS server-side via JSONP, tapi bisa di-hit langsung
-  // karena kita di Node (tidak ada browser restriction)
-  const url = 'https://alkitab.sabda.org/api/vod.php?format=json';
-  try {
-    const res = await axios.get(url, { timeout: 15000 });
-    return res.data;
-  } catch (err) {
-    // Fallback: coba JSONP endpoint dengan strip callback
-    console.log('Coba endpoint alternatif...');
-    const res2 = await axios.get('https://alkitab.sabda.org/api/vod.php?format=jsonp', {
-      timeout: 15000,
-    });
-    // Strip JSONP wrapper: callback({...})
-    const raw = res2.data;
-    const match = raw.match(/^\w+\((.+)\)\s*;?\s*$/s);
-    if (match) return JSON.parse(match[1]);
-    throw new Error('Format respons API tidak dikenal');
+  const endpoints = [
+    'https://alkitab.sabda.org/api/vod.php?format=json',
+    'https://alkitab.sabda.org/api/vod.php?format=jsonp',
+  ];
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    for (const url of endpoints) {
+      try {
+        console.log(`  Percobaan ${attempt}/3 → ${url}`);
+        const res = await axios.get(url, {
+          timeout: 30000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; sukalogika-bot/1.0)' },
+        });
+
+        // Kalau JSONP, strip wrapper
+        if (typeof res.data === 'string') {
+          const match = res.data.match(/^\w+\((.+)\)\s*;?\s*$/s);
+          if (match) return JSON.parse(match[1]);
+        }
+
+        if (res.data && (res.data.html || res.data.text)) return res.data;
+        console.log(`  Respons tidak valid, coba endpoint lain...`);
+      } catch (err) {
+        console.log(`  Gagal: ${err.message}`);
+      }
+    }
+
+    if (attempt < 3) {
+      console.log(`  Tunggu 5 detik sebelum retry...`);
+      await new Promise(r => setTimeout(r, 5000));
+    }
   }
+
+  // Semua percobaan gagal — pakai fallback
+  console.log('⚠️  API SABDA tidak dapat dijangkau. Menggunakan ayat fallback...');
+  return getFallbackVerse();
 }
 
 // ─── Generate Image ───────────────────────────────────────────────────────────
