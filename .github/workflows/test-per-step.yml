@@ -223,7 +223,7 @@ jobs:
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
         run: |
-          node -e "
+          node << 'JSEOF'
           const axios = require('axios');
           const token = process.env.BUFFER_ACCESS_TOKEN;
 
@@ -234,46 +234,60 @@ jobs:
           }
 
           console.log('✅ Token ditemukan (' + token.slice(0,8) + '...' + token.slice(-4) + ')');
-          console.log('📡 Mengambil daftar channel via GraphQL API...\n');
 
-          axios.post('https://api.buffer.com', {
-            query: \`query { channels { id name service serviceId timezone } }\`
-          }, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + token,
-            }
-          }).then(res => {
-            if (res.data.errors) {
-              console.error('❌ GraphQL error:', res.data.errors.map(e=>e.message).join(', '));
-              process.exit(1);
-            }
-            const channels = res.data.data.channels || [];
+          const gql = (query) => axios.post('https://api.buffer.com', { query }, {
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+          });
+
+          async function run() {
+            // Step 1: Ambil organizationId dari account
+            console.log('📡 Mengambil info akun...');
+            const accRes = await gql('query { account { organizations { id name } } }');
+            if (accRes.data.errors) throw new Error(accRes.data.errors.map(e=>e.message).join(', '));
+            const orgs = accRes.data.data.account.organizations;
+            if (!orgs.length) throw new Error('Tidak ada organisasi di akun ini.');
+            const org = orgs[0];
+            console.log('🏢 Organisasi: ' + org.name + ' (ID: ' + org.id + ')\n');
+
+            // Step 2: Fetch channels pakai organizationId
+            console.log('📡 Mengambil daftar channel...');
+            const chRes = await gql(`
+              query {
+                channels(input: { organizationId: "${org.id}" }) {
+                  id name service displayName isDisconnected
+                }
+              }
+            `);
+            if (chRes.data.errors) throw new Error(chRes.data.errors.map(e=>e.message).join(', '));
+            const channels = chRes.data.data.channels || [];
             if (!channels.length) {
-              console.log('⚠️  Tidak ada channel terhubung ke akun Buffer ini.');
+              console.log('⚠️  Tidak ada channel terhubung.');
               return;
             }
+
             console.log('Channel yang terhubung:\n');
             channels.forEach((c, i) => {
+              const status = c.isDisconnected ? '⚠️  DISCONNECTED' : '✅ aktif';
               console.log('[' + (i+1) + '] ID       : ' + c.id);
-              console.log('    Nama     : ' + c.name);
+              console.log('    Nama     : ' + (c.displayName || c.name));
               console.log('    Platform : ' + c.service);
-              console.log('    Timezone : ' + c.timezone);
+              console.log('    Status   : ' + status);
               console.log('');
             });
             console.log('─────────────────────────────────────────────────');
-            console.log('Copy ID di atas ke Secret: BUFFER_CHANNEL_IDS');
-            console.log('Pisah koma jika lebih dari satu: abc123,def456');
-          }).catch(err => {
+            console.log('Copy ID channel di atas ke Secret: BUFFER_CHANNEL_IDS');
+            console.log('Pisah koma jika lebih dari satu, contoh: abc123,def456');
+          }
+
+          run().catch(err => {
             const msg = err.response?.data || err.message;
-            console.error('❌ Gagal koneksi ke Buffer:', JSON.stringify(msg));
+            console.error('❌ Error:', typeof msg === 'object' ? JSON.stringify(msg) : msg);
             if (err.response?.status === 401) {
-              console.error('   → Token tidak valid atau sudah expired.');
-              console.error('   → Buat token baru di: https://buffer.com/developers/apps');
+              console.error('   → Token tidak valid. Buat baru di: https://publish.buffer.com/settings/api');
             }
             process.exit(1);
           });
-          "
+          JSEOF
 
       - name: 📋 Preview apa yang akan dipost ke Buffer
         run: |
