@@ -104,6 +104,13 @@ async function main() {
   // "multiply" blend mode sehingga area hitam effect menggelapkan BG.
   // Jika effect.mp4 sesungguhnya transparan (RGBA), ganti dengan overlay biasa.
 
+  // Pipeline:
+  //   [bg]    → background.mp4 normal
+  //   [eff]   → effect.mp4 (bintang putih di hitam) + screen blend → hitam transparan
+  //   [img]   → PNG quote (teks putih di hitam) + screen blend → hitam transparan
+  // Screen blend: hitam (0,0,0) jadi transparan, putih tetap putih — cocok untuk
+  // video/gambar dengan elemen terang di atas latar hitam.
+
   const ffmpegCmd = `ffmpeg -y \\
   -stream_loop -1 -i "${bgVideo}" \\
   -stream_loop -1 -i "${effectVideo}" \\
@@ -111,10 +118,10 @@ async function main() {
   -i "${musicFile}" \\
   -filter_complex "
     [0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30[bg];
-    [1:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=rgba[eff];
-    [bg][eff]blend=all_mode=multiply:all_opacity=0.6[bg_eff];
-    [2:v]scale=1080:1920,format=rgba,colorchannelmixer=aa=0.88[img];
-    [bg_eff][img]overlay=0:0:format=auto[v_out];
+    [1:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30[eff_raw];
+    [bg][eff_raw]blend=all_mode=screen:all_opacity=0.8[bg_eff];
+    [2:v]scale=1080:1920,setsar=1[img_raw];
+    [bg_eff][img_raw]blend=all_mode=screen:all_opacity=1.0[v_out];
     [3:a]afade=t=in:st=0:d=2,afade=t=out:st=${finalDuration - 3}:d=3,atrim=0:${finalDuration},asetpts=PTS-STARTPTS[a_out]
   " \\
   -map "[v_out]" -map "[a_out]" \\
