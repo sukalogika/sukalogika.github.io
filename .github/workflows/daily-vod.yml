@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      image_filename: ${{ steps.rename_image.outputs.image_filename }}
 
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +78,6 @@ jobs:
       contents: write
     outputs:
       vod_filename: ${{ steps.rename_video.outputs.vod_filename }}
-      image_filename: ${{ needs.generate-image.outputs.image_filename }}
 
     steps:
       - uses: actions/checkout@v4
@@ -95,6 +96,16 @@ jobs:
         with:
           name: vod-image
           path: vod-image/
+
+      - name: Rename downloaded image back to latest.png for compose script
+        run: |
+          ls -lah vod-image/
+          # Cari file PNG di vod-image
+          IMAGE_FILE=$(ls vod-image/*.png | head -1)
+          echo "Found image: $IMAGE_FILE"
+          # Copy ke latest.png agar script compose-video.js bisa menemukannya
+          cp "$IMAGE_FILE" vod-image/latest.png
+          echo "Created latest.png for compose script"
 
       - name: Ensure assets
         run: |
@@ -133,7 +144,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add vod-video/
-          git commit -m "🎬 Daily VOD ${DATE}.mp4" || true
+          git commit -m "🎬 Daily VOD $(date '+%Y-%m-%d').mp4" || true
           git push
 
       - uses: actions/upload-artifact@v4
