@@ -53,21 +53,23 @@ jobs:
           DATE=$(date '+%Y-%m-%d')
           YMD_IMAGE="${DATE}.png"
           
-          mv vod-image/latest.png "vod-image/${YMD_IMAGE}"
+          # Copy latest.png ke YMD format (biar latest.png tetep ada)
+          cp vod-image/latest.png "vod-image/${YMD_IMAGE}"
           echo "image_filename=${YMD_IMAGE}" >> $GITHUB_OUTPUT
-          echo "Renamed to: ${YMD_IMAGE}"
+          echo "✅ Image YMD: ${YMD_IMAGE}"
 
-      - run: |
+      - name: Commit both latest.png and YMD.png
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add vod-image/
-          git commit -m "📸 Daily verse $(date '+%Y-%m-%d')" || true
-          git push
+          git commit -m "📸 Daily verse $(date '+%Y-%m-%d')" || echo "No changes to commit"
+          git push || echo "Nothing to push"
 
       - uses: actions/upload-artifact@v4
         with:
           name: vod-image
-          path: vod-image/${{ steps.rename_image.outputs.image_filename }}
+          path: vod-image/
 
 
   compose-video:
@@ -97,15 +99,12 @@ jobs:
           name: vod-image
           path: vod-image/
 
-      - name: Rename downloaded image back to latest.png for compose script
+      - name: Check downloaded image
         run: |
           ls -lah vod-image/
-          # Cari file PNG di vod-image
-          IMAGE_FILE=$(ls vod-image/*.png | head -1)
-          echo "Found image: $IMAGE_FILE"
-          # Copy ke latest.png agar script compose-video.js bisa menemukannya
-          cp "$IMAGE_FILE" vod-image/latest.png
-          echo "Created latest.png for compose script"
+          # Pastikan latest.png ada (karena kita upload seluruh folder)
+          test -f vod-image/latest.png
+          echo "✅ latest.png found!"
 
       - name: Ensure assets
         run: |
@@ -133,24 +132,24 @@ jobs:
           DATE=$(date '+%Y-%m-%d')
           YMD_VIDEO="${DATE}.mp4"
 
-          mv vod-video/latest.mp4 "vod-video/${YMD_VIDEO}"
+          # Copy latest.mp4 ke YMD format (biar latest.mp4 tetep ada)
+          cp vod-video/latest.mp4 "vod-video/${YMD_VIDEO}"
           echo "vod_filename=${YMD_VIDEO}" >> $GITHUB_OUTPUT
-          echo "Renamed to: ${YMD_VIDEO}"
+          echo "✅ Video YMD: ${YMD_VIDEO}"
 
-      - run: |
+      - name: Commit both latest.mp4 and YMD.mp4
+        run: |
           ls -lah vod-video/
-
-      - run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add vod-video/
-          git commit -m "🎬 Daily VOD $(date '+%Y-%m-%d').mp4" || true
-          git push
+          git commit -m "🎬 Daily VOD $(date '+%Y-%m-%d').mp4" || echo "No changes to commit"
+          git push || echo "Nothing to push"
 
       - uses: actions/upload-artifact@v4
         with:
           name: vod-video
-          path: vod-video/${{ steps.rename_video.outputs.vod_filename }}
+          path: vod-video/
 
 
   upload-buffer:
@@ -173,14 +172,33 @@ jobs:
       - name: Wait for GitHub raw ready
         run: sleep 20
 
-      - name: Validate file
+      - name: Validate YMD video file
+        id: validate
         run: |
-          test -f "vod-video/${{ needs.compose-video.outputs.vod_filename }}"
-          echo "Video file: ${{ needs.compose-video.outputs.vod_filename }}"
+          DATE=$(date '+%Y-%m-%d')
+          YMD_VIDEO="${DATE}.mp4"
+          
+          echo "📹 Looking for: ${YMD_VIDEO}"
+          ls -lah vod-video/
+          
+          if test -f "vod-video/${YMD_VIDEO}"; then
+            echo "✅ Video found: ${YMD_VIDEO}"
+            echo "ymd_video=${YMD_VIDEO}" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Video not found: ${YMD_VIDEO}"
+            exit 1
+          fi
 
-      - name: Upload ke Buffer
+      - name: Upload YMD video to Buffer
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
-          BUFFER_CHANNEL_IDS:  ${{ secrets.BUFFER_CHANNEL_IDS }}
-          BUFFER_VIDEO_URL: "https://raw.githubusercontent.com/${{ github.repository }}/main/vod-video/${{ needs.compose-video.outputs.vod_filename }}?v=${{ github.run_id }}"
-        run: node scripts/upload-buffer.js
+          BUFFER_CHANNEL_IDS: ${{ secrets.BUFFER_CHANNEL_IDS }}
+        run: |
+          YMD_VIDEO="${{ steps.validate.outputs.ymd_video }}"
+          BUFFER_VIDEO_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/vod-video/${YMD_VIDEO}?v=${{ github.run_id }}"
+          
+          echo "📤 Uploading to Buffer: ${YMD_VIDEO}"
+          echo "🔗 URL: ${BUFFER_VIDEO_URL}"
+          
+          export BUFFER_VIDEO_URL
+          node scripts/upload-buffer.js
