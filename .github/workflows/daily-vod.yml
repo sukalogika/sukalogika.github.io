@@ -82,7 +82,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      vod_filename: ${{ steps.rename.outputs.vod_filename }}   # ← expose ke job 3
+      vod_filename: ${{ steps.rename.outputs.vod_filename }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -145,35 +145,22 @@ jobs:
         env:
           VOD_DURATION: ${{ env.VOD_DURATION }}
         run: node scripts/compose-video.js
-      - name: Rename & copy video dengan nama tanggal+ayat
+      - name: Rename & copy video dengan nama dari metadata
         id: rename
         run: |
+          # Ambil langsung field "video" dari latest-meta.json yang ditulis generate-quote.js
           if [ -f vod-image/latest-meta.json ]; then
-            BOOK=$(node -e "
+            NUMBERED_NAME=$(node -e "
               const m = require('./vod-image/latest-meta.json');
-              const raw = (m.book || m.kitab || m.abbr || 'unk');
-              process.stdout.write(raw.toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,6));
-            ")
-            CHAPTER=$(node -e "
-              const m = require('./vod-image/latest-meta.json');
-              process.stdout.write(String(m.chapter || m.pasal || 0));
-            ")
-            VERSE=$(node -e "
-              const m = require('./vod-image/latest-meta.json');
-              process.stdout.write(String(m.verse || m.ayat || 0));
+              process.stdout.write(m.video || 'vod_fallback.mp4');
             ")
           else
             echo "⚠️  latest-meta.json tidak ada, pakai fallback"
-            BOOK="unk"; CHAPTER="0"; VERSE="0"
+            NUMBERED_NAME="vod_$(date '+%Y-%m-%d')_unk.mp4"
           fi
 
-          DATE=$(date '+%Y-%m-%d')
-          NUMBERED_NAME="vod_${DATE}_${BOOK}_${CHAPTER}_${VERSE}.mp4"
-
-          echo "📁 Nama file bernomor: $NUMBERED_NAME"
+          echo "📁 Nama file: $NUMBERED_NAME"
           cp vod-video/latest.mp4 "vod-video/$NUMBERED_NAME"
-
-          # Expose ke job 3 via outputs
           echo "vod_filename=$NUMBERED_NAME" >> $GITHUB_OUTPUT
       - name: Verify video output
         run: |
