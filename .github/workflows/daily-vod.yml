@@ -1,5 +1,4 @@
 name: 🎬 Daily VOD - Full Pipeline
-
 on:
   schedule:
     - cron: '0 0 * * *'   # Jam 07:00 WIB (00:00 UTC)
@@ -13,11 +12,9 @@ on:
         description: 'Skip upload ke Buffer? (true/false)'
         required: false
         default: 'false'
-
 env:
   NODE_VERSION: '22'
   VOD_DURATION: ${{ github.event.inputs.duration || '30' }}
-
 jobs:
   # ══════════════════════════════════════════════════════════════════════════
   # JOB 1: Generate gambar quote dari API SABDA
@@ -28,16 +25,13 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
       - name: Install canvas system dependencies
         run: |
           sudo apt-get update -qq
@@ -49,13 +43,10 @@ jobs:
             librsvg2-dev \
             build-essential \
             pkg-config
-
       - name: Install npm packages
         run: npm install canvas axios
-
       - name: 🎨 Generate quote image
         run: node scripts/generate-quote.js
-
       - name: Verify output
         run: |
           ls -lah vod-image/
@@ -64,7 +55,6 @@ jobs:
             exit 1
           fi
           echo "✅ Gambar berhasil dibuat: $(du -sh vod-image/latest.png | cut -f1)"
-
       - name: Commit & push gambar
         run: |
           git config user.name "github-actions[bot]"
@@ -72,8 +62,6 @@ jobs:
           git add vod-image/
           git commit -m "📸 Daily verse image $(date '+%Y-%m-%d')" || echo "No changes to commit"
           git push
-
-      # Upload sebagai artifact untuk job berikutnya
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
@@ -93,67 +81,56 @@ jobs:
     needs: generate-image
     permissions:
       contents: write
-
+    outputs:
+      vod_filename: ${{ steps.rename.outputs.vod_filename }}   # ← expose ke job 3
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Checkout fresh agar dapat vod-image/ terbaru yang sudah di-push
           fetch-depth: 1
-
       - name: Pull latest changes (gambar baru)
         run: git pull origin main
-
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
       - name: Install npm packages
         run: npm install axios
-
       - name: Install FFmpeg
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
-
       - name: Download image artifact (fallback jika git pull belum ready)
         uses: actions/download-artifact@v4
         with:
           name: vod-image
           path: vod-image/
-
       - name: Verify aset tersedia
         run: |
           echo "── vod-image/ ──"
           ls -lah vod-image/
-
           echo "── assets/background/ ──"
           if [ -d assets/background ]; then
             ls assets/background/
           else
             echo "⚠️  Folder assets/background/ belum ada. Buat folder dan tambahkan video pemandangan .mp4"
             mkdir -p assets/background assets/effect assets/music
-            # Buat video background dummy 30 detik (warna solid) jika belum ada
             ffmpeg -y -f lavfi -i color=c=0x1a1a2e:size=1080x1920:rate=30 \
               -t 30 -c:v libx264 -pix_fmt yuv420p assets/background/default_bg.mp4
             echo "✅ Dibuat background dummy"
           fi
-
           echo "── assets/effect/ ──"
           if [ -d assets/effect ] && ls assets/effect/*.mp4 &>/dev/null; then
             ls assets/effect/
           else
             echo "⚠️  Folder assets/effect/ belum ada. Membuat effect dummy (hitam transparan)..."
             mkdir -p assets/effect
-            # Effect: video hitam dengan opacity rendah (untuk multiply blend)
             ffmpeg -y -f lavfi -i color=c=black:size=1080x1920:rate=30 \
               -t 30 -vf "format=rgba,colorchannelmixer=aa=0.3" \
               -c:v libx264 -pix_fmt yuv420p assets/effect/default_effect.mp4
             echo "✅ Dibuat effect dummy"
           fi
-
           echo "── assets/music/ ──"
           if [ -d assets/music ] && ls assets/music/*.mp3 &>/dev/null; then
             ls assets/music/
@@ -164,12 +141,40 @@ jobs:
               -c:a libmp3lame assets/music/default_music.mp3
             echo "✅ Dibuat musik dummy"
           fi
-
       - name: 🎬 Compose video dengan FFmpeg
         env:
           VOD_DURATION: ${{ env.VOD_DURATION }}
         run: node scripts/compose-video.js
+      - name: Rename & copy video dengan nama tanggal+ayat
+        id: rename
+        run: |
+          if [ -f vod-image/latest-meta.json ]; then
+            BOOK=$(node -e "
+              const m = require('./vod-image/latest-meta.json');
+              const raw = (m.book || m.kitab || m.abbr || 'unk');
+              process.stdout.write(raw.toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,6));
+            ")
+            CHAPTER=$(node -e "
+              const m = require('./vod-image/latest-meta.json');
+              process.stdout.write(String(m.chapter || m.pasal || 0));
+            ")
+            VERSE=$(node -e "
+              const m = require('./vod-image/latest-meta.json');
+              process.stdout.write(String(m.verse || m.ayat || 0));
+            ")
+          else
+            echo "⚠️  latest-meta.json tidak ada, pakai fallback"
+            BOOK="unk"; CHAPTER="0"; VERSE="0"
+          fi
 
+          DATE=$(date '+%Y-%m-%d')
+          NUMBERED_NAME="vod_${DATE}_${BOOK}_${CHAPTER}_${VERSE}.mp4"
+
+          echo "📁 Nama file bernomor: $NUMBERED_NAME"
+          cp vod-video/latest.mp4 "vod-video/$NUMBERED_NAME"
+
+          # Expose ke job 3 via outputs
+          echo "vod_filename=$NUMBERED_NAME" >> $GITHUB_OUTPUT
       - name: Verify video output
         run: |
           ls -lah vod-video/
@@ -177,27 +182,29 @@ jobs:
             echo "❌ latest.mp4 tidak ditemukan!"
             exit 1
           fi
+          if [ ! -f "vod-video/${{ steps.rename.outputs.vod_filename }}" ]; then
+            echo "❌ File bernomor tidak ditemukan!"
+            exit 1
+          fi
           DURATION=$(ffprobe -v error -show_entries format=duration \
             -of default=noprint_wrappers=1:nokey=1 vod-video/latest.mp4)
           SIZE=$(du -sh vod-video/latest.mp4 | cut -f1)
-          echo "✅ Video: ${SIZE}, durasi: ${DURATION}s"
-
+          echo "✅ latest.mp4: ${SIZE}, durasi: ${DURATION}s"
+          echo "✅ File bernomor: ${{ steps.rename.outputs.vod_filename }}"
       - name: Commit & push video
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add vod-video/
-          # File video besar — gunakan git LFS jika sudah disetup, atau skip push video
-          # dan hanya push metadata. Uncomment baris di bawah jika ingin push video:
-          git commit -m "🎬 Daily VOD video $(date '+%Y-%m-%d')" || echo "No changes to commit"
+          git commit -m "🎬 Daily VOD ${{ steps.rename.outputs.vod_filename }}" || echo "No changes to commit"
           git push
-
       - name: Upload video artifact
         uses: actions/upload-artifact@v4
         with:
           name: vod-video
           path: |
             vod-video/latest.mp4
+            vod-video/${{ steps.rename.outputs.vod_filename }}
             vod-video/latest-meta.json
           retention-days: 1
 
@@ -210,38 +217,31 @@ jobs:
     timeout-minutes: 15
     needs: compose-video
     if: ${{ github.event.inputs.skip_upload != 'true' }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
       - name: Install npm packages
         run: npm install axios form-data
-
       - name: Pull latest (pastikan dapat video terbaru dari job 2)
         run: git pull origin main
-
       - name: Verify video tersedia
         run: |
           ls -lah vod-video/
-          if [ ! -f vod-video/latest.mp4 ]; then
-            echo "❌ Video tidak ditemukan! Pastikan job Compose Video sukses."
+          if [ ! -f "vod-video/${{ needs.compose-video.outputs.vod_filename }}" ]; then
+            echo "❌ Video ${{ needs.compose-video.outputs.vod_filename }} tidak ditemukan!"
             exit 1
           fi
-          echo "✅ Video: $(du -sh vod-video/latest.mp4 | cut -f1)"
-
+          echo "✅ Video: $(du -sh "vod-video/${{ needs.compose-video.outputs.vod_filename }}" | cut -f1)"
       - name: 📤 Upload ke Buffer
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
           BUFFER_CHANNEL_IDS:  ${{ secrets.BUFFER_CHANNEL_IDS }}
-          BUFFER_VIDEO_URL: "https://raw.githubusercontent.com/${{ github.repository }}/main/vod-video/latest.mp4"
+          BUFFER_VIDEO_URL: "https://raw.githubusercontent.com/${{ github.repository }}/main/vod-video/${{ needs.compose-video.outputs.vod_filename }}"
         run: node scripts/upload-buffer.js
-
       - name: 🎉 Summary
         run: |
           echo "## ✅ Pipeline Selesai!" >> $GITHUB_STEP_SUMMARY
@@ -252,4 +252,5 @@ jobs:
           echo "| 🎬 Compose Video  | ✅ |" >> $GITHUB_STEP_SUMMARY
           echo "| 🚀 Upload Buffer  | ✅ |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "File: ${{ needs.compose-video.outputs.vod_filename }}" >> $GITHUB_STEP_SUMMARY
           echo "Tanggal: $(date '+%Y-%m-%d %H:%M WIB')" >> $GITHUB_STEP_SUMMARY
