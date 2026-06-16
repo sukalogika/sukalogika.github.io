@@ -42,9 +42,18 @@ jobs:
 
       - run: node scripts/generate-quote.js
 
-      - run: |
+      - name: Rename image to YMD format
+        id: rename_image
+        run: |
           ls -lah vod-image/
           test -f vod-image/latest.png
+          
+          DATE=$(date '+%Y-%m-%d')
+          YMD_IMAGE="${DATE}.png"
+          
+          mv vod-image/latest.png "vod-image/${YMD_IMAGE}"
+          echo "image_filename=${YMD_IMAGE}" >> $GITHUB_OUTPUT
+          echo "Renamed to: ${YMD_IMAGE}"
 
       - run: |
           git config user.name "github-actions[bot]"
@@ -56,7 +65,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: vod-image
-          path: vod-image/latest.png
+          path: vod-image/${{ steps.rename_image.outputs.image_filename }}
 
 
   compose-video:
@@ -66,7 +75,8 @@ jobs:
     permissions:
       contents: write
     outputs:
-      vod_filename: ${{ steps.rename.outputs.vod_filename }}
+      vod_filename: ${{ steps.rename_video.outputs.vod_filename }}
+      image_filename: ${{ needs.generate-image.outputs.image_filename }}
 
     steps:
       - uses: actions/checkout@v4
@@ -104,18 +114,17 @@ jobs:
 
       - run: node scripts/compose-video.js
 
-      # 🔥 FIX UTAMA: deterministic filename
-      - name: Rename video
-        id: rename
+      - name: Rename video to YMD format
+        id: rename_video
         run: |
           test -f vod-video/latest.mp4
 
           DATE=$(date '+%Y-%m-%d')
-          NAME="vod_${DATE}.mp4"
+          YMD_VIDEO="${DATE}.mp4"
 
-          cp vod-video/latest.mp4 "vod-video/$NAME"
-
-          echo "vod_filename=$NAME" >> $GITHUB_OUTPUT
+          mv vod-video/latest.mp4 "vod-video/${YMD_VIDEO}"
+          echo "vod_filename=${YMD_VIDEO}" >> $GITHUB_OUTPUT
+          echo "Renamed to: ${YMD_VIDEO}"
 
       - run: |
           ls -lah vod-video/
@@ -124,13 +133,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add vod-video/
-          git commit -m "🎬 Daily VOD ${{ steps.rename.outputs.vod_filename }}" || true
+          git commit -m "🎬 Daily VOD ${DATE}.mp4" || true
           git push
 
       - uses: actions/upload-artifact@v4
         with:
           name: vod-video
-          path: vod-video/${{ steps.rename.outputs.vod_filename }}
+          path: vod-video/${{ steps.rename_video.outputs.vod_filename }}
 
 
   upload-buffer:
@@ -156,8 +165,8 @@ jobs:
       - name: Validate file
         run: |
           test -f "vod-video/${{ needs.compose-video.outputs.vod_filename }}"
+          echo "Video file: ${{ needs.compose-video.outputs.vod_filename }}"
 
-      # 🔥 FIX: anti cache
       - name: Upload ke Buffer
         env:
           BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
