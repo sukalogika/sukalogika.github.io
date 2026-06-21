@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penghitung Jemaat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg:#FBF7EF;
+    --surface:#FFFFFF;
+    --surface-alt:#F3ECDD;
+    --ink:#2A2420;
+    --muted:#8B8174;
+    --accent:#1F5C52;
+    --accent-ink:#E9F3F0;
+    --accent-2:#C0792E;
+    --border:#E3D9C6;
+    --danger:#B1473A;
+    --danger-ink:#FBEAE7;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 64px;}
+
+  /* ---- Header ---- */
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:30px;
+    margin:4px 0 2px;
+    letter-spacing:-0.01em;
+  }
+  .sub{color:var(--muted);font-size:14px;margin:0 0 18px;}
+
+  .org-row{display:flex;align-items:center;gap:8px;margin-bottom:22px;}
+  .org-row input{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    border:none;
+    background:transparent;
+    border-bottom:1px dashed var(--border);
+    padding:4px 2px;
+    color:var(--ink);
+    width:240px;
+    outline:none;
+  }
+  .org-row input:focus{border-bottom-color:var(--accent);}
+  .org-row label{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em;}
+
+  /* ---- Card shell ---- */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:16px;
+  }
+  .card-title{
+    font-family:'Fraunces',serif;
+    font-size:16px;
+    font-weight:600;
+    margin:0 0 12px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .card-title .num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:999px;
+    width:18px;height:18px;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* ---- Entry form ---- */
+  .entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .field label{
+    display:block;
+    font-size:11px;
+    font-family:'JetBrains Mono',monospace;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--muted);
+    margin-bottom:5px;
+  }
+  .field input{
+    width:100%;
+    padding:10px 11px;
+    border:1px solid var(--border);
+    border-radius:9px;
+    background:var(--surface-alt);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    outline:none;
+  }
+  .field input:focus{border-color:var(--accent);background:var(--surface);}
+
+  /* ---- Stamp Counter (signature element) ---- */
+  .stamp-zone{display:flex;flex-direction:column;align-items:center;padding:10px 0 4px;}
+  .stamp{
+    position:relative;
+    width:188px;height:188px;
+    border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, #2a6e62, var(--accent) 60%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    box-shadow:0 10px 24px -10px rgba(31,92,82,0.55), inset 0 0 0 6px rgba(255,255,255,0.07);
+    cursor:pointer;
+    user-select:none;
+    transition:transform .08s ease;
+    touch-action:manipulation;
+  }
+  .stamp:active{transform:scale(0.96);}
+  .stamp svg.ring{position:absolute;top:0;left:0;width:100%;height:100%;transform:rotate(-90deg);}
+  .stamp .count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:52px;
+    font-weight:700;
+    color:#fff;
+    line-height:1;
+  }
+  .stamp .label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,0.75);
+    margin-top:6px;
+  }
+  .stamp-hint{font-size:12px;color:var(--muted);margin-top:10px;}
+  .stamp-controls{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center;}
+  .chip-btn{
+    border:1px solid var(--border);
+    background:var(--surface-alt);
+    border-radius:9px;
+    padding:9px 14px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .chip-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .chip-btn.minus{color:var(--danger);}
+  .chip-btn.minus:hover{border-color:var(--danger);}
+  .chip-btn.reset{color:var(--muted);}
+
+  .btn{
+    border:none;border-radius:10px;
+    padding:12px 18px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;font-size:14px;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--accent);color:#fff;width:100%;margin-top:16px;}
+  .btn-primary:hover{background:#194a42;}
+  .btn-primary:disabled{background:#C8C2B6;cursor:not-allowed;}
+  .btn-secondary{background:var(--surface-alt);color:var(--ink);border:1px solid var(--border);}
+  .btn-secondary:hover{border-color:var(--accent);}
+  .btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent);}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+
+  /* ---- History (ledger) ---- */
+  .ledger-row{
+    display:grid;
+    grid-template-columns:84px 1fr 60px 28px;
+    gap:10px;align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+  }
+  .ledger-row:last-child{border-bottom:none;}
+  .ledger-row .d{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:12px;}
+  .ledger-row .a{font-weight:500;}
+  .ledger-row .c{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);text-align:right;}
+  .ledger-row .x{color:var(--danger);cursor:pointer;text-align:center;font-size:16px;line-height:1;background:none;border:none;}
+  .empty{color:var(--muted);font-size:13px;padding:14px 0;text-align:center;}
+
+  /* ---- Chart ---- */
+  .chart-wrap{overflow-x:auto;}
+  .chart-legend{font-size:11px;color:var(--muted);margin-top:8px;font-family:'JetBrains Mono',monospace;}
+  .chart-block{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+  .chart-block:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+  .chart-block-title{
+    font-family:'Fraunces',serif;font-weight:600;font-size:14px;
+    color:var(--accent);margin-bottom:8px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .chart-block-title .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;}
+
+  /* ---- Report select ---- */
+  select{
+    width:100%;
+    padding:10px 11px;
+    border:1px solid var(--border);
+    border-radius:9px;
+    background:var(--surface-alt);
+    font-family:'Inter',sans-serif;
+    font-size:14px;color:var(--ink);
+  }
+
+  /* ---- Report card (excel-style, rendered inside a visible preview modal) ---- */
+  .modal.report-modal{max-width:480px;width:92vw;max-height:88vh;overflow-y:auto;}
+  .report-card{background:var(--bg);padding:4px 2px 6px;font-family:'Inter',sans-serif;}
+  .rep-head{margin-bottom:14px;}
+  .rep-org{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;}
+  .rep-title{font-family:'Fraunces',serif;font-size:21px;font-weight:700;margin-top:3px;}
+  .rep-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;font-size:13px;}
+  .rep-table td, .rep-table th{padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;}
+  .rep-table tr:last-child td{border-bottom:none;}
+  .rep-table td:first-child{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.04em;width:42%;}
+  .rep-table td:last-child, .rep-table th:last-child{text-align:right;font-family:'JetBrains Mono',monospace;}
+  .rep-highlight{font-size:17px !important;font-weight:700;color:var(--accent);}
+  .rep-section-label{font-family:'Fraunces',serif;font-weight:600;font-size:13px;color:var(--ink);margin:4px 0 8px;}
+  .rep-history thead th{background:var(--accent);color:#fff;font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-bottom:none;}
+  .rep-history tbody tr:nth-child(even){background:var(--surface-alt);}
+  .rep-history tbody tr.current{background:#F6E1C2;}
+  .rep-history tbody tr.current td{font-weight:700;color:var(--accent-2);}
+  .rep-stats{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+  .rep-foot{font-size:10px;color:var(--muted);text-align:center;margin-top:12px;font-family:'JetBrains Mono',monospace;}
+  .report-modal-actions{margin-top:14px;justify-content:center;flex-wrap:wrap;}
+
+  /* ---- Toast ---- */
+  #toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;
+    font-size:13px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:50;
+    max-width:90%;text-align:center;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---- Modal ---- */
+  .modal-bg{position:fixed;inset:0;background:rgba(42,36,32,0.45);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;}
+  .modal-bg.show{display:flex;}
+  .modal{background:var(--surface);border-radius:14px;padding:22px;max-width:340px;width:100%;}
+  .modal p{font-size:14px;margin:0 0 16px;color:var(--ink);}
+  .modal .btn-row{justify-content:flex-end;}
+
+  footer{text-align:center;color:var(--muted);font-size:11px;margin-top:30px;font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">REGISTER KEHADIRAN</div>
+  <h1>Penghitung Jemaat</h1>
+  <p class="sub">Catat kehadiran tiap kegiatan, lihat tren, lalu bagikan laporannya.</p>
+
+  <div class="org-row">
+    <label for="orgName">Nama gereja/komunitas</label>
+    <input id="orgName" type="text" placeholder="cth. GBI RGCC">
+  </div>
+
+  <!-- 1. Entri kegiatan -->
+  <div class="card">
+    <div class="card-title"><span class="num">1</span> Kegiatan</div>
+    <div class="entry-grid">
+      <div class="field">
+        <label for="actDate">Tanggal</label>
+        <input id="actDate" type="date">
+      </div>
+      <div class="field">
+        <label for="actSelect">Nama kegiatan</label>
+        <select id="actSelect">
+          <option value="Ibadah Umum">Ibadah Umum (Minggu)</option>
+          <option value="Sekolah Minggu">Sekolah Minggu (Minggu)</option>
+          <option value="Healing and Breakthrough">Healing and Breakthrough (Rabu)</option>
+          <option value="__custom">+ Kegiatan lain…</option>
+        </select>
+        <input id="actCustom" type="text" placeholder="Nama kegiatan" style="margin-top:8px;display:none;">
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Clicker -->
+  <div class="card">
+    <div class="card-title"><span class="num">2</span> Hitung jemaat masuk</div>
+    <div class="stamp-zone">
+      <div class="stamp" id="stampBtn" role="button" aria-label="Tambah satu">
+        <svg class="ring" viewBox="0 0 188 188">
+          <circle cx="94" cy="94" r="86" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="5"/>
+          <circle id="ringProgress" cx="94" cy="94" r="86" fill="none" stroke="#E7B65C" stroke-width="5" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="540"/>
+        </svg>
+        <div class="count" id="countDisplay">0</div>
+        <div class="label">Tap untuk +1</div>
+      </div>
+      <div class="stamp-hint">Tap lingkaran setiap satu jemaat masuk</div>
+      <div class="stamp-controls">
+        <button class="chip-btn minus" id="minusBtn">− 1</button>
+        <button class="chip-btn" id="plus5Btn">+ 5</button>
+        <button class="chip-btn reset" id="resetBtn">Reset</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="saveBtn">Simpan ke riwayat</button>
+  </div>
+
+  <!-- 3. Riwayat -->
+  <div class="card">
+    <div class="card-title"><span class="num">3</span> Riwayat kehadiran</div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- 4. Grafik -->
+  <div class="card">
+    <div class="card-title"><span class="num">4</span> Grafik kehadiran</div>
+    <p class="sub" style="margin:-6px 0 14px;">Grafik dipisah per kegiatan supaya perbandingannya apple-to-apple.</p>
+    <div id="chartsContainer"></div>
+  </div>
+
+  <!-- 5. Laporan -->
+  <div class="card">
+    <div class="card-title"><span class="num">5</span> Buat laporan</div>
+    <div class="field" style="margin-bottom:12px;">
+      <label for="reportSelect">Pilih kegiatan</label>
+      <select id="reportSelect"></select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="downloadTxtBtn">Unduh teks (.txt)</button>
+      <button class="btn btn-secondary" id="downloadImgBtn">Pratinjau & unduh gambar</button>
+      <button class="btn btn-outline" id="shareWaBtn">Pratinjau & bagikan WA</button>
+    </div>
+  </div>
+
+  <!-- 6. Data -->
+  <div class="card">
+    <div class="card-title"><span class="num">6</span> Data</div>
+    <p class="sub" style="margin-bottom:12px;">Data tersimpan otomatis di penyimpanan akun ini. Gunakan ekspor/impor untuk cadangan atau pindah perangkat.</p>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="exportBtn">Ekspor JSON</button>
+      <button class="btn btn-secondary" id="importBtn">Impor JSON</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none;">
+    </div>
+  </div>
+
+  <footer>dibuat untuk pencatatan kehadiran jemaat</footer>
+</div>
+
+<!-- Report preview modal (visible on screen so the capture is always reliable) -->
+<div class="modal-bg" id="reportModalBg">
+  <div class="modal report-modal">
+    <div class="report-card" id="reportCard">
+      <div class="rep-head">
+        <div class="rep-org" id="repOrg">GBI RGCC</div>
+        <div class="rep-title">Laporan Kehadiran Jemaat</div>
+      </div>
+      <table class="rep-table">
+        <tbody>
+          <tr><td>Kegiatan</td><td id="repAct">-</td></tr>
+          <tr><td>Tanggal</td><td id="repDate">-</td></tr>
+          <tr><td>Jumlah hadir</td><td id="repCount" class="rep-highlight">0</td></tr>
+        </tbody>
+      </table>
+      <div class="rep-section-label" id="repHistLabel">Riwayat terakhir</div>
+      <table class="rep-table rep-history">
+        <thead><tr><th>Tanggal</th><th>Hadir</th><th>+/-</th></tr></thead>
+        <tbody id="repHistoryBody"></tbody>
+      </table>
+      <div class="rep-stats" id="repStats"></div>
+      <div class="rep-foot" id="repFoot">dibuat dengan Penghitung Jemaat</div>
+    </div>
+    <div class="btn-row report-modal-actions">
+      <button class="btn btn-secondary" id="reportCloseBtn">Tutup</button>
+      <button class="btn btn-secondary" id="reportDownloadBtn">Unduh PNG</button>
+      <button class="btn btn-outline" id="reportShareBtn">Bagikan WA</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div class="modal-bg" id="importModal">
+  <div class="modal">
+    <p>File berisi <span id="importCount">0</span> catatan. Gabungkan dengan data yang sudah ada, atau ganti semuanya?</p>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="importCancel">Batal</button>
+      <button class="btn btn-secondary" id="importReplace">Ganti semua</button>
+      <button class="btn btn-primary" id="importMerge" style="margin:0;width:auto;">Gabungkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORE_KEY = 'jemaat-records';
+  const SETTINGS_KEY = 'jemaat-settings';
+  const PRESET_ACTIVITIES = ['Ibadah Umum', 'Sekolah Minggu', 'Healing and Breakthrough'];
+  const ACTIVITY_DOW = { 'Ibadah Umum': 0, 'Sekolah Minggu': 0, 'Healing and Breakthrough': 3 };
+  let records = [];
+  let settings = { org: '' };
+  let count = 0;
+  let pendingImport = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function toast(msg){
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(()=>t.classList.remove('show'), 2400);
+  }
+
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  function fmtDateID(dStr){
+    if(!dStr) return '-';
+    const d = new Date(dStr+'T00:00:00');
+    return d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  }
+  function fmtDateShort(dStr){
+    const d = new Date(dStr+'T00:00:00');
+    return d.toLocaleDateString('id-ID', { day:'2-digit', month:'short' });
+  }
+
+  function nearestDow(dow){
+    const d = new Date();
+    const diff = (d.getDay() - dow + 7) % 7;
+    d.setDate(d.getDate() - diff);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  function getActivityName(){
+    const v = $('actSelect').value;
+    return v === '__custom' ? $('actCustom').value.trim() : v;
+  }
+
+  $('actSelect').addEventListener('change', ()=>{
+    const v = $('actSelect').value;
+    if(v === '__custom'){
+      $('actCustom').style.display = 'block';
+      $('actCustom').focus();
+    } else {
+      $('actCustom').style.display = 'none';
+      if(ACTIVITY_DOW.hasOwnProperty(v)){
+        $('actDate').value = nearestDow(ACTIVITY_DOW[v]);
+      }
+    }
+  });
+  $('actSelect').dispatchEvent(new Event('change'));
+
+  // ---------- storage ----------
+  async function loadAll(){
+    try{
+      const r = await window.storage.get(STORE_KEY, false);
+      records = r ? JSON.parse(r.value) : [];
+    }catch(e){ records = []; }
+    try{
+      const s = await window.storage.get(SETTINGS_KEY, false);
+      settings = s ? JSON.parse(s.value) : { org:'' };
+    }catch(e){ settings = { org:'' }; }
+    if(!settings.org){ settings.org = 'GBI RGCC'; }
+    $('orgName').value = settings.org || '';
+    renderAll();
+  }
+
+  async function persistRecords(){
+    try{ await window.storage.set(STORE_KEY, JSON.stringify(records), false); }
+    catch(e){ toast('Gagal menyimpan data.'); }
+  }
+  async function persistSettings(){
+    try{ await window.storage.set(SETTINGS_KEY, JSON.stringify(settings), false); }
+    catch(e){ /* silent */ }
+  }
+
+  $('orgName').addEventListener('change', ()=>{
+    settings.org = $('orgName').value.trim();
+    persistSettings();
+  });
+
+  // ---------- clicker ----------
+  const RING_LEN = 540;
+  function updateStamp(){
+    $('countDisplay').textContent = count;
+    const pct = Math.min(count / 50, 1); // fills per 50 people, then loops
+    $('ringProgress').style.strokeDashoffset = RING_LEN - (RING_LEN * (count % 50 === 0 && count>0 ? 1 : pct));
+  }
+  function bump(n){
+    count = Math.max(0, count + n);
+    updateStamp();
+  }
+  $('stampBtn').addEventListener('click', ()=>bump(1));
+  $('minusBtn').addEventListener('click', ()=>bump(-1));
+  $('plus5Btn').addEventListener('click', ()=>bump(5));
+  $('resetBtn').addEventListener('click', ()=>{ count = 0; updateStamp(); });
+
+  if(!$('actDate').value) $('actDate').value = todayStr();
+
+  // ---------- save record ----------
+  $('saveBtn').addEventListener('click', async ()=>{
+    const date = $('actDate').value;
+    const act = getActivityName();
+    if(!date){ toast('Isi tanggal dulu.'); return; }
+    if(!act){ toast('Isi nama kegiatan dulu.'); return; }
+    if(count === 0){ toast('Jumlah masih 0, yakin mau simpan?'); }
+    const rec = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), date, activity: act, count, ts: Date.now() };
+    records.push(rec);
+    await persistRecords();
+    count = 0; updateStamp();
+    $('actCustom').value = '';
+    if($('actSelect').value === '__custom'){
+      $('actSelect').value = 'Ibadah Umum';
+      $('actSelect').dispatchEvent(new Event('change'));
+    }
+    renderAll();
+    toast('Tersimpan: '+act+' — '+rec.count+' jemaat');
+  });
+
+  // ---------- history ----------
+  function sortedRecords(){
+    return [...records].sort((a,b)=> (b.date+b.ts).localeCompare(a.date+a.ts));
+  }
+
+  function renderHistory(){
+    const list = $('historyList');
+    const sorted = sortedRecords();
+    if(sorted.length===0){
+      list.innerHTML = '<div class="empty">Belum ada catatan. Simpan kegiatan pertama di atas.</div>';
+      return;
+    }
+    list.innerHTML = sorted.map(r=>`
+      <div class="ledger-row">
+        <div class="d">${fmtDateShort(r.date)}</div>
+        <div class="a">${escapeHtml(r.activity)}</div>
+        <div class="c">${r.count}</div>
+        <button class="x" data-id="${r.id}" title="Hapus">×</button>
+      </div>
+    `).join('');
+    list.querySelectorAll('.x').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        records = records.filter(r=>r.id !== btn.dataset.id);
+        await persistRecords();
+        renderAll();
+        toast('Catatan dihapus.');
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- charts (separated per activity) ----------
+  function activityList(){
+    const present = [...new Set(records.map(r=>r.activity))];
+    const ordered = PRESET_ACTIVITIES.filter(a=>present.includes(a));
+    const customs = present.filter(a=>!PRESET_ACTIVITIES.includes(a)).sort();
+    return [...ordered, ...customs];
+  }
+
+  function renderCharts(){
+    const container = $('chartsContainer');
+    const acts = activityList();
+    if(acts.length===0){
+      container.innerHTML = '<div class="empty">Belum ada data untuk ditampilkan.</div>';
+      return;
+    }
+    container.innerHTML = acts.map((act,i)=>`
+      <div class="chart-block">
+        <div class="chart-block-title"><span class="dot"></span>${escapeHtml(act)}</div>
+        <div class="chart-wrap"><svg id="chart-${i}" width="100%" height="170"></svg></div>
+        <div class="chart-legend" id="legend-${i}"></div>
+      </div>
+    `).join('');
+    acts.forEach((act,i)=>drawActivityChart(act, `chart-${i}`, `legend-${i}`));
+  }
+
+  function drawActivityChart(act, svgId, legendId){
+    const svg = $(svgId);
+    const data = records.filter(r=>r.activity===act).sort((a,b)=>(a.date+a.ts).localeCompare(b.date+b.ts)).slice(-10);
+    const legend = $(legendId);
+    if(data.length===0){
+      svg.innerHTML = '';
+      legend.textContent = '';
+      return;
+    }
+    const h = 170, padBottom = 30, padTop = 16;
+    const w = Math.max(320, data.length*54);
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.setAttribute('width', w);
+    const max = Math.max(...data.map(r=>r.count), 1);
+    const barW = 30, gap = (w - data.length*barW) / (data.length+1);
+    let bars = '';
+    data.forEach((r,i)=>{
+      const bh = ((h-padTop-padBottom) * (r.count/max));
+      const x = gap + i*(barW+gap);
+      const y = h - padBottom - bh;
+      const isMax = r.count === max;
+      bars += `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(bh,2)}" rx="5" fill="${isMax?'#C0792E':'#1F5C52'}"/>`;
+      bars += `<text x="${x+barW/2}" y="${y-6}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="#2A2420">${r.count}</text>`;
+      bars += `<text x="${x+barW/2}" y="${h-padBottom+16}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8B8174">${fmtDateShort(r.date)}</text>`;
+    });
+    svg.innerHTML = bars;
+    const total = data.reduce((s,r)=>s+r.count,0);
+    const avg = Math.round(total/data.length);
+    const last = data[data.length-1];
+    let trend = '';
+    if(data.length>1){
+      const prev = data[data.length-2];
+      const diff = last.count - prev.count;
+      trend = ` · terakhir vs sebelumnya: ${diff>=0?'+':''}${diff}`;
+    }
+    legend.textContent = `${data.length} kegiatan tercatat · rata-rata ${avg}${trend}`;
+  }
+
+  // ---------- report select ----------
+  function renderReportSelect(){
+    const sel = $('reportSelect');
+    const acts = activityList();
+    if(records.length===0){
+      sel.innerHTML = '<option value="">Belum ada catatan</option>';
+      return;
+    }
+    sel.innerHTML = acts.map(act=>{
+      const items = records.filter(r=>r.activity===act).sort((a,b)=> (b.date+b.ts).localeCompare(a.date+a.ts));
+      const opts = items.map(r=>`<option value="${r.id}">${fmtDateShort(r.date)} — ${r.count}</option>`).join('');
+      return `<optgroup label="${escapeHtml(act)}">${opts}</optgroup>`;
+    }).join('');
+  }
+
+  function renderAll(){
+    renderHistory();
+    renderCharts();
+    renderReportSelect();
+  }
+
+  // ---------- report text ----------
+  function buildReportText(rec){
+    const sorted = records.filter(r=>r.activity===rec.activity).sort((a,b)=> (a.date+a.ts).localeCompare(b.date+b.ts));
+    const idx = sorted.findIndex(r=>r.id===rec.id);
+    const prev = idx>0 ? sorted[idx-1] : null;
+    let diffLine = '';
+    if(prev){
+      const diff = rec.count - prev.count;
+      diffLine = `Perubahan dari ${rec.activity} sebelumnya: ${diff>=0?'+':''}${diff}\n`;
+    }
+    const org = settings.org ? settings.org : 'GBI RGCC';
+    return `${org}\nLAPORAN KEHADIRAN\n\nKegiatan : ${rec.activity}\nTanggal  : ${fmtDateID(rec.date)}\nHadir    : ${rec.count} jemaat\n${diffLine}\nDibuat dengan Penghitung Jemaat`;
+  }
+
+  function getSelectedRecord(){
+    const id = $('reportSelect').value;
+    return records.find(r=>r.id===id);
+  }
+
+  $('downloadTxtBtn').addEventListener('click', ()=>{
+    const rec = getSelectedRecord();
+    if(!rec){ toast('Pilih kegiatan dulu.'); return; }
+    const text = buildReportText(rec);
+    downloadBlob(new Blob([text], {type:'text/plain'}), `laporan-${rec.date}.txt`);
+  });
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  }
+
+  // ---------- report image (excel-style table, shown in a visible preview modal) ----------
+  let currentReportRec = null;
+
+  function fillReportRender(rec){
+    $('repOrg').textContent = (settings.org || 'GBI RGCC').toUpperCase();
+    $('repAct').textContent = rec.activity;
+    $('repDate').textContent = fmtDateID(rec.date);
+    $('repCount').textContent = rec.count + ' jemaat';
+
+    const sameAct = records.filter(r=>r.activity===rec.activity).sort((a,b)=> (a.date+a.ts).localeCompare(b.date+b.ts));
+    const idx = sameAct.findIndex(r=>r.id===rec.id);
+    const histSlice = sameAct.slice(Math.max(0, idx-6), idx+1);
+
+    $('repHistLabel').textContent = `Riwayat ${rec.activity} terakhir`;
+    $('repHistoryBody').innerHTML = histSlice.map((r,i)=>{
+      let diffText = '–';
+      if(i>0){
+        const diff = r.count - histSlice[i-1].count;
+        diffText = (diff>=0?'+':'') + diff;
+      }
+      const isCurrent = r.id === rec.id;
+      return `<tr class="${isCurrent?'current':''}"><td>${fmtDateShort(r.date)}</td><td>${r.count}</td><td>${diffText}</td></tr>`;
+    }).join('');
+
+    const total = sameAct.reduce((s,r)=>s+r.count,0);
+    const avg = Math.round(total/sameAct.length);
+    $('repStats').textContent = `Rata-rata seluruh ${rec.activity}: ${avg} · Total ${sameAct.length}x tercatat`;
+    $('repFoot').textContent = 'Dibuat dengan Penghitung Jemaat #sukalogika · ' + new Date().toLocaleDateString('id-ID');
+  }
+
+  function openReportPreview(rec){
+    currentReportRec = rec;
+    fillReportRender(rec);
+    $('reportModalBg').classList.add('show');
+  }
+
+  $('reportCloseBtn').addEventListener('click', ()=>{
+    $('reportModalBg').classList.remove('show');
+  });
+
+  async function captureReportCanvas(){
+    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+    const node = $('reportCard');
+    return html2canvas(node, { scale: 2, backgroundColor: '#FBF7EF', useCORS: true });
+  }
+
+  $('downloadImgBtn').addEventListener('click', ()=>{
+    const rec = getSelectedRecord();
+    if(!rec){ toast('Pilih kegiatan dulu.'); return; }
+    openReportPreview(rec);
+  });
+
+  $('shareWaBtn').addEventListener('click', ()=>{
+    const rec = getSelectedRecord();
+    if(!rec){ toast('Pilih kegiatan dulu.'); return; }
+    openReportPreview(rec);
+  });
+
+  $('reportDownloadBtn').addEventListener('click', async ()=>{
+    toast('Membuat gambar...');
+    try{
+      const canvas = await captureReportCanvas();
+      canvas.toBlob(blob=>{
+        if(!blob){ toast('Gagal membuat gambar, coba lagi.'); return; }
+        downloadBlob(blob, `laporan-${currentReportRec.date}.png`);
+        toast('Gambar laporan diunduh.');
+      }, 'image/png');
+    }catch(e){
+      toast('Gagal membuat gambar, coba lagi.');
+    }
+  });
+
+  $('reportShareBtn').addEventListener('click', async ()=>{
+    toast('Menyiapkan laporan...');
+    try{
+      const canvas = await captureReportCanvas();
+      canvas.toBlob(async blob=>{
+        if(!blob){ toast('Gagal membuat gambar, coba lagi.'); return; }
+        const text = buildReportText(currentReportRec);
+        const file = new File([blob], `laporan-${currentReportRec.date}.png`, {type:'image/png'});
+        if(navigator.canShare && navigator.canShare({ files:[file] })){
+          try{
+            await navigator.share({ files:[file], title:'Laporan Kehadiran', text });
+            return;
+          }catch(e){ /* user cancelled or unsupported, fall through */ }
+        }
+        // Fallback: download image + open WhatsApp with text
+        downloadBlob(blob, `laporan-${currentReportRec.date}.png`);
+        toast('Gambar diunduh. Lampirkan manual di WhatsApp.');
+        const waUrl = 'https://wa.me/?text=' + encodeURIComponent(text);
+        window.open(waUrl, '_blank');
+      }, 'image/png');
+    }catch(e){
+      toast('Gagal membuat gambar, coba lagi.');
+    }
+  });
+
+  // ---------- export / import ----------
+  $('exportBtn').addEventListener('click', ()=>{
+    const payload = { exportedAt: new Date().toISOString(), settings, records };
+    downloadBlob(new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'}), `jemaat-data-${todayStr()}.json`);
+    toast('Data diekspor.');
+  });
+
+  $('importBtn').addEventListener('click', ()=> $('importFile').click());
+
+  $('importFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      try{
+        const data = JSON.parse(ev.target.result);
+        const incoming = Array.isArray(data) ? data : (data.records || []);
+        if(!Array.isArray(incoming)) throw new Error('format salah');
+        pendingImport = { records: incoming, settings: data.settings };
+        $('importCount').textContent = incoming.length;
+        $('importModal').classList.add('show');
+      }catch(err){
+        toast('File tidak valid.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  $('importCancel').addEventListener('click', ()=>{ pendingImport=null; $('importModal').classList.remove('show'); });
+
+  $('importReplace').addEventListener('click', async ()=>{
+    if(!pendingImport) return;
+    records = pendingImport.records;
+    if(pendingImport.settings){ settings = pendingImport.settings; $('orgName').value = settings.org||''; await persistSettings(); }
+    await persistRecords();
+    renderAll();
+    $('importModal').classList.remove('show');
+    toast('Data diganti dengan file impor.');
+  });
+
+  $('importMerge').addEventListener('click', async ()=>{
+    if(!pendingImport) return;
+    const existingIds = new Set(records.map(r=>r.id));
+    pendingImport.records.forEach(r=>{
+      if(!r.id) r.id = Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      if(existingIds.has(r.id)){
+        const idx = records.findIndex(x=>x.id===r.id);
+        records[idx] = r;
+      } else {
+        records.push(r);
+      }
+    });
+    await persistRecords();
+    renderAll();
+    $('importModal').classList.remove('show');
+    toast('Data digabungkan.');
+  });
+
+  // ---------- init ----------
+  updateStamp();
+  loadAll();
+})();
+</script>
+</body>
+</html>
