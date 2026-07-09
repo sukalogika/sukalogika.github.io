@@ -1,0 +1,1048 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	
+	<meta name="author" content="Henky Adlin Shan">
+<meta name="dcterms.rightsHolder" content="Henky Adlin Shan (sukalogika.com)">
+<meta name="license" content="MIT License">
+<meta name="description" content="Ada 10 puzzle bertema serangga yang dapat kamu mainkan">
+
+    <title>Puzzle Serangga - Phaser Puzzle Game</title>
+	
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Phaser 3 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Lucide Icons for high-quality interface vectors -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+      body {
+        font-family: 'Space Grotesk', sans-serif;
+      }
+      .font-mono-custom {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      /* Custom glowing scrollbars and selections */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #020617;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #10b981;
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 relative overflow-x-hidden">
+    
+    <!-- Decorative Glowing Ambient Lights in Background -->
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-lime-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Main Game Frame -->
+    <div class="w-full max-w-md bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-800/80 shadow-2xl p-6 relative overflow-hidden">
+      
+      <!-- HEADER GAME -->
+      <div class="flex items-center justify-between mb-6 border-b border-slate-800/80 pb-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <i data-lucide="bug" class="w-4 h-4 text-white"></i>
+          </div>
+          <span class="font-bold text-lg tracking-wide bg-gradient-to-r from-emerald-400 to-lime-400 bg-clip-text text-transparent">PUZZLE SERANGGA</span>
+        </div>
+        <button id="guide-btn" class="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 border border-slate-700/50 transition duration-300" title="Panduan Ganti Gambar">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- ================= MENU SCREEN ================= -->
+      <div id="menu-screen" class="space-y-6">
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-xs font-semibold tracking-wider text-slate-400 uppercase">1. Pilih Serangga Lucu (9:16)</h2>
+            <span class="text-[10px] text-emerald-400 font-mono-custom font-semibold">10 Pilihan</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1">
+            
+            <!-- Stage 1 Card -->
+            <button id="stage-0-card" onclick="selectStage(0)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-emerald-500 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+              <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+                <!-- Procedural thumbnail goes here -->
+                <canvas id="thumb-canvas-0" class="w-full h-full object-cover"></canvas>
+                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+                  <p class="text-xs font-bold text-white leading-tight">Darkling Beetle</p>
+                  <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 01</p>
+                </div>
+              </div>
+            </button>
+
+            <!-- Stage 2 Card -->
+            <button id="stage-1-card" onclick="selectStage(1)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-slate-700 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+              <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+                <!-- Procedural thumbnail goes here -->
+                <canvas id="thumb-canvas-1" class="w-full h-full object-cover"></canvas>
+                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+                  <p class="text-xs font-bold text-white leading-tight">Ladybug</p>
+                  <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 02</p>
+                </div>
+              </div>
+            </button>
+
+            <!-- Stage 3 Card -->
+            <button id="stage-2-card" onclick="selectStage(2)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-slate-700 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+              <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+                <!-- Procedural thumbnail goes here -->
+                <canvas id="thumb-canvas-2" class="w-full h-full object-cover"></canvas>
+                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+                  <p class="text-xs font-bold text-white leading-tight">Rhinoceros Beetle</p>
+                  <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 03</p>
+                </div>
+              </div>
+            </button>
+
+            <!-- Stage 4 Card -->
+            <button id="stage-3-card" onclick="selectStage(3)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-slate-700 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+              <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+                <!-- Procedural thumbnail goes here -->
+                <canvas id="thumb-canvas-3" class="w-full h-full object-cover"></canvas>
+                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+                  <p class="text-xs font-bold text-white leading-tight">Stag Beetle</p>
+                  <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 04</p>
+                </div>
+              </div>
+            </button>
+
+            <!-- Stage 5 Card -->
+            <button id="stage-4-card" onclick="selectStage(4)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-slate-700 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+              <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+                <!-- Procedural thumbnail goes here -->
+                <canvas id="thumb-canvas-4" class="w-full h-full object-cover"></canvas>
+                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+                  <p class="text-xs font-bold text-white leading-tight">Jewel Beetle</p>
+                  <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 05</p>
+                </div>
+              </div>
+            </button>
+
+            <!-- Stage 6 Card -->
+            <button id="stage-5-card" onclick="selectStage(5)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-slate-700 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+              <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+                <!-- Procedural thumbnail goes here -->
+                <canvas id="thumb-canvas-5" class="w-full h-full object-cover"></canvas>
+                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+                  <p class="text-xs font-bold text-white leading-tight">Golden Tortoise</p>
+                  <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 06</p>
+                </div>
+              </div>
+            </button>
+
+
+<button id="stage-6-card" onclick="selectStage(6)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-slate-700 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+  <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+    <canvas id="thumb-canvas-6" class="w-full h-full object-cover"></canvas>
+    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+      <p class="text-xs font-bold text-white leading-tight">Firefly</p>
+      <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 07</p>
+    </div>
+  </div>
+</button>
+
+<button id="stage-7-card" onclick="selectStage(7)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-slate-700 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+  <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+    <canvas id="thumb-canvas-7" class="w-full h-full object-cover"></canvas>
+    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+      <p class="text-xs font-bold text-white leading-tight">Dragonfly</p>
+      <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 08</p>
+    </div>
+  </div>
+</button>
+
+<button id="stage-8-card" onclick="selectStage(8)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-slate-700 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+  <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+    <canvas id="thumb-canvas-8" class="w-full h-full object-cover"></canvas>
+    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+      <p class="text-xs font-bold text-white leading-tight">Butterfly</p>
+      <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 09</p>
+    </div>
+  </div>
+</button>
+
+<button id="stage-9-card" onclick="selectStage(9)" class="group text-left relative rounded-2xl overflow-hidden border-2 border-transparent hover:border-slate-700 bg-slate-800/30 p-1.5 transition duration-300 focus:outline-none">
+  <div class="aspect-[9/16] w-full rounded-xl overflow-hidden bg-slate-950 relative">
+    <canvas id="thumb-canvas-9" class="w-full h-full object-cover"></canvas>
+    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2.5 pt-6">
+      <p class="text-xs font-bold text-white leading-tight">Weaver Ant</p>
+      <p class="text-[9px] text-emerald-400 font-bold tracking-wider uppercase mt-1">Stage 10</p>
+    </div>
+  </div>
+</button>
+
+          </div>
+        </div>
+
+        <div>
+          <h2 class="text-xs font-semibold tracking-wider text-slate-400 uppercase mb-3">2. Pilih Tingkat Kesulitan</h2>
+          <div class="grid grid-cols-3 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800/60">
+            <button id="diff-easy" onclick="selectDifficulty('easy')" class="py-2.5 px-3 rounded-lg text-xs font-medium transition duration-300 bg-emerald-600 text-white shadow-lg">
+              Easy (3x3)
+            </button>
+            <button id="diff-medium" onclick="selectDifficulty('medium')" class="py-2.5 px-3 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition duration-300">
+              Medium (3x4)
+            </button>
+            <button id="diff-hard" onclick="selectDifficulty('hard')" class="py-2.5 px-3 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition duration-300">
+              Hard (3x5)
+            </button>
+          </div>
+        </div>
+
+        <button id="play-btn" onclick="startGame()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold tracking-wider uppercase shadow-xl shadow-emerald-600/20 hover:shadow-emerald-600/40 hover:scale-[1.02] active:scale-[0.98] transition duration-300 flex items-center justify-center gap-2">
+          <span>MAIN SEKARANG</span>
+          <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+        </button>
+      </div>
+
+      <!-- ================= GAMEPLAY SCREEN ================= -->
+      <div id="game-screen" class="hidden space-y-4">
+        <!-- HUD Stats Bar -->
+        <div class="flex items-center justify-between p-3 bg-slate-950 rounded-2xl border border-slate-800/60 font-mono-custom text-xs">
+          <div class="flex items-center gap-1.5 text-slate-400">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span id="timer-text" class="text-slate-200 font-bold">00:00</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-slate-400">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-lime-400"></i>
+            <span>Moves: <strong id="moves-text" class="text-slate-200">0</strong></span>
+          </div>
+          <div class="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-bold text-[10px] tracking-wider uppercase">
+            <span id="diff-badge">EASY</span>
+          </div>
+        </div>
+
+        <!-- Phaser Game Viewport Parent -->
+        <div class="relative flex justify-center">
+          <!-- Canvas Frame overlay shadow -->
+          <div id="phaser-game-container" class="w-full max-w-[320px] aspect-[9/16] bg-slate-950 rounded-2xl border-2 border-slate-800 shadow-inner relative overflow-hidden">
+            <!-- Loading Indicator -->
+            <div id="game-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 z-10 space-y-3">
+              <div class="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+              <p class="text-xs text-slate-400 font-mono-custom animate-pulse">Menyiapkan Puzzle...</p>
+            </div>
+            
+            <!-- Hint Overlay (visible when holding "Tahan Hint") -->
+            <div id="hint-overlay" class="absolute inset-0 z-20 opacity-0 pointer-events-none transition-opacity duration-300 bg-slate-950/90 flex items-center justify-center">
+              <img id="hint-image" class="w-full h-full object-cover rounded-2xl" src="" alt="Hint" />
+              <div class="absolute top-3 left-3 bg-slate-900/90 border border-slate-700/60 rounded-lg px-2.5 py-1 text-[10px] text-emerald-400 font-bold tracking-wider">HINT VIEW</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gameplay Controls -->
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <!-- Press and hold to view the full original picture -->
+          <button id="hint-btn" class="py-3 px-4 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 text-xs font-semibold text-slate-300 flex items-center justify-center gap-2 select-none active:bg-emerald-900/20 active:border-emerald-700/50 transition duration-200">
+            <i data-lucide="eye" class="w-4 h-4"></i>
+            <span>TAHAN HINT</span>
+          </button>
+          
+          <button onclick="restartGame()" class="py-3 px-4 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 text-xs font-semibold text-slate-300 flex items-center justify-center gap-2 transition duration-200">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <span>RESET</span>
+          </button>
+        </div>
+
+        <!-- Back button -->
+        <button onclick="backToMenu()" class="w-full py-3 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800/80 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2 transition duration-200 mt-2">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          <span>KEMBALI KE MENU</span>
+        </button>
+      </div>
+
+      <!-- ================= VICTORY PANEL ================= -->
+      <div id="victory-screen" class="hidden text-center py-6 space-y-6">
+        <div class="flex justify-center">
+          <div class="w-16 h-16 bg-gradient-to-tr from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-2xl shadow-yellow-500/30 animate-bounce">
+            <i data-lucide="trophy" class="w-8 h-8 text-slate-950"></i>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-bold text-amber-400 tracking-wider uppercase mb-1">KAMU MENANG!</h2>
+          <p class="text-xs text-slate-400">Kerja bagus, kamu berhasil menyelesaikan puzzle!</p>
+        </div>
+
+        <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800 max-w-[280px] mx-auto space-y-3 font-mono-custom text-sm">
+          <div class="flex justify-between">
+            <span class="text-slate-500">Waktu:</span>
+            <span id="final-time" class="text-slate-200 font-bold">00:00</span>
+          </div>
+          <div class="flex justify-between border-t border-slate-900 pt-2">
+            <span class="text-slate-500">Total Move:</span>
+            <span id="final-moves" class="text-slate-200 font-bold">0</span>
+          </div>
+          <div class="flex justify-between border-t border-slate-900 pt-2">
+            <span class="text-slate-500">Level:</span>
+            <span id="final-diff" class="text-emerald-400 font-bold uppercase">Easy</span>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <button onclick="playAgain()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold tracking-wider uppercase transition duration-300 shadow-lg shadow-emerald-600/20">
+            MAIN LAGI
+          </button>
+          <button onclick="backToMenu()" class="w-full py-3 rounded-xl bg-slate-800/40 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700/50 text-xs font-semibold transition duration-200">
+            KEMBALI KE MENU
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= INSTRUCTIONS / CUSTOMIZATION GUIDE MODAL ================= -->
+    <div id="guide-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300">
+      <div class="bg-slate-900 border border-slate-800 max-w-md w-full rounded-3xl p-6 shadow-2xl relative space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2 text-emerald-400">
+            <i data-lucide="info" class="w-5 h-5"></i>
+            <h3 class="font-bold text-lg text-slate-100">Puzzle Serangga Lucu</h3>
+          </div>
+          <button id="close-guide-btn" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition duration-200">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs leading-relaxed text-slate-300">
+          <p>Selamat datang di <strong>Puzzle Serangga</strong>! Ada 10 jenis serangga kartun lucu bertema hijau daun yang siap kamu mainkan:</p>
+          
+          <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 space-y-2">
+            <h4 class="font-bold text-emerald-400 text-xs flex items-center gap-1.5">
+              <i data-lucide="bug" class="w-3.5 h-3.5"></i>
+              Mengenal Serangga Kita:
+            </h4>
+<ul class="list-disc list-inside space-y-1 text-slate-400 text-[11px]">
+  <li><strong class="text-slate-200">Darkling Beetle:</strong> Kumbang hitam berkilau yang suka berpetualang di lantai hutan.</li>
+  <li><strong class="text-slate-200">Ladybug:</strong> Kumbang koksi merah totol hitam menggemaskan pembawa keberuntungan.</li>
+  <li><strong class="text-slate-200">Rhinoceros Beetle:</strong> Kumbang tanduk yang sangat kuat tapi ramah dan baik hati.</li>
+  <li><strong class="text-slate-200">Stag Beetle:</strong> Kumbang rusa dengan penjepit unik yang gagah namun bersahabat.</li>
+  <li><strong class="text-slate-200">Jewel Beetle:</strong> Kumbang permata berkilau seindah perhiasan warna-warni hutan.</li>
+  <li><strong class="text-slate-200">Golden Tortoise:</strong> Kumbang kura-kura emas dengan cangkang transparan keemasan.</li>
+  <li><strong class="text-slate-200">Firefly:</strong> Serangga malam yang memancarkan cahaya indah pemecah kegelapan.</li>
+  <li><strong class="text-slate-200">Dragonfly:</strong> Penerbang ulung dengan sayap transparan yang lincah dan menawan.</li>
+  <li><strong class="text-slate-200">Butterfly:</strong> Hewan indah bersayap penuh warna hasil metamorfosis sempurna.</li>
+  <li><strong class="text-slate-200">Weaver Ant:</strong> Arsitek alam terampil yang kompak membangun sarang dari dedaunan.</li>
+</ul>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button id="close-guide-ok-btn" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-100 font-bold transition duration-200">
+              Ayo Main!
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= GAME LOGIC & PHASER INTEGRATION ================= -->
+    <script>
+      // Initialize Web Audio API for synthesized sounds
+      let audioCtx = null;
+      function initAudio() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+      function playSynthSound(type) {
+        initAudio();
+        if (!audioCtx) return;
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'click') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'swap') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.22);
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.22);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.22);
+        } else if (type === 'correct') {
+          const now = audioCtx.currentTime;
+          const freqs = [523.25, 659.25, 783.99]; // Arpeggio of C5, E5, G5 (Do-Mi-Sol)
+          freqs.forEach((freq, idx) => {
+            const noteOsc = audioCtx.createOscillator();
+            const noteGain = audioCtx.createGain();
+            noteOsc.connect(noteGain);
+            noteGain.connect(audioCtx.destination);
+            noteOsc.type = 'sine';
+            noteOsc.frequency.setValueAtTime(freq, now + idx * 0.06);
+            noteGain.gain.setValueAtTime(0.12, now + idx * 0.06);
+            noteGain.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.06 + 0.18);
+            noteOsc.start(now + idx * 0.06);
+            noteOsc.stop(now + idx * 0.06 + 0.22);
+          });
+        } else if (type === 'win') {
+          // Melodic victory fanfare in C Major Pentatonic
+          const now = audioCtx.currentTime;
+          const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const noteOsc = audioCtx.createOscillator();
+            const noteGain = audioCtx.createGain();
+            noteOsc.connect(noteGain);
+            noteGain.connect(audioCtx.destination);
+
+            noteOsc.type = 'sine';
+            noteOsc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            noteGain.gain.setValueAtTime(0.15, now + idx * 0.08);
+            noteGain.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.08 + 0.35);
+
+            noteOsc.start(now + idx * 0.08);
+            noteOsc.stop(now + idx * 0.08 + 0.4);
+          });
+        }
+      }
+
+      // ================= IMAGE STAGE ASSETS (9:16) =================
+      // High-quality vertical PNG images saved in the assets directory
+      const proceduralImages = [
+        "assets/darkling_beetle.jpg",
+        "assets/ladybug.jpg",
+        "assets/rhinoceros_beetle.jpg",
+        "assets/stag_beetle.jpg",
+        "assets/jewel_beetle.jpg",
+        "assets/golden_tortoise_beetle.jpg",
+        "assets/kunang_kunang.jpg",
+        "assets/capung.jpg",
+        "assets/kupu_kupu.jpg",
+        "assets/semut_rangrang.jpg"
+      ];
+      
+function renderThumbnails() {
+  // Ubah batas iterasi menjadi proceduralImages.length
+  for (let idx = 0; idx < proceduralImages.length; idx++) { 
+    const tCanvas = document.getElementById(`thumb-canvas-${idx}`);
+    if (tCanvas) {
+      const ctx = tCanvas.getContext('2d');
+      const img = new Image();
+      img.onload = function() {
+        tCanvas.width = 180;
+        tCanvas.height = 320;
+        ctx.drawImage(img, 0, 0, 180, 320);
+      };
+      img.src = proceduralImages[idx];
+    }
+  }
+}
+
+      // Render thumbnails immediately on load
+      window.addEventListener('DOMContentLoaded', () => {
+        renderThumbnails();
+        lucide.createIcons();
+      });
+
+      // ================= STATE MANAGEMENT =================
+      let selectedStageIndex = 0;
+      let selectedDifficulty = 'easy'; // 'easy' (3x3), 'medium' (3x4), 'hard' (3x5)
+      let gameInstance = null;
+      let gameTimer = null;
+      let timerSeconds = 0;
+      let movesCount = 0;
+
+function selectStage(index) {
+  playSynthSound('click');
+  selectedStageIndex = index;
+  
+  // Ubah batas iterasi menjadi proceduralImages.length
+  for (let i = 0; i < proceduralImages.length; i++) {
+    const card = document.getElementById(`stage-${i}-card`);
+    if (card) {
+      if (i === index) {
+        card.classList.add('border-emerald-500');
+        card.classList.remove('border-transparent', 'hover:border-slate-700');
+      } else {
+        card.classList.add('border-transparent', 'hover:border-slate-700');
+        card.classList.remove('border-emerald-500');
+      }
+    }
+  }
+}
+
+      function selectDifficulty(diff) {
+        playSynthSound('click');
+        selectedDifficulty = diff;
+        
+        const btnEasy = document.getElementById('diff-easy');
+        const btnMedium = document.getElementById('diff-medium');
+        const btnHard = document.getElementById('diff-hard');
+
+        // Reset class lists
+        [btnEasy, btnMedium, btnHard].forEach(btn => {
+          btn.className = "py-2.5 px-3 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition duration-300";
+        });
+
+        // Set active style to selected button
+        const activeBtn = document.getElementById(`diff-${diff}`);
+        activeBtn.className = "py-2.5 px-3 rounded-lg text-xs font-medium transition duration-300 bg-emerald-600 text-white shadow-lg shadow-emerald-600/30";
+      }
+
+      // ================= GAME ENGINE CONTROLLER =================
+      function startGame() {
+        playSynthSound('click');
+        
+        // Configure hint picture
+        const hintImg = document.getElementById('hint-image');
+        hintImg.src = proceduralImages[selectedStageIndex];
+
+        // Hide Menu Screen, Show Game Screen
+        document.getElementById('menu-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+
+        // Set difficulty badge text
+        const badge = document.getElementById('diff-badge');
+        badge.innerText = selectedDifficulty.toUpperCase();
+
+        // Initialize variables
+        movesCount = 0;
+        timerSeconds = 0;
+        document.getElementById('moves-text').innerText = '0';
+        document.getElementById('timer-text').innerText = '00:00';
+
+        // Initialize Phaser Instance
+        initPhaserPuzzle();
+      }
+
+      function updateTimer() {
+        timerSeconds++;
+        const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+        const secs = (timerSeconds % 60).toString().padStart(2, '0');
+        document.getElementById('timer-text').innerText = `${mins}:${secs}`;
+      }
+
+      window.incrementMoves = function() {
+        movesCount++;
+        document.getElementById('moves-text').innerText = movesCount;
+        playSynthSound('swap');
+      };
+
+      window.handleWin = function() {
+        clearInterval(gameTimer);
+        playSynthSound('win');
+
+        // Trigger confetti explosion from multiple coordinates
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 25, spread: 360, ticks: 50, zIndex: 100 };
+
+        function randomInRange(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+
+        const interval = setInterval(function() {
+          const timeLeft = animationEnd - Date.now();
+
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 50 * (timeLeft / duration);
+          // since particles fall down, start a bit higher than random
+          confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+          confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+
+        // Display Stats on victory
+        const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+        const secs = (timerSeconds % 60).toString().padStart(2, '0');
+        document.getElementById('final-time').innerText = `${mins}:${secs}`;
+        document.getElementById('final-moves').innerText = movesCount;
+        document.getElementById('final-diff').innerText = selectedDifficulty.toUpperCase();
+
+        // Show victory container overlay
+        setTimeout(() => {
+          document.getElementById('game-screen').classList.add('hidden');
+          document.getElementById('victory-screen').classList.remove('hidden');
+        }, 500);
+      };
+
+      function restartGame() {
+        playSynthSound('click');
+        if (gameInstance) {
+          clearInterval(gameTimer);
+          timerSeconds = 0;
+          movesCount = 0;
+          document.getElementById('moves-text').innerText = '0';
+          document.getElementById('timer-text').innerText = '00:00';
+          
+          document.getElementById('game-loader').classList.remove('hidden');
+
+          // Retrieve active scene and command a reboot shuffle
+          const activeScene = gameInstance.scene.getScene('PuzzleScene');
+          if (activeScene) {
+            activeScene.restartScene();
+          }
+        }
+      }
+
+      function backToMenu() {
+        playSynthSound('click');
+        clearInterval(gameTimer);
+        
+        // Destroy active Phaser instance to free up webGL context memory
+        if (gameInstance) {
+          gameInstance.destroy(true);
+          gameInstance = null;
+        }
+
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('victory-screen').classList.add('hidden');
+        document.getElementById('menu-screen').classList.remove('hidden');
+      }
+
+      function playAgain() {
+        document.getElementById('victory-screen').classList.add('hidden');
+        startGame();
+      }
+
+      // ================= PHASER SCENE IMPLEMENTATION =================
+      class PuzzleScene extends Phaser.Scene {
+        constructor() {
+          super({ key: 'PuzzleScene' });
+        }
+
+        init() {
+          // Setup column and row parameters depending on user selected difficulty
+          this.cols = 3; // "ada 3 kolom"
+          if (selectedDifficulty === 'easy') {
+            this.rows = 3;
+          } else if (selectedDifficulty === 'medium') {
+            this.rows = 4;
+          } else {
+            this.rows = 5;
+          }
+
+          // Container dimensions (Phaser Canvas size is 360 x 640)
+          this.displayTileW = 360 / this.cols;
+          this.displayTileH = 640 / this.rows;
+
+          this.tiles = [];
+          this.selectedTile = null;
+          this.isWin = false;
+          this.isMoving = false;
+        }
+
+        preload() {
+          // Load local PNG asset directly from server assets path
+          this.load.image('puzzle-image', proceduralImages[selectedStageIndex]);
+        }
+
+        create() {
+          const texture = this.textures.get('puzzle-image');
+          const source = texture.getSourceImage();
+          const imgW = source.width;
+          const imgH = source.height;
+
+          // Slicing dimensions relative to original image size
+          this.sourceTileW = imgW / this.cols;
+          this.sourceTileH = imgH / this.rows;
+          
+          // Generate precise frames sliced relative to selected grid density
+          for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+              const frameName = `slice_${r}_${c}`;
+              const srcX = c * this.sourceTileW;
+              const srcY = r * this.sourceTileH;
+              
+              // Register frame coordinate slice within image texture
+              texture.add(frameName, 0, srcX, srcY, this.sourceTileW, this.sourceTileH);
+            }
+          }
+
+          // Spawn tile image entities in correct position first
+          const originalPositions = [];
+          for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+              const frameName = `slice_${r}_${c}`;
+              const targetX = c * this.displayTileW + this.displayTileW / 2;
+              const targetY = r * this.displayTileH + this.displayTileH / 2;
+
+              const tileImg = this.add.image(targetX, targetY, 'puzzle-image', frameName);
+              tileImg.setDisplaySize(this.displayTileW, this.displayTileH);
+              
+              tileImg.correctCol = c;
+              tileImg.correctRow = r;
+              tileImg.gridCol = c;
+              tileImg.gridRow = r;
+              tileImg.frameName = frameName;
+              tileImg.baseScaleX = tileImg.scaleX;
+              tileImg.baseScaleY = tileImg.scaleY;
+
+              tileImg.setInteractive();
+              this.tiles.push(tileImg);
+              
+              originalPositions.push({ col: c, row: r });
+            }
+          }
+
+          // Register tile clicking interaction
+          this.input.on('gameobjectdown', (pointer, gameObject) => {
+            if (this.isMoving || this.isWin) return;
+            this.handleTileClick(gameObject);
+          });
+
+          // Interactive Hover highlights
+          this.input.on('gameobjectover', (pointer, gameObject) => {
+            if (this.isMoving || this.isWin || gameObject === this.selectedTile) return;
+            // Prevent hover highlight on already correct tiles
+            if (gameObject.gridCol === gameObject.correctCol && gameObject.gridRow === gameObject.correctRow) return;
+            gameObject.setTint(0xdddddd);
+          });
+
+          this.input.on('gameobjectout', (pointer, gameObject) => {
+            if (gameObject === this.selectedTile) return;
+            gameObject.clearTint();
+          });
+
+          // Remove HTML loader UI overlay once Phaser scene creation is set
+          document.getElementById('game-loader').classList.add('hidden');
+
+          // Settle dynamic cascade shuffle delay after brief preview delay (1 second)
+          this.time.delayedCall(1000, () => {
+            this.scrambleTiles(originalPositions);
+          });
+        }
+
+        scrambleTiles(positions) {
+          // Shuffle position index arrays using random sort
+          let shuffled = [...positions];
+          
+          let solvedCheck = true;
+          while (solvedCheck) {
+            for (let i = shuffled.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+
+            // Ensure no elements match their starting indexes (or as few as possible)
+            let matching = 0;
+            for (let i = 0; i < this.tiles.length; i++) {
+              if (shuffled[i].col === this.tiles[i].correctCol && shuffled[i].row === this.tiles[i].correctRow) {
+                matching++;
+              }
+            }
+            if (matching < this.tiles.length / 2) {
+              solvedCheck = false;
+            }
+          }
+
+          // Cascade scramble slide animations
+          this.tiles.forEach((tile, index) => {
+            const nextPos = shuffled[index];
+            tile.gridCol = nextPos.col;
+            tile.gridRow = nextPos.row;
+
+            const nextX = nextPos.col * this.displayTileW + this.displayTileW / 2;
+            const nextY = nextPos.row * this.displayTileH + this.displayTileH / 2;
+
+            this.tweens.add({
+              targets: tile,
+              x: nextX,
+              y: nextY,
+              duration: 500,
+              ease: 'Back.easeOut',
+              delay: index * 25,
+              onComplete: () => {
+                if (index === this.tiles.length - 1) {
+                  // Scrambling is complete, start the gameplay timer now!
+                  gameTimer = setInterval(updateTimer, 1000);
+                }
+              }
+            });
+          });
+        }
+
+        handleTileClick(tile) {
+          // If the clicked tile is already correct, lock it in place and prevent selection/swapping
+          if (tile.gridCol === tile.correctCol && tile.gridRow === tile.correctRow) return;
+
+          playSynthSound('click');
+
+          if (this.selectedTile === null) {
+            // First piece selection
+            this.selectedTile = tile;
+            tile.setDepth(10);
+            tile.setTint(0x34d399); // Vibrant emerald leaf-green overlay
+
+            this.tweens.add({
+              targets: tile,
+              scaleX: tile.baseScaleX * 1.08,
+              scaleY: tile.baseScaleY * 1.08,
+              duration: 100
+            });
+          } else if (this.selectedTile === tile) {
+            // Un-select
+            this.deselectTile();
+          } else {
+            // Swap tiles!
+            this.isMoving = true;
+            const tile1 = this.selectedTile;
+            const tile2 = tile;
+
+            const col1 = tile1.gridCol;
+            const row1 = tile1.gridRow;
+            const col2 = tile2.gridCol;
+            const row2 = tile2.gridRow;
+
+            // Track if tiles were correct before swap
+            const tile1WasCorrect = (tile1.gridCol === tile1.correctCol && tile1.gridRow === tile1.correctRow);
+            const tile2WasCorrect = (tile2.gridCol === tile2.correctCol && tile2.gridRow === tile2.correctRow);
+
+            // Update state grid properties
+            tile1.gridCol = col2;
+            tile1.gridRow = row2;
+            tile2.gridCol = col1;
+            tile2.gridRow = row1;
+
+            const x1 = col2 * this.displayTileW + this.displayTileW / 2;
+            const y1 = row2 * this.displayTileH + this.displayTileH / 2;
+            const x2 = col1 * this.displayTileW + this.displayTileW / 2;
+            const y2 = row1 * this.displayTileH + this.displayTileH / 2;
+
+            tile1.setDepth(10);
+            tile2.setDepth(9);
+
+            tile1.clearTint();
+            tile2.clearTint();
+
+            // Animate tile 1 sliding
+            this.tweens.add({
+              targets: tile1,
+              x: x1,
+              y: y1,
+              scaleX: tile1.baseScaleX,
+              scaleY: tile1.baseScaleY,
+              duration: 250,
+              ease: 'Cubic.easeInOut',
+              onComplete: () => {
+                tile1.setDepth(1);
+              }
+            });
+
+            // Animate tile 2 sliding
+            this.tweens.add({
+              targets: tile2,
+              x: x2,
+              y: y2,
+              duration: 250,
+              ease: 'Cubic.easeInOut',
+              onComplete: () => {
+                tile2.setDepth(1);
+                this.selectedTile = null;
+                this.isMoving = false;
+                
+                // Track actions
+                window.incrementMoves();
+
+                // Check if any swapped tiles have newly become correct
+                const tile1IsCorrect = (tile1.gridCol === tile1.correctCol && tile1.gridRow === tile1.correctRow);
+                const tile2IsCorrect = (tile2.gridCol === tile2.correctCol && tile2.gridRow === tile2.correctRow);
+
+                let newlyCorrect = false;
+                if (tile1IsCorrect && !tile1WasCorrect) {
+                  newlyCorrect = true;
+                  tile1.setTint(0xa3e635); // Flash vibrant lime green
+                  this.time.delayedCall(300, () => { if (!this.isWin) tile1.clearTint(); });
+                  this.tweens.add({
+                    targets: tile1,
+                    scaleX: tile1.baseScaleX * 1.1,
+                    scaleY: tile1.baseScaleY * 1.1,
+                    yoyo: true,
+                    duration: 150,
+                    ease: 'Quad.easeInOut'
+                  });
+                }
+                if (tile2IsCorrect && !tile2WasCorrect) {
+                  newlyCorrect = true;
+                  tile2.setTint(0xa3e635); // Flash vibrant lime green
+                  this.time.delayedCall(300, () => { if (!this.isWin) tile2.clearTint(); });
+                  this.tweens.add({
+                    targets: tile2,
+                    scaleX: tile2.baseScaleX * 1.1,
+                    scaleY: tile2.baseScaleY * 1.1,
+                    yoyo: true,
+                    duration: 150,
+                    ease: 'Quad.easeInOut'
+                  });
+                }
+
+                // Check for win condition
+                const winStatus = this.checkWinCondition();
+
+                if (newlyCorrect && !winStatus) {
+                  playSynthSound('correct');
+                }
+              }
+            });
+          }
+        }
+
+        deselectTile() {
+          if (!this.selectedTile) return;
+          const tile = this.selectedTile;
+          tile.clearTint();
+          tile.setDepth(1);
+          this.tweens.add({
+            targets: tile,
+            scaleX: tile.baseScaleX,
+            scaleY: tile.baseScaleY,
+            duration: 100
+          });
+          this.selectedTile = null;
+        }
+
+        checkWinCondition() {
+          let hasWon = true;
+          for (let i = 0; i < this.tiles.length; i++) {
+            const tile = this.tiles[i];
+            if (tile.gridCol !== tile.correctCol || tile.gridRow !== tile.correctRow) {
+              hasWon = false;
+              break;
+            }
+          }
+
+          if (hasWon) {
+            this.isWin = true;
+            this.tiles.forEach((tile) => {
+              tile.disableInteractive();
+              tile.clearTint();
+            });
+
+            // Bounce congratulations animations
+            this.tiles.forEach((tile, index) => {
+              this.tweens.add({
+                targets: tile,
+                scaleX: tile.baseScaleX * 1.05,
+                scaleY: tile.baseScaleY * 1.05,
+                yoyo: true,
+                duration: 180,
+                delay: index * 20
+              });
+            });
+
+            window.handleWin();
+            return true;
+          }
+          return false;
+        }
+
+        restartScene() {
+          // Destroys and boots up the active level again
+          clearInterval(gameTimer);
+          this.scene.restart();
+        }
+      }
+
+      function initPhaserPuzzle() {
+        // Destroy existing instance to clean canvas context
+        if (gameInstance) {
+          gameInstance.destroy(true);
+          gameInstance = null;
+        }
+
+        const config = {
+          type: Phaser.AUTO,
+          width: 360,
+          height: 640,
+          parent: 'phaser-game-container',
+          scale: {
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH
+          },
+          backgroundColor: '#020617', // Match slate-950 background
+          scene: [PuzzleScene]
+        };
+
+        gameInstance = new Phaser.Game(config);
+      }
+
+      // ================= HINT OVERLAY INTERACTION =================
+      const hintBtn = document.getElementById('hint-btn');
+      const hintOverlay = document.getElementById('hint-overlay');
+
+      function showHint() {
+        hintOverlay.classList.remove('opacity-0');
+        hintOverlay.classList.add('opacity-100');
+      }
+
+      function hideHint() {
+        hintOverlay.classList.remove('opacity-100');
+        hintOverlay.classList.add('opacity-0');
+      }
+
+      // Add Mouse events
+      hintBtn.addEventListener('mousedown', showHint);
+      hintBtn.addEventListener('mouseup', hideHint);
+      hintBtn.addEventListener('mouseleave', hideHint);
+
+      // Add Touch events (for mobile screens)
+      hintBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        showHint();
+      });
+      hintBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        hideHint();
+      });
+
+      // ================= GUIDE MODAL INTERACTION =================
+      const guideBtn = document.getElementById('guide-btn');
+      const guideModal = document.getElementById('guide-modal');
+      const closeGuideBtn = document.getElementById('close-guide-btn');
+      const closeGuideOkBtn = document.getElementById('close-guide-ok-btn');
+
+      function openModal() {
+        playSynthSound('click');
+        guideModal.classList.remove('hidden');
+        setTimeout(() => {
+          guideModal.classList.remove('opacity-0');
+          guideModal.classList.add('opacity-100');
+        }, 10);
+      }
+
+      function closeModal() {
+        playSynthSound('click');
+        guideModal.classList.remove('opacity-100');
+        guideModal.classList.add('opacity-0');
+        setTimeout(() => {
+          guideModal.classList.add('hidden');
+        }, 300);
+      }
+
+      guideBtn.addEventListener('click', openModal);
+      closeGuideBtn.addEventListener('click', closeModal);
+      closeGuideOkBtn.addEventListener('click', closeModal);
+    </script>
+  </body>
+</html>
+
