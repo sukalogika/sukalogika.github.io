@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stardew Valley Chat Video Generator</title>
+  
+  <!-- Google Fonts for Stardew Pixel Style -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    /* Bold Typography & Retro Stardew Pixel Theme Styles */
+    :root {
+      --theme-bg: #2d1b2d;
+      --sd-wood-dark: #3a2216;
+      --sd-wood-mid: #5c4033;
+      --sd-parchment: #e8c48c;
+      --sd-parchment-light: #fdf2d9;
+      --sd-green-bold: #5c9e31;
+      --sd-green-dark: #2d4f18;
+      --sd-red-bold: #b82323;
+      --sd-red-dark: #3a0a0a;
+    }
+
+    body {
+      background-color: var(--theme-bg);
+      background-image: 
+        radial-gradient(#4a2b4a 1.5px, transparent 1.5px),
+        radial-gradient(#4a2b4a 1.5px, #2d1b2d 1.5px);
+      background-size: 24px 24px;
+      background-position: 0 0, 12px 12px;
+      font-family: 'Pixelify Sans', cursive, monospace;
+      color: #3a2216;
+      min-height: 100vh;
+    }
+
+    .font-pixel {
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    .font-pixelify {
+      font-family: 'Pixelify Sans', cursive, sans-serif;
+    }
+
+    /* Bold Typography Theme Box & Borders */
+    .stardew-box {
+      background-color: var(--sd-parchment);
+      border: 4px solid var(--sd-wood-dark);
+      box-shadow: 6px 6px 0 0 var(--sd-wood-dark);
+      color: var(--sd-wood-dark);
+      position: relative;
+    }
+
+    .stardew-box-dark {
+      background-color: var(--sd-parchment);
+      border: 4px solid var(--sd-wood-dark);
+      box-shadow: 4px 4px 0 0 var(--sd-wood-dark);
+      color: var(--sd-wood-dark);
+    }
+
+    .stardew-button {
+      background-color: var(--sd-wood-dark);
+      border: 3px solid #1a0f0a;
+      box-shadow: 4px 4px 0 0 #1a0f0a;
+      color: var(--sd-parchment);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.08s ease;
+    }
+
+    .stardew-button:hover {
+      background-color: #523118;
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0 0 #1a0f0a;
+    }
+
+    .stardew-button:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0 0 #1a0f0a;
+    }
+
+    .stardew-button-red {
+      background-color: var(--sd-red-bold);
+      border: 3px solid var(--sd-red-dark);
+      box-shadow: 4px 4px 0 0 var(--sd-red-dark);
+      color: #ffffff;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.08s ease;
+    }
+
+    .stardew-button-red:hover {
+      background-color: #d63838;
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0 0 var(--sd-red-dark);
+    }
+
+    .stardew-button-red:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0 0 var(--sd-red-dark);
+    }
+
+    .stardew-button-green {
+      background-color: var(--sd-green-bold);
+      border: 3px solid var(--sd-green-dark);
+      box-shadow: 4px 4px 0 0 var(--sd-green-dark);
+      color: #ffffff;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.08s ease;
+    }
+
+    .stardew-button-green:hover {
+      background-color: #6cb839;
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0 0 var(--sd-green-dark);
+    }
+
+    .stardew-button-green:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0 0 var(--sd-green-dark);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fdf2d9;
+      border: 2px solid #3a2216;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3a2216;
+      border: 1px solid #e8c48c;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #5c4033;
+    }
+
+    /* Pulse animation for record indicator */
+    @keyframes recPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.9); }
+    }
+    .rec-indicator {
+      animation: recPulse 1.2s infinite;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-6 flex flex-col items-center min-h-screen">
+
+  <!-- TOP HEADER / BRANDING -->
+  <header class="w-full max-w-7xl mb-6 flex flex-col md:flex-row items-center justify-between gap-4 border-b-4 border-[#3a2216] pb-4 bg-[#e8c48c] p-4 rounded-xl shadow-[6px_6px_0_0_#3a2216] border-4 border-[#3a2216]">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-[#3a2216] border-4 border-black rounded flex items-center justify-center shadow-[3px_3px_0_0_#000]">
+        <span class="text-2xl font-bold text-[#e8c48c] font-pixel">💬</span>
+      </div>
+      <div>
+        <h1 class="text-2xl md:text-3xl font-black italic uppercase tracking-tighter text-[#3a2216]">
+          STARDEW CHAT MAKER
+        </h1>
+        <p class="text-xs font-bold text-[#5c4033] uppercase tracking-wider">Cinematic Stardew Valley Chat Video Generator (9:16, 16:9, 1:1)</p>
+      </div>
+    </div>
+
+    <!-- Quick Status / Mode -->
+    <div class="flex items-center gap-3">
+      <div id="audioStatusBtn" onclick="toggleAudioMute()" class="cursor-pointer bg-[#3a2216] text-[#e8c48c] border-3 border-black px-3 py-1.5 rounded flex items-center gap-2 text-xs font-bold hover:bg-[#523118] transition shadow-[3px_3px_0_0_#000]">
+        <span id="audioIcon">🔊</span>
+        <span id="audioText" class="uppercase">Suara Aktif</span>
+      </div>
+      <div class="bg-[#fdf2d9] border-3 border-[#3a2216] px-3 py-1.5 rounded text-xs text-[#3a2216] font-bold shadow-[3px_3px_0_0_#3a2216]">
+        Export: <span id="exportFormatLabel" class="text-[#b82323] uppercase">WebM / MP4</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    <!-- LEFT PANEL: SCRIPT EDITOR & CONFIGURATION (5 COLS) -->
+    <section class="lg:col-span-5 flex flex-col gap-5">
+
+      <!-- ASPECT RATIO PICKER -->
+      <div class="stardew-box-dark p-4 rounded-xl">
+        <label class="block text-xs font-black uppercase tracking-tighter italic text-[#3a2216] mb-2 border-b-2 border-[#3a2216] pb-1">
+          1. Pilih Ukuran Video (Aspect Ratio)
+        </label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="setAspectRatio('9:16')" id="ratioBtn_9_16"
+            class="stardew-button py-2 px-1 text-center rounded text-xs flex flex-col items-center justify-center gap-1">
+            <span class="font-black text-sm">📱 9:16</span>
+            <span class="text-[10px] opacity-80 uppercase tracking-widest font-bold">Shorts / Reels</span>
+          </button>
+          <button type="button" onclick="setAspectRatio('16:9')" id="ratioBtn_16_9"
+            class="stardew-button py-2 px-1 text-center rounded text-xs flex flex-col items-center justify-center gap-1">
+            <span class="font-black text-sm">📺 16:9</span>
+            <span class="text-[10px] opacity-80 uppercase tracking-widest font-bold">YouTube</span>
+          </button>
+          <button type="button" onclick="setAspectRatio('1:1')" id="ratioBtn_1_1"
+            class="stardew-button py-2 px-1 text-center rounded text-xs flex flex-col items-center justify-center gap-1">
+            <span class="font-black text-sm">🔳 1:1</span>
+            <span class="text-[10px] opacity-80 uppercase tracking-widest font-bold">Feed</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TEXTAREA SCRIPT INPUT -->
+      <div class="stardew-box-dark p-4 rounded-xl">
+        <div class="flex items-center justify-between mb-2 border-b-2 border-[#3a2216] pb-1">
+          <label class="text-xs font-black uppercase tracking-tighter italic text-[#3a2216]">
+            2. Script Percakapan (Teks Area)
+          </label>
+          <span class="text-[11px] font-bold text-[#5c4033] uppercase">Format: Pembicara: Pesan</span>
+        </div>
+
+        <textarea id="scriptInput" rows="6" oninput="parseScript()"
+          class="w-full bg-[#fdf2d9] border-4 border-[#3a2216] focus:border-[#5c9e31] text-[#3a2216] p-3 rounded-lg text-sm font-mono font-bold focus:outline-none resize-y leading-relaxed shadow-inner"
+          placeholder="Saya: Tuhan aku bingung&#10;Saya: startup saya belum berhasil&#10;Yesus: Jangan khawatir"></textarea>
+
+        <!-- PRESET SCRIPT PICKER -->
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <span class="text-[11px] text-[#3a2216] font-black uppercase tracking-wider">Preset:</span>
+          <button onclick="loadPreset('startup')" class="bg-[#3a2216] hover:bg-[#523118] border-2 border-black text-[#e8c48c] text-xs px-2.5 py-1 rounded font-bold uppercase shadow-[2px_2px_0_0_#000]">
+            ✨ Startup & Tuhan
+          </button>
+          <button onclick="loadPreset('stardew_farm')" class="bg-[#3a2216] hover:bg-[#523118] border-2 border-black text-[#e8c48c] text-xs px-2.5 py-1 rounded font-bold uppercase shadow-[2px_2px_0_0_#000]">
+            🌾 Curhat Hujan
+          </button>
+          <button onclick="loadPreset('motivasi')" class="bg-[#3a2216] hover:bg-[#523118] border-2 border-black text-[#e8c48c] text-xs px-2.5 py-1 rounded font-bold uppercase shadow-[2px_2px_0_0_#000]">
+            🙏 Doa & Motivasi
+          </button>
+          <button onclick="loadPreset('surat_kakek')" class="bg-[#3a2216] hover:bg-[#523118] border-2 border-black text-[#e8c48c] text-xs px-2.5 py-1 rounded font-bold uppercase shadow-[2px_2px_0_0_#000]">
+            📜 Surat Kakek
+          </button>
+        </div>
+      </div>
+
+      <!-- SPEAKER AVATAR MAPPINGS -->
+      <div class="stardew-box-dark p-4 rounded-xl">
+        <label class="block text-xs font-black uppercase tracking-tighter italic text-[#3a2216] mb-2 border-b-2 border-[#3a2216] pb-1">
+          3. Karakter & Avatar Speaker
+        </label>
+        <div id="speakerList" class="flex flex-col gap-2.5 max-h-56 overflow-y-auto pr-1">
+          <!-- Dynamically populated by JS parseScript() -->
+        </div>
+      </div>
+
+      <!-- BACKGROUND SCENE & SPEED SETTINGS -->
+      <div class="stardew-box-dark p-4 rounded-xl grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[11px] font-black uppercase italic text-[#3a2216] mb-1">Background Scene</label>
+          <select id="bgSceneSelect" onchange="updateCanvas()" class="w-full bg-[#fdf2d9] border-3 border-[#3a2216] text-[#3a2216] text-xs font-bold p-2 rounded focus:outline-none">
+            <option value="farm_day">🌾 Kebun Siang (Farm Day)</option>
+            <option value="farm_night">🌙 Kebun Malam (Farm Night)</option>
+            <option value="cozy_room">🔥 Kamar Kayu (Cozy Room)</option>
+            <option value="shrine">🕯️ Candi / Gereja Yoba</option>
+            <option value="town">🏡 Kota Pelican Town</option>
+            <option value="beach">🏖️ Pantai Stardew</option>
+            <option value="forest">🌲 Hutan Pinus</option>
+            <option value="green_screen">🟩 Green Screen (Transparan)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-black uppercase italic text-[#3a2216] mb-1">Kecepatan Ketik</label>
+          <select id="typingSpeedSelect" class="w-full bg-[#fdf2d9] border-3 border-[#3a2216] text-[#3a2216] text-xs font-bold p-2 rounded focus:outline-none">
+            <option value="35">Normal (Stardew Style)</option>
+            <option value="60">Lambat (Slow & Dramatic)</option>
+            <option value="18">Cepat (Fast)</option>
+            <option value="1">Seketika (Instant)</option>
+          </select>
+        </div>
+
+        <div class="col-span-2 grid grid-cols-2 gap-3 pt-2 border-t-2 border-[#3a2216]">
+          <div>
+            <label class="block text-[11px] font-black uppercase italic text-[#3a2216] mb-1">Jeda Antar Kalimat</label>
+            <select id="lineDelaySelect" class="w-full bg-[#fdf2d9] border-3 border-[#3a2216] text-[#3a2216] text-xs font-bold p-2 rounded focus:outline-none">
+              <option value="2000">2.0 Detik</option>
+              <option value="1200">1.2 Detik</option>
+              <option value="3000">3.0 Detik</option>
+              <option value="4000">4.0 Detik</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-black uppercase italic text-[#3a2216] mb-1">Musik Latar 8-bit</label>
+            <select id="bgmSelect" onchange="toggleBGM()" class="w-full bg-[#fdf2d9] border-3 border-[#3a2216] text-[#3a2216] text-xs font-bold p-2 rounded focus:outline-none">
+              <option value="off">Off (Tanpa BGM)</option>
+              <option value="stardew_chill">🎶 Stardew Chill Synth</option>
+              <option value="holy_chimes">✨ Sacred Chimes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT PANEL: LIVE CANVAS PREVIEW & VIDEO RECORDING CONTROLS (7 COLS) -->
+    <section class="lg:col-span-7 flex flex-col items-center gap-5">
+
+      <!-- PREVIEW CANVAS CONTAINER -->
+      <div class="w-full stardew-box-dark p-4 rounded-xl flex flex-col items-center relative shadow-[6px_6px_0_0_#3a2216]">
+
+        <div class="w-full flex items-center justify-between mb-3 px-1 border-b-2 border-[#3a2216] pb-2">
+          <span class="text-xs font-black text-[#3a2216] uppercase italic tracking-wider flex items-center gap-2">
+            <span>📺</span> Live Canvas Preview (<span id="canvasDimLabel">720x1280 - 9:16</span>)
+          </span>
+          <span id="recordingBadge" class="hidden bg-[#b82323] text-white text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-widest flex items-center gap-1.5 shadow-[2px_2px_0_0_#000] border border-black">
+            <span class="w-2.5 h-2.5 bg-white rounded-full rec-indicator"></span> RECORDING...
+          </span>
+        </div>
+
+        <!-- CANVAS WRAPPER FOR SCALING -->
+        <div id="canvasViewport" class="w-full flex items-center justify-center overflow-hidden bg-[#1a1a1a] rounded-lg border-4 border-[#3a2216] p-2 relative shadow-inner" style="min-height: 480px; max-height: 72vh;">
+          <canvas id="previewCanvas" width="720" height="1280" class="max-w-full max-h-full object-contain rounded shadow-2xl transition-all duration-200 border-2 border-black"></canvas>
+        </div>
+
+        <!-- CONTROL BUTTONS BELOW CANVAS -->
+        <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+          <button type="button" onclick="togglePlayPause()" id="playBtn" class="stardew-button py-3.5 px-4 rounded-lg text-xs font-black flex items-center justify-center gap-2 uppercase tracking-widest">
+            <span>▶</span> PLAY PREVIEW
+          </button>
+
+          <button type="button" onclick="startRecordVideo()" id="recordBtn" class="stardew-button-red py-3.5 px-4 rounded-lg text-xs font-black flex items-center justify-center gap-2 uppercase tracking-widest">
+            <span>🔴</span> REKAM & EXPORT
+          </button>
+
+          <button type="button" onclick="stopOrReset()" id="resetBtn" class="stardew-button py-3.5 px-4 rounded-lg text-xs font-black flex items-center justify-center gap-2 uppercase tracking-widest">
+            <span>⏹</span> RESET / STOP
+          </button>
+        </div>
+
+        <!-- RECORDING PROGRESS BAR -->
+        <div id="progressContainer" class="w-full mt-3 hidden bg-[#fdf2d9] p-3 rounded-lg border-3 border-[#3a2216]">
+          <div class="flex justify-between text-xs text-[#3a2216] font-bold uppercase mb-1">
+            <span id="progressStatusText">Merekam video percakapan...</span>
+            <span id="progressPercentText">0%</span>
+          </div>
+          <div class="w-full h-4 bg-[#e8c48c] border-2 border-[#3a2216] rounded-full overflow-hidden p-0.5">
+            <div id="progressBar" class="h-full bg-[#5c9e31] border-r-2 border-[#2d4f18] w-0 transition-all duration-200 rounded-full"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- INSTRUCTIONS & TIPS BOX -->
+      <div class="w-full stardew-box-dark p-4 rounded-xl text-xs leading-relaxed text-[#3a2216]">
+        <h3 class="font-black text-[#3a2216] uppercase italic mb-2 text-sm border-b-2 border-[#3a2216] pb-1">💡 Trik Hasil Terbaik:</h3>
+        <ul class="list-disc list-inside space-y-1 text-xs font-bold">
+          <li>Format penulisan script: <code class="text-[#3a2216] bg-[#fdf2d9] border border-[#3a2216] px-1.5 py-0.5 rounded font-mono">Nama: Isi pesan yang diucapkan</code>.</li>
+          <li>Gunakan opsi **9:16** untuk video TikTok, Instagram Reels, dan YouTube Shorts!</li>
+          <li>Tombol **REKAM & EXPORT** akan otomatis memainkan script dari awal dan merekam animasi beserta **efek suara ketikan Stardew Valley 8-bit**!</li>
+          <li>Anda dapat mengunggah gambar avatar sendiri untuk setiap karakter di bagian Karakter & Avatar.</li>
+        </ul>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL DOWNLOAD VIDEO EXPORT -->
+  <div id="downloadModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="stardew-box p-6 rounded-2xl max-w-lg w-full flex flex-col items-center gap-4 text-center border-8 border-[#3a2216] shadow-[10px_10px_0_0_#000]">
+      <div class="w-14 h-14 bg-[#5c9e31] border-4 border-[#2d4f18] rounded-full flex items-center justify-center text-2xl text-white shadow-[3px_3px_0_0_#000]">
+        🎬
+      </div>
+      <div>
+        <h2 class="text-xl font-black text-[#3a2216] uppercase italic tracking-wider">VIDEO SIAP DI-DOWNLOAD!</h2>
+        <p class="text-xs font-bold text-[#5c4033] mt-1">Video percakapan gaya Stardew Valley Anda telah berhasil direkam beserta suara 8-bit.</p>
+      </div>
+
+      <!-- VIDEO PREVIEW -->
+      <div class="w-full bg-[#1a1a1a] rounded-lg overflow-hidden border-4 border-[#3a2216] p-1">
+        <video id="exportedVideoPreview" controls autoplay loop class="w-full max-h-72 object-contain rounded"></video>
+      </div>
+
+      <!-- DOWNLOAD BUTTONS -->
+      <div class="w-full flex flex-col sm:flex-row items-center gap-3 mt-2">
+        <a id="downloadVideoLink" download="stardew_chat_video.webm" href="#"
+          class="w-full stardew-button-green py-3.5 px-4 rounded-lg text-xs font-black flex items-center justify-center gap-2 uppercase tracking-widest">
+          <span>📥</span> DOWNLOAD VIDEO (WEBM)
+        </a>
+        <button onclick="closeDownloadModal()" class="w-full stardew-button py-3.5 px-4 rounded-lg text-xs font-black uppercase tracking-widest">
+          TUTUP
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    /* =========================================================================
+     * STARDEW VALLEY CHAT GENERATOR & MEDIA RECORDER ENGINE (VANILLA JS)
+     * ========================================================================= */
+
+    // STATE VARIABLES
+    let currentAspect = '9:16'; // '9:16', '16:9', '1:1'
+    let canvasWidth = 720;
+    let canvasHeight = 1280;
+
+    let parsedLines = [];
+    let speakerMap = {}; // { speakerName: { avatarKey: 'jesus', customImg: null } }
+    
+    // Animation State
+    let isPlaying = false;
+    let isRecording = false;
+    let currentLineIndex = 0;
+    let currentTypedChars = 0;
+    let animFrameId = null;
+    let lastCharTime = 0;
+    let lineStartTime = 0;
+    let linePhase = 'typing'; // 'typing', 'waiting', 'done'
+    
+    // Media Recorder
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recordStream = null;
+
+    // Web Audio API
+    let audioCtx = null;
+    let audioDestNode = null;
+    let isAudioMuted = false;
+    let bgmOsc = null;
+    let bgmInterval = null;
+
+    // Canvas elements
+    const canvas = document.getElementById('previewCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // PRESET AVATARS (PROCEDURAL CANVAS GENERATED AVATARS)
+    const PRESET_AVATARS = [
+      { id: 'jesus', name: 'Tuhan / Yesus (Holy Halo)' },
+      { id: 'farmer_male', name: 'Petani Laki-laki (Farmer Male)' },
+      { id: 'farmer_female', name: 'Petani Perempuan (Farmer Female)' },
+      { id: 'abigail', name: 'Abigail (Purple Hair)' },
+      { id: 'sebastian', name: 'Sebastian (Dark Hoodie)' },
+      { id: 'lewis', name: 'Wali Kota Lewis' },
+      { id: 'grandpa', name: 'Kakek (Grandpa Ghost)' },
+      { id: 'cat', name: 'Kucing Orange' },
+      { id: 'dog', name: 'Anjing Cokelat' }
+    ];
+
+    // PRESET SCRIPTS
+    const PRESET_SCRIPTS = {
+      startup: `Saya: Tuhan aku bingung.
+Saya: startup saya belum berhasil.
+Yesus: Jangan khawatir.
+Yesus: Percayalah, setiap benih yang ditanam dengan sabar akan berbuah manis pada waktunya.
+Saya: Terima kasih Tuhan, damai-Mu menenangkan jiwaku.`,
+
+      stardew_farm: `Saya: Hari ini hujan deras di kebun.
+Abigail: Wah, waktu yang pas untuk berpetualang di Gua Tambang!
+Saya: Tapi tanaman parsnip saya belum dipanen...
+Abigail: Biar hujan yang menyiramnya, ayo cari batu amatis bersama!`,
+
+      motivasi: `Saya: Tuhan, beban hidup ini terasa berat sekali.
+Yesus: Marilah kepada-Ku, semua yang letih lesu dan berbeban berat.
+Yesus: Aku akan memberi kelegaan kepadamu.
+Saya: Amin! Terima kasih Tuhan atas kasih-Mu.`,
+
+      surat_kakek: `Kakek: Cucuku tersayang... jika kau membaca surat ini, kau pasti butuh perubahan.
+Kakek: Tinggalkan kejenuhan kota, dan mulailah hidup baru di Lembah Stardew.
+Saya: Terima kasih Kakek, aku akan menjaga warisanmu dengan baik!`
+    };
+
+    // CACHED AVATAR CANVAS IMAGES
+    const avatarCanvasCache = {};
+
+    /* -------------------------------------------------------------------------
+     * INIT & SETUP
+     * ------------------------------------------------------------------------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set initial script
+      document.getElementById('scriptInput').value = PRESET_SCRIPTS.startup;
+      
+      // Generate avatar cache
+      generateProceduralAvatars();
+      
+      // Parse script & update UI
+      parseScript();
+      
+      // Set initial ratio
+      setAspectRatio('9:16');
+
+      // Draw initial frame
+      updateCanvas();
+    });
+
+    /* -------------------------------------------------------------------------
+     * AUDIO SYNTHESIZER (WEB AUDIO API FOR RETRO SOUNDS)
+     * ------------------------------------------------------------------------- */
+    let activeBlipOsc = null;
+    let activeBlipGain = null;
+    let ambientToneNode = null;
+    let ambientGainNode = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        audioDestNode = audioCtx.createMediaStreamDestination();
+
+        // Continuous ambient warm room hum (keeps WebAudio clock stream active throughout sentence pauses so MediaRecorder never drops pause durations)
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(60, audioCtx.currentTime); // Low 60Hz warm retro room hum
+          gain.gain.setValueAtTime(0.008, audioCtx.currentTime); // Soft, subtle background room atmosphere
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          if (audioDestNode) {
+            gain.connect(audioDestNode);
+          }
+          osc.start();
+          ambientToneNode = osc;
+          ambientGainNode = gain;
+        } catch (e) {
+          console.warn('Ambient setup warning:', e);
+        }
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Speaker signature voice pitch calculator
+    function getSpeakerPitch(speakerName) {
+      const lower = (speakerName || '').toLowerCase().trim();
+      
+      if (lower.includes('yesus') || lower.includes('tuhan')) {
+        return { pitch: 200, wave: 'sine', vol: 0.12, dur: 0.035 };
+      } else if (lower.includes('abigail') || lower.includes('perempuan') || lower.includes('cewek')) {
+        return { pitch: 480, wave: 'square', vol: 0.05, dur: 0.025 };
+      } else if (lower.includes('kakek') || lower.includes('grandpa')) {
+        return { pitch: 170, wave: 'triangle', vol: 0.10, dur: 0.032 };
+      } else if (lower.includes('sebastian')) {
+        return { pitch: 260, wave: 'square', vol: 0.06, dur: 0.028 };
+      } else if (lower.includes('saya') || lower.includes('pemain') || lower.includes('farmer')) {
+        return { pitch: 320, wave: 'triangle', vol: 0.08, dur: 0.028 };
+      }
+
+      // Consistent deterministic pitch for any custom speaker based on name hash
+      let hash = 0;
+      for (let i = 0; i < lower.length; i++) {
+        hash = (hash << 5) - hash + lower.charCodeAt(i);
+        hash |= 0;
+      }
+      const baseFreq = 260 + (Math.abs(hash) % 220); // 260Hz - 480Hz
+      const waveTypes = ['triangle', 'square', 'sine'];
+      const wave = waveTypes[Math.abs(hash) % waveTypes.length];
+      return { pitch: baseFreq, wave: wave, vol: 0.07, dur: 0.028 };
+    }
+
+    // Play retro 8-bit blip per letter cleanly without overlapping
+    function playTypingBlip(speakerName, charIndex) {
+      if (isAudioMuted) return;
+      initAudio();
+      
+      try {
+        const now = audioCtx.currentTime;
+
+        // Cut off previous blip instantly to eliminate sound overlap
+        if (activeBlipGain) {
+          try {
+            activeBlipGain.gain.cancelScheduledValues(now);
+            activeBlipGain.gain.setValueAtTime(0, now);
+          } catch (e) {}
+        }
+        if (activeBlipOsc) {
+          try {
+            activeBlipOsc.stop(now);
+            activeBlipOsc.disconnect();
+          } catch (e) {}
+        }
+
+        const voice = getSpeakerPitch(speakerName);
+
+        // Gentle rhythmic cadence (+-5Hz) based on character index for smooth Stardew feel
+        const cadence = ((charIndex % 3) - 1) * 5;
+        const freq = Math.max(100, voice.pitch + cadence);
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = voice.wave;
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(voice.vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + voice.dur);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        if (audioDestNode) gain.connect(audioDestNode);
+
+        osc.start(now);
+        osc.stop(now + voice.dur + 0.005);
+
+        activeBlipOsc = osc;
+        activeBlipGain = gain;
+      } catch (e) {
+        // Audio error silent fallback
+      }
+    }
+
+    // Dialogue advance chime
+    function playAdvanceChime() {
+      if (isAudioMuted) return;
+      initAudio();
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.08); // E5
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        if (audioDestNode) gain.connect(audioDestNode);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.13);
+      } catch (e) {}
+    }
+
+    // Toggle 8-bit Background Music
+    function toggleBGM() {
+      const bgmVal = document.getElementById('bgmSelect').value;
+      if (bgmVal === 'off') {
+        if (bgmInterval) clearInterval(bgmInterval);
+        bgmInterval = null;
+        return;
+      }
+      initAudio();
+      if (bgmInterval) clearInterval(bgmInterval);
+
+      let step = 0;
+      const notes = bgmVal === 'holy_chimes' 
+        ? [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]
+        : [196.00, 246.94, 293.66, 392.00, 293.66, 246.94];
+
+      bgmInterval = setInterval(() => {
+        if (isAudioMuted || !audioCtx) return;
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(notes[step % notes.length], audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          if (audioDestNode) gain.connect(audioDestNode);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.38);
+          step++;
+        } catch (e) {}
+      }, 400);
+    }
+
+    /* -------------------------------------------------------------------------
+     * ASPECT RATIO MANAGER
+     * ------------------------------------------------------------------------- */
+    function setAspectRatio(ratio) {
+      currentAspect = ratio;
+
+      const btn916 = document.getElementById('ratioBtn_9_16');
+      const btn169 = document.getElementById('ratioBtn_16_9');
+      const btn11 = document.getElementById('ratioBtn_1_1');
+
+      btn916.className = ratio === '9:16' ? 'stardew-button-green py-2 px-1 text-center rounded text-xs flex flex-col items-center justify-center gap-1 font-bold' : 'stardew-button py-2 px-1 text-center rounded text-xs flex flex-col items-center justify-center gap-1';
+      btn169.className = ratio === '16:9' ? 'stardew-button-green py-2 px-1 text-center rounded text-xs flex flex-col items-center justify-center gap-1 font-bold' : 'stardew-button py-2 px-1 text-center rounded text-xs flex flex-col items-center justify-center gap-1';
+      btn11.className = ratio === '1:1' ? 'stardew-button-green py-2 px-1 text-center rounded text-xs flex flex-col items-center justify-center gap-1 font-bold' : 'stardew-button py-2 px-1 text-center rounded text-xs flex flex-col items-center justify-center gap-1';
+
+      if (ratio === '9:16') {
+        canvasWidth = 720;
+        canvasHeight = 1280;
+        document.getElementById('canvasDimLabel').innerText = '720x1280 - 9:16 (Shorts/Reels)';
+      } else if (ratio === '16:9') {
+        canvasWidth = 1280;
+        canvasHeight = 720;
+        document.getElementById('canvasDimLabel').innerText = '1280x720 - 16:9 (YouTube)';
+      } else {
+        canvasWidth = 720;
+        canvasHeight = 720;
+        document.getElementById('canvasDimLabel').innerText = '720x720 - 1:1 (Square Feed)';
+      }
+
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      updateCanvas();
+    }
+
+    /* -------------------------------------------------------------------------
+     * SCRIPT PARSER & SPEAKER MAPPER
+     * ------------------------------------------------------------------------- */
+    function parseScript() {
+      const rawText = document.getElementById('scriptInput').value;
+      const lines = rawText.split('\n');
+      
+      parsedLines = [];
+      const currentSpeakers = {};
+
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+
+        const colonIdx = trimmed.indexOf(':');
+        if (colonIdx > 0) {
+          const speaker = trimmed.substring(0, colonIdx).trim();
+          const text = trimmed.substring(colonIdx + 1).trim();
+          if (speaker && text) {
+            parsedLines.push({ speaker, text });
+            currentSpeakers[speaker] = true;
+          }
+        } else {
+          // Default speaker if no colon
+          parsedLines.push({ speaker: 'Saya', text: trimmed });
+          currentSpeakers['Saya'] = true;
+        }
+      });
+
+      // Update speaker map
+      Object.keys(currentSpeakers).forEach(speaker => {
+        if (!speakerMap[speaker]) {
+          // Auto assign default preset based on name
+          let defaultAvatar = 'farmer_male';
+          const lower = speaker.toLowerCase();
+          if (lower.includes('yesus') || lower.includes('tuhan')) {
+            defaultAvatar = 'jesus';
+          } else if (lower.includes('abigail')) {
+            defaultAvatar = 'abigail';
+          } else if (lower.includes('sebastian')) {
+            defaultAvatar = 'sebastian';
+          } else if (lower.includes('lewis') || lower.includes('wali')) {
+            defaultAvatar = 'lewis';
+          } else if (lower.includes('kakek') || lower.includes('grandpa')) {
+            defaultAvatar = 'grandpa';
+          } else if (lower.includes('kucing') || lower.includes('cat')) {
+            defaultAvatar = 'cat';
+          } else if (lower.includes('anjing') || lower.includes('dog')) {
+            defaultAvatar = 'dog';
+          }
+          speakerMap[speaker] = { avatarKey: defaultAvatar, customImg: null };
+        }
+      });
+
+      renderSpeakerListUI();
+      updateCanvas();
+    }
+
+    function renderSpeakerListUI() {
+      const container = document.getElementById('speakerList');
+      container.innerHTML = '';
+
+      const speakers = Object.keys(speakerMap);
+      if (speakers.length === 0) {
+        container.innerHTML = `<span class="text-xs text-[#5c4033] font-bold italic">Tulis script untuk mendeteksi speaker...</span>`;
+        return;
+      }
+
+      speakers.forEach(speaker => {
+        const data = speakerMap[speaker];
+        
+        const card = document.createElement('div');
+        card.className = 'bg-[#fdf2d9] border-3 border-[#3a2216] p-2 rounded-lg flex items-center justify-between gap-2 text-xs shadow-[2px_2px_0_0_#3a2216]';
+
+        let optionsHtml = PRESET_AVATARS.map(av => 
+          `<option value="${av.id}" ${data.avatarKey === av.id ? 'selected' : ''}>${av.name}</option>`
+        ).join('');
+        optionsHtml += `<option value="custom" ${data.avatarKey === 'custom' ? 'selected' : ''}>📷 Custom Upload Image</option>`;
+
+        card.innerHTML = `
+          <div class="flex items-center gap-2 overflow-hidden">
+            <span class="font-black text-[#3a2216] uppercase font-pixel text-xs truncate max-w-[90px]">${speaker}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <select onchange="updateSpeakerAvatar('${speaker}', this.value)" class="bg-[#e8c48c] border-2 border-[#3a2216] text-[#3a2216] font-bold text-[11px] p-1 rounded focus:outline-none max-w-[170px]">
+              ${optionsHtml}
+            </select>
+            <label class="cursor-pointer bg-[#3a2216] hover:bg-[#523118] border border-black px-2 py-1 rounded text-[11px] text-[#e8c48c] font-bold shadow-[2px_2px_0_0_#000]">
+              📂
+              <input type="file" accept="image/*" class="hidden" onchange="uploadCustomAvatar('${speaker}', this)">
+            </label>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function updateSpeakerAvatar(speaker, avatarKey) {
+      if (speakerMap[speaker]) {
+        speakerMap[speaker].avatarKey = avatarKey;
+        updateCanvas();
+      }
+    }
+
+    function uploadCustomAvatar(speaker, inputEl) {
+      if (inputEl.files && inputEl.files[0]) {
+        const file = inputEl.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            speakerMap[speaker].avatarKey = 'custom';
+            speakerMap[speaker].customImg = img;
+            renderSpeakerListUI();
+            updateCanvas();
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function loadPreset(key) {
+      if (PRESET_SCRIPTS[key]) {
+        document.getElementById('scriptInput').value = PRESET_SCRIPTS[key];
+        parseScript();
+      }
+    }
+
+    /* -------------------------------------------------------------------------
+     * PROCEDURAL STARDEW PIXEL ART AVATARS
+     * ------------------------------------------------------------------------- */
+    function generateProceduralAvatars() {
+      PRESET_AVATARS.forEach(av => {
+        const pCanvas = document.createElement('canvas');
+        pCanvas.width = 64;
+        pCanvas.height = 64;
+        const pCtx = pCanvas.getContext('2d');
+        pCtx.imageSmoothingEnabled = false;
+
+        drawAvatarOnCanvas(pCtx, av.id, 64, 64);
+        avatarCanvasCache[av.id] = pCanvas;
+      });
+    }
+
+    function drawAvatarOnCanvas(pCtx, id, w, h) {
+      pCtx.clearRect(0, 0, w, h);
+
+      if (id === 'jesus') {
+        // Glowing Holy Halo
+        pCtx.fillStyle = '#ffeb7a';
+        pCtx.beginPath();
+        pCtx.arc(32, 28, 24, 0, Math.PI * 2);
+        pCtx.fill();
+
+        pCtx.fillStyle = '#fff4a8';
+        pCtx.beginPath();
+        pCtx.arc(32, 28, 20, 0, Math.PI * 2);
+        pCtx.fill();
+
+        // Face / Skin
+        pCtx.fillStyle = '#fce0ba';
+        pCtx.fillRect(20, 20, 24, 26);
+
+        // Brown Hair Parted
+        pCtx.fillStyle = '#5c3214';
+        pCtx.fillRect(16, 14, 32, 12);
+        pCtx.fillRect(14, 20, 8, 28);
+        pCtx.fillRect(42, 20, 8, 28);
+
+        // Kind Eyes & Beard
+        pCtx.fillStyle = '#381c08';
+        pCtx.fillRect(24, 28, 4, 4); // left eye
+        pCtx.fillRect(36, 28, 4, 4); // right eye
+
+        pCtx.fillStyle = '#4f2b11'; // Beard
+        pCtx.fillRect(20, 38, 24, 12);
+        pCtx.fillRect(24, 48, 16, 6);
+
+        // Smile
+        pCtx.fillStyle = '#a65624';
+        pCtx.fillRect(28, 38, 8, 2);
+
+        // White/Cream Robe & Red Mantle
+        pCtx.fillStyle = '#fbf7ee';
+        pCtx.fillRect(14, 50, 36, 14);
+
+        pCtx.fillStyle = '#b82323'; // Red mantle strap
+        pCtx.fillRect(14, 50, 12, 14);
+        pCtx.fillRect(22, 54, 28, 10);
+
+      } else if (id === 'farmer_male') {
+        // Green Straw Hat
+        pCtx.fillStyle = '#48802d';
+        pCtx.fillRect(10, 14, 44, 8);
+        pCtx.fillRect(18, 6, 28, 10);
+
+        pCtx.fillStyle = '#301808'; // Hat brim outline
+        pCtx.fillRect(10, 20, 44, 2);
+
+        // Skin & Messy Hair
+        pCtx.fillStyle = '#6e3c1b'; // hair
+        pCtx.fillRect(16, 22, 32, 8);
+
+        pCtx.fillStyle = '#fce0ba'; // skin
+        pCtx.fillRect(18, 24, 28, 24);
+
+        // Eyes & Smile
+        pCtx.fillStyle = '#3a200e';
+        pCtx.fillRect(22, 32, 4, 4);
+        pCtx.fillRect(38, 32, 4, 4);
+
+        pCtx.fillStyle = '#b85623';
+        pCtx.fillRect(28, 40, 8, 2);
+
+        // Blue Denim Overalls & Yellow Shirt
+        pCtx.fillStyle = '#fcd02d'; // shirt
+        pCtx.fillRect(14, 48, 36, 16);
+
+        pCtx.fillStyle = '#2d5cb8'; // overalls
+        pCtx.fillRect(18, 52, 28, 12);
+        pCtx.fillRect(20, 48, 6, 6);
+        pCtx.fillRect(38, 48, 6, 6);
+
+      } else if (id === 'farmer_female') {
+        // Auburn Hair & Red Headband
+        pCtx.fillStyle = '#9e3b11'; // hair
+        pCtx.fillRect(14, 10, 36, 24);
+        pCtx.fillRect(10, 22, 8, 26);
+        pCtx.fillRect(46, 22, 8, 26);
+
+        pCtx.fillStyle = '#d62424'; // headband
+        pCtx.fillRect(14, 18, 36, 4);
+
+        // Face
+        pCtx.fillStyle = '#fde2c2';
+        pCtx.fillRect(20, 22, 24, 22);
+
+        pCtx.fillStyle = '#3a200e';
+        pCtx.fillRect(24, 30, 4, 4);
+        pCtx.fillRect(36, 30, 4, 4);
+
+        pCtx.fillStyle = '#e86180'; // blush
+        pCtx.fillRect(21, 35, 4, 2);
+        pCtx.fillRect(39, 35, 4, 2);
+
+        pCtx.fillStyle = '#d62424';
+        pCtx.fillRect(28, 38, 8, 2);
+
+        // Yellow Top & Denim Overalls
+        pCtx.fillStyle = '#fcd02d';
+        pCtx.fillRect(16, 44, 32, 20);
+
+      } else if (id === 'abigail') {
+        // Purple Hair
+        pCtx.fillStyle = '#7a31a8';
+        pCtx.fillRect(12, 10, 40, 28);
+        pCtx.fillRect(8, 20, 10, 30);
+        pCtx.fillRect(46, 20, 10, 30);
+
+        pCtx.fillStyle = '#2b7ab8'; // bow
+        pCtx.fillRect(14, 12, 8, 8);
+
+        pCtx.fillStyle = '#fce0ba';
+        pCtx.fillRect(18, 22, 28, 22);
+
+        pCtx.fillStyle = '#2d183a';
+        pCtx.fillRect(22, 30, 4, 4);
+        pCtx.fillRect(38, 30, 4, 4);
+
+        pCtx.fillStyle = '#31858f'; // Teal Coat
+        pCtx.fillRect(14, 44, 36, 20);
+
+      } else if (id === 'sebastian') {
+        // Dark Hooded Hair
+        pCtx.fillStyle = '#1c1724';
+        pCtx.fillRect(12, 10, 40, 32);
+        pCtx.fillRect(10, 18, 12, 30);
+
+        pCtx.fillStyle = '#f5d3b3';
+        pCtx.fillRect(22, 24, 22, 20);
+
+        pCtx.fillStyle = '#110c17';
+        pCtx.fillRect(26, 30, 4, 4);
+
+        pCtx.fillStyle = '#282433'; // Black Hoodie
+        pCtx.fillRect(14, 42, 36, 22);
+
+      } else if (id === 'lewis') {
+        // Yellow Cap
+        pCtx.fillStyle = '#e6af19';
+        pCtx.fillRect(16, 8, 32, 14);
+        pCtx.fillRect(10, 20, 44, 4);
+
+        pCtx.fillStyle = '#fce0ba';
+        pCtx.fillRect(18, 22, 28, 22);
+
+        // Big Mustache
+        pCtx.fillStyle = '#6b3e1b';
+        pCtx.fillRect(18, 34, 28, 8);
+
+        pCtx.fillStyle = '#276b2c'; // Green coat
+        pCtx.fillRect(14, 44, 36, 20);
+
+      } else if (id === 'grandpa') {
+        // Ghost Aura
+        pCtx.fillStyle = '#63d3ff';
+        pCtx.beginPath();
+        pCtx.arc(32, 32, 28, 0, Math.PI * 2);
+        pCtx.fill();
+
+        pCtx.fillStyle = '#d1f2ff';
+        pCtx.fillRect(18, 16, 28, 32);
+
+        pCtx.fillStyle = '#ffffff'; // White Beard
+        pCtx.fillRect(16, 28, 32, 24);
+
+        pCtx.fillStyle = '#1c5e7d';
+        pCtx.fillRect(22, 26, 4, 4);
+        pCtx.fillRect(38, 26, 4, 4);
+
+      } else if (id === 'cat') {
+        // Orange Cat
+        pCtx.fillStyle = '#e3731b';
+        pCtx.fillRect(12, 18, 40, 32);
+        // Ears
+        pCtx.fillRect(12, 8, 10, 10);
+        pCtx.fillRect(42, 8, 10, 10);
+
+        pCtx.fillStyle = '#ffffff'; // muzzle
+        pCtx.fillRect(22, 34, 20, 12);
+
+        pCtx.fillStyle = '#22701b'; // Green eyes
+        pCtx.fillRect(20, 26, 6, 6);
+        pCtx.fillRect(38, 26, 6, 6);
+
+        pCtx.fillStyle = '#e0416b'; // Pink nose
+        pCtx.fillRect(29, 34, 6, 4);
+
+      } else if (id === 'dog') {
+        // Brown Dog
+        pCtx.fillStyle = '#8a5022';
+        pCtx.fillRect(16, 16, 32, 34);
+        // Floppy ears
+        pCtx.fillRect(8, 18, 10, 24);
+        pCtx.fillRect(46, 18, 10, 24);
+
+        pCtx.fillStyle = '#fce0ba'; // muzzle
+        pCtx.fillRect(22, 32, 20, 14);
+
+        pCtx.fillStyle = '#261408'; // Nose
+        pCtx.fillRect(28, 32, 8, 6);
+
+        pCtx.fillStyle = '#e03d3d'; // Tongue
+        pCtx.fillRect(30, 42, 6, 8);
+      }
+    }
+
+    /* -------------------------------------------------------------------------
+     * CANVAS BACKGROUND SCENE RENDERER
+     * ------------------------------------------------------------------------- */
+    function drawBackgroundScene(sceneKey) {
+      ctx.save();
+
+      if (sceneKey === 'green_screen') {
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.restore();
+        return;
+      }
+
+      if (sceneKey === 'farm_day') {
+        // Sky gradient
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, canvasHeight * 0.6);
+        skyGrad.addColorStop(0, '#5fa8eb');
+        skyGrad.addColorStop(1, '#a3d5ff');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Sun
+        ctx.fillStyle = '#ffee73';
+        ctx.beginPath();
+        ctx.arc(canvasWidth * 0.85, canvasHeight * 0.15, 60, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Mountains / Hills
+        ctx.fillStyle = '#599c43';
+        ctx.beginPath();
+        ctx.ellipse(canvasWidth * 0.3, canvasHeight * 0.55, 300, 140, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#478533';
+        ctx.beginPath();
+        ctx.ellipse(canvasWidth * 0.8, canvasHeight * 0.58, 350, 160, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Grass Ground
+        ctx.fillStyle = '#65ab3c';
+        ctx.fillRect(0, canvasHeight * 0.52, canvasWidth, canvasHeight * 0.48);
+
+        // Pixel Grass Tufts
+        ctx.fillStyle = '#4c8a2b';
+        for (let x = 20; x < canvasWidth; x += 60) {
+          ctx.fillRect(x, canvasHeight * 0.55 + (x % 30), 8, 16);
+          ctx.fillRect(x + 6, canvasHeight * 0.55 + (x % 30) - 6, 8, 22);
+        }
+
+        // Wooden Fence
+        ctx.fillStyle = '#824e23';
+        ctx.fillRect(0, canvasHeight * 0.62, canvasWidth, 12);
+        for (let fx = 40; fx < canvasWidth; fx += 120) {
+          ctx.fillRect(fx, canvasHeight * 0.58, 16, 40);
+        }
+
+      } else if (sceneKey === 'farm_night') {
+        // Starry Night Sky
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, canvasHeight * 0.6);
+        skyGrad.addColorStop(0, '#0a0d24');
+        skyGrad.addColorStop(1, '#1b2252');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Moon
+        ctx.fillStyle = '#fff4bd';
+        ctx.beginPath();
+        ctx.arc(canvasWidth * 0.2, canvasHeight * 0.18, 50, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Stars
+        ctx.fillStyle = '#ffffff';
+        const starCoords = [[80,90], [220,50], [400,120], [600,70], [520,180], [150,220], [310,250], [680,210]];
+        starCoords.forEach(([sx, sy]) => {
+          ctx.fillRect(sx % canvasWidth, sy % (canvasHeight*0.4), 4, 4);
+        });
+
+        // Dark Hills
+        ctx.fillStyle = '#172b1d';
+        ctx.beginPath();
+        ctx.ellipse(canvasWidth * 0.5, canvasHeight * 0.6, 450, 200, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ground
+        ctx.fillStyle = '#1b3d22';
+        ctx.fillRect(0, canvasHeight * 0.55, canvasWidth, canvasHeight * 0.45);
+
+      } else if (sceneKey === 'cozy_room') {
+        // Log Wall Background
+        ctx.fillStyle = '#4a2a16';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Wood Plank Lines
+        ctx.fillStyle = '#361d0d';
+        for (let y = 0; y < canvasHeight * 0.65; y += 40) {
+          ctx.fillRect(0, y, canvasWidth, 4);
+        }
+
+        // Stone Fireplace
+        ctx.fillStyle = '#52504d';
+        ctx.fillRect(canvasWidth * 0.35, canvasHeight * 0.2, canvasWidth * 0.3, canvasHeight * 0.45);
+        ctx.fillStyle = '#1f1e1c';
+        ctx.fillRect(canvasWidth * 0.42, canvasHeight * 0.35, canvasWidth * 0.16, canvasHeight * 0.3);
+
+        // Fire Glow
+        ctx.fillStyle = '#ff7b00';
+        ctx.beginPath();
+        ctx.arc(canvasWidth * 0.5, canvasHeight * 0.55, 25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffe033';
+        ctx.beginPath();
+        ctx.arc(canvasWidth * 0.5, canvasHeight * 0.56, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Wooden Floor
+        ctx.fillStyle = '#6b3f21';
+        ctx.fillRect(0, canvasHeight * 0.65, canvasWidth, canvasHeight * 0.35);
+
+      } else if (sceneKey === 'shrine') {
+        // Sacred Shrine Background
+        const grad = ctx.createRadialGradient(canvasWidth/2, canvasHeight*0.3, 20, canvasWidth/2, canvasHeight*0.3, canvasWidth);
+        grad.addColorStop(0, '#4a3b6e');
+        grad.addColorStop(1, '#0e0a17');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Stained Glass Window Glow
+        ctx.fillStyle = '#ffea85';
+        ctx.beginPath();
+        ctx.arc(canvasWidth/2, canvasHeight*0.25, 80, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.fillStyle = '#732626';
+        ctx.fillRect(canvasWidth/2 - 6, canvasHeight*0.15, 12, 140);
+        ctx.fillRect(canvasWidth/2 - 70, canvasHeight*0.25 - 6, 140, 12);
+
+      } else {
+        // Default Cozy Wood Texture
+        ctx.fillStyle = '#261408';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      }
+
+      ctx.restore();
+    }
+
+    /* -------------------------------------------------------------------------
+     * STARDEW VALLEY DIALOGUE BOX CANVAS ENGINE
+     * ------------------------------------------------------------------------- */
+    function drawDialogueFrame(speaker, fullText, typedText, isTypingFinished) {
+      // 1. Calculate positions based on Aspect Ratio
+      let boxW, boxH, boxX, boxY;
+      let portraitW = 120;
+      let portraitH = 120;
+
+      if (currentAspect === '9:16') {
+        boxW = canvasWidth * 0.92;
+        boxH = 260;
+        boxX = (canvasWidth - boxW) / 2;
+        boxY = canvasHeight - boxH - 180; // Safe zone above TikTok controls
+      } else if (currentAspect === '16:9') {
+        boxW = canvasWidth * 0.82;
+        boxH = 210;
+        boxX = (canvasWidth - boxW) / 2;
+        boxY = canvasHeight - boxH - 50;
+      } else { // 1:1
+        boxW = canvasWidth * 0.90;
+        boxH = 230;
+        boxX = (canvasWidth - boxW) / 2;
+        boxY = canvasHeight - boxH - 60;
+      }
+
+      ctx.save();
+
+      // --- A. OUTER WOODEN SHADOW & BORDER ---
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.fillRect(boxX + 8, boxY + 8, boxW, boxH);
+
+      ctx.fillStyle = '#261308'; // Dark wood border
+      ctx.fillRect(boxX, boxY, boxW, boxH);
+
+      ctx.fillStyle = '#633618'; // Mid wood frame
+      ctx.fillRect(boxX + 6, boxY + 6, boxW - 12, boxH - 12);
+
+      ctx.fillStyle = '#9e5d10'; // Inner shadow border
+      ctx.fillRect(boxX + 12, boxY + 12, boxW - 24, boxH - 24);
+
+      ctx.fillStyle = '#e59b2a'; // Gold highlight border
+      ctx.fillRect(boxX + 14, boxY + 14, boxW - 28, boxH - 28);
+
+      // --- B. PARCHMENT BACKGROUND ---
+      ctx.fillStyle = '#ffeab0';
+      ctx.fillRect(boxX + 18, boxY + 18, boxW - 36, boxH - 36);
+
+      // Subtly textured grid pattern inside box
+      ctx.fillStyle = '#fce4a6';
+      for (let px = boxX + 18; px < boxX + boxW - 18; px += 16) {
+        ctx.fillRect(px, boxY + 18, 8, boxH - 36);
+      }
+
+      // --- C. SPEAKER NAME RIBBON ---
+      if (speaker) {
+        const nameText = speaker.toUpperCase();
+        ctx.font = 'bold 16px "Press Start 2P", monospace';
+        const nameWidth = Math.max(120, ctx.measureText(nameText).width + 36);
+        const nameX = boxX + 24;
+        const nameY = boxY - 18;
+        const nameH = 34;
+
+        // Name Tag Dark Shadow
+        ctx.fillStyle = '#1c0808';
+        ctx.fillRect(nameX + 4, nameY + 4, nameWidth, nameH);
+
+        // Name Tag Border
+        ctx.fillStyle = '#3a0a0a';
+        ctx.fillRect(nameX, nameY, nameWidth, nameH);
+
+        // Name Tag Fill (Burgundy)
+        ctx.fillStyle = '#801c1c';
+        ctx.fillRect(nameX + 3, nameY + 3, nameWidth - 6, nameH - 6);
+
+        // Gold Trim
+        ctx.fillStyle = '#ffe278';
+        ctx.fillRect(nameX + 5, nameY + 5, nameWidth - 10, 2);
+
+        // Speaker Text
+        ctx.fillStyle = '#ffe278';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(nameText, nameX + nameWidth / 2, nameY + nameH / 2 + 1);
+      }
+
+      // --- D. CHARACTER PORTRAIT BOX (RIGHT SIDE) ---
+      const portraitBoxX = boxX + boxW - portraitW - 28;
+      const portraitBoxY = boxY + (boxH - portraitH) / 2;
+
+      // Portrait Wooden Frame
+      ctx.fillStyle = '#261308';
+      ctx.fillRect(portraitBoxX - 4, portraitBoxY - 4, portraitW + 8, portraitH + 8);
+
+      ctx.fillStyle = '#804a1b';
+      ctx.fillRect(portraitBoxX, portraitBoxY, portraitW, portraitH);
+
+      // Metallic Frame Studs
+      ctx.fillStyle = '#ffe278';
+      ctx.fillRect(portraitBoxX - 2, portraitBoxY - 2, 4, 4);
+      ctx.fillRect(portraitBoxX + portraitW - 2, portraitBoxY - 2, 4, 4);
+      ctx.fillRect(portraitBoxX - 2, portraitBoxY + portraitH - 2, 4, 4);
+      ctx.fillRect(portraitBoxX + portraitW - 2, portraitBoxY + portraitH - 2, 4, 4);
+
+      // DRAW PORTRAIT IMAGE / CANV
+      const speakerData = speakerMap[speaker] || { avatarKey: 'farmer_male' };
+      
+      // Gentle breathing idle float animation
+      const breathOffset = Math.sin(Date.now() / 400) * 1.5;
+
+      if (speakerData.avatarKey === 'custom' && speakerData.customImg) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(speakerData.customImg, portraitBoxX + 2, portraitBoxY + 2 + breathOffset, portraitW - 4, portraitH - 4);
+      } else {
+        const key = speakerData.avatarKey || 'farmer_male';
+        const pCanvas = avatarCanvasCache[key];
+        if (pCanvas) {
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(pCanvas, portraitBoxX + 2, portraitBoxY + 2 + breathOffset, portraitW - 4, portraitH - 4);
+        }
+      }
+
+      // --- E. DIALOGUE TEXT (WORD WRAP & TYPEWRITER) ---
+      const textAreaX = boxX + 32;
+      const textAreaY = boxY + 42;
+      const textAreaMaxW = portraitBoxX - textAreaX - 20;
+
+      ctx.font = '22px "Pixelify Sans", "Press Start 2P", monospace';
+      ctx.fillStyle = '#381c08';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+
+      // Word Wrap Engine
+      const words = typedText.split(' ');
+      let line = '';
+      let y = textAreaY;
+      const lineHeight = 30;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+
+        if (testWidth > textAreaMaxW && n > 0) {
+          ctx.fillText(line, textAreaX, y);
+          line = words[n] + ' ';
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, textAreaX, y);
+
+      // --- F. NEXT LINE PULSING ARROW INDICATOR ---
+      if (isTypingFinished) {
+        const arrowX = boxX + boxW - portraitW - 54;
+        const arrowY = boxY + boxH - 42 + Math.sin(Date.now() / 150) * 4;
+
+        ctx.fillStyle = '#d63838'; // Red Stardew Arrow
+        ctx.beginPath();
+        ctx.moveTo(arrowX, arrowY);
+        ctx.lineTo(arrowX + 16, arrowY);
+        ctx.lineTo(arrowX + 8, arrowY + 12);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#ffe278'; // Arrow Highlight
+        ctx.fillRect(arrowX + 6, arrowY, 4, 4);
+      }
+
+      ctx.restore();
+    }
+
+    /* -------------------------------------------------------------------------
+     * MAIN ANIMATION LOOP & UPDATE
+     * ------------------------------------------------------------------------- */
+    function updateCanvas() {
+      // Draw selected scene background
+      const scene = document.getElementById('bgSceneSelect').value;
+      drawBackgroundScene(scene);
+
+      // If no lines parsed, draw empty dialogue
+      if (parsedLines.length === 0) {
+        drawDialogueFrame('SAYA', 'Tulis percakapan Anda...', 'Tulis percakapan Anda...', true);
+        return;
+      }
+
+      const activeLine = parsedLines[currentLineIndex] || parsedLines[0];
+      const typedText = activeLine.text.substring(0, currentTypedChars);
+      const isFinished = currentTypedChars >= activeLine.text.length;
+
+      drawDialogueFrame(activeLine.speaker, activeLine.text, typedText, isFinished);
+    }
+
+    function animate(timestamp) {
+      if (!isPlaying) {
+        if (animFrameId) {
+          cancelAnimationFrame(animFrameId);
+          animFrameId = null;
+        }
+        return;
+      }
+
+      const speedMs = parseInt(document.getElementById('typingSpeedSelect').value, 10);
+      const lineDelayMs = parseInt(document.getElementById('lineDelaySelect').value, 10);
+
+      const activeLine = parsedLines[currentLineIndex];
+
+      if (!activeLine) {
+        // Reached end of script!
+        stopOrReset();
+        if (isRecording) {
+          stopRecordVideo();
+        }
+        return;
+      }
+
+      // Phase 1: Typewriter typing characters
+      if (linePhase === 'typing') {
+        if (timestamp - lastCharTime >= speedMs) {
+          if (currentTypedChars < activeLine.text.length) {
+            currentTypedChars++;
+            lastCharTime = timestamp;
+
+            const char = activeLine.text[currentTypedChars - 1];
+            // Play sound blip per letter (skip spaces and punctuation)
+            if (char && char !== ' ' && char !== '.' && char !== ',' && char !== '!' && char !== '?' && char !== '-' && char !== '"') {
+              playTypingBlip(activeLine.speaker, currentTypedChars);
+            }
+
+            // Natural dramatic pause on punctuation marks
+            if (char === '.' || char === '!' || char === '?') {
+              lastCharTime = timestamp + speedMs * 1.8;
+            } else if (char === ',') {
+              lastCharTime = timestamp + speedMs * 1.2;
+            }
+          } else {
+            // Typing complete!
+            linePhase = 'waiting';
+            lineStartTime = timestamp;
+            playAdvanceChime();
+          }
+        }
+      }
+
+      // Phase 2: Pause after full line typed before advancing
+      if (linePhase === 'waiting') {
+        if (timestamp - lineStartTime >= lineDelayMs) {
+          currentLineIndex++;
+          currentTypedChars = 0;
+          linePhase = 'typing';
+          lastCharTime = timestamp;
+        }
+      }
+
+      // Update canvas frame
+      updateCanvas();
+
+      // Update progress if recording
+      if (isRecording) {
+        const totalLines = parsedLines.length;
+        const progressPct = Math.min(100, Math.round(((currentLineIndex + (currentTypedChars / (activeLine?.text.length || 1))) / totalLines) * 100));
+        document.getElementById('progressBar').style.width = progressPct + '%';
+        document.getElementById('progressPercentText').innerText = progressPct + '%';
+        document.getElementById('progressStatusText').innerText = `Merekam kalimat ${currentLineIndex + 1} dari ${totalLines}...`;
+      }
+
+      animFrameId = requestAnimationFrame(animate);
+    }
+
+    /* -------------------------------------------------------------------------
+     * PLAYBACK & RECORDING CONTROLS
+     * ------------------------------------------------------------------------- */
+    function togglePlayPause() {
+      if (parsedLines.length === 0) return;
+      initAudio();
+
+      if (isPlaying) {
+        // Pause
+        isPlaying = false;
+        if (animFrameId) {
+          cancelAnimationFrame(animFrameId);
+          animFrameId = null;
+        }
+        // Silence active blip audio immediately
+        silenceBlipAudio();
+        document.getElementById('playBtn').innerText = '▶ RESUME';
+      } else {
+        // Resume / Start
+        if (currentLineIndex >= parsedLines.length) {
+          currentLineIndex = 0;
+          currentTypedChars = 0;
+          linePhase = 'typing';
+        }
+        isPlaying = true;
+        lastCharTime = performance.now();
+        document.getElementById('playBtn').innerText = '⏸ PAUSE';
+
+        if (animFrameId) {
+          cancelAnimationFrame(animFrameId);
+        }
+        animFrameId = requestAnimationFrame(animate);
+      }
+    }
+
+    function playPreview() {
+      stopOrReset();
+      if (parsedLines.length === 0) return;
+      initAudio();
+
+      isPlaying = true;
+      currentLineIndex = 0;
+      currentTypedChars = 0;
+      linePhase = 'typing';
+      lastCharTime = performance.now();
+
+      document.getElementById('playBtn').innerText = '⏸ PAUSE';
+      animFrameId = requestAnimationFrame(animate);
+    }
+
+    function silenceBlipAudio() {
+      if (activeBlipGain && audioCtx) {
+        try {
+          activeBlipGain.gain.cancelScheduledValues(audioCtx.currentTime);
+          activeBlipGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        } catch (e) {}
+      }
+      if (activeBlipOsc) {
+        try {
+          activeBlipOsc.stop(audioCtx ? audioCtx.currentTime : 0);
+          activeBlipOsc.disconnect();
+        } catch (e) {}
+      }
+      activeBlipOsc = null;
+      activeBlipGain = null;
+    }
+
+    function stopOrReset() {
+      isPlaying = false;
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+
+      silenceBlipAudio();
+
+      document.getElementById('playBtn').innerText = '▶ PLAY PREVIEW';
+      currentLineIndex = 0;
+      currentTypedChars = parsedLines.length > 0 ? parsedLines[0].text.length : 0;
+      linePhase = 'typing';
+
+      updateCanvas();
+    }
+
+    /* -------------------------------------------------------------------------
+     * VIDEO RECORDING ENGINE (MEDIA RECORDER + WEBAUDIO SYNC)
+     * ------------------------------------------------------------------------- */
+    function startRecordVideo() {
+      if (parsedLines.length === 0) {
+        alert('Mohon isi script percakapan terlebih dahulu!');
+        return;
+      }
+
+      // Ensure single clean execution: stop existing animation loop & audio
+      stopOrReset();
+      initAudio();
+
+      isRecording = true;
+      recordedChunks = [];
+
+      // UI Feedback
+      document.getElementById('recordingBadge').classList.remove('hidden');
+      document.getElementById('progressContainer').classList.remove('hidden');
+      document.getElementById('recordBtn').disabled = true;
+
+      // 1. Capture Canvas Stream (30 FPS)
+      const canvasStream = canvas.captureStream(30);
+
+      // 2. Mix WebAudio Stream
+      let tracks = [...canvasStream.getVideoTracks()];
+      if (audioDestNode && audioDestNode.stream) {
+        const audioTracks = audioDestNode.stream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          tracks.push(audioTracks[0]);
+        }
+      }
+
+      recordStream = new MediaStream(tracks);
+
+      // 3. MediaRecorder Options
+      let options = { mimeType: 'video/webm;codecs=vp9' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'video/webm' };
+      }
+
+      try {
+        mediaRecorder = new MediaRecorder(recordStream, options);
+      } catch (e) {
+        mediaRecorder = new MediaRecorder(recordStream);
+      }
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const videoUrl = URL.createObjectURL(blob);
+
+        const videoPreview = document.getElementById('exportedVideoPreview');
+        videoPreview.src = videoUrl;
+
+        const downloadLink = document.getElementById('downloadVideoLink');
+        downloadLink.href = videoUrl;
+        downloadLink.download = `stardew_chat_${currentAspect.replace(':', 'x')}_${Date.now()}.webm`;
+
+        // Open Download Modal
+        document.getElementById('downloadModal').classList.remove('hidden');
+
+        // Reset Recording UI
+        isRecording = false;
+        document.getElementById('recordingBadge').classList.add('hidden');
+        document.getElementById('progressContainer').classList.add('hidden');
+        document.getElementById('recordBtn').disabled = false;
+      };
+
+      // Start Recording & Play animation cleanly from start
+      mediaRecorder.start(100);
+      
+      isPlaying = true;
+      currentLineIndex = 0;
+      currentTypedChars = 0;
+      linePhase = 'typing';
+      lastCharTime = performance.now();
+      document.getElementById('playBtn').innerText = '⏸ PAUSE';
+
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+      }
+      animFrameId = requestAnimationFrame(animate);
+    }
+
+    function stopRecordVideo() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        setTimeout(() => {
+          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+          }
+        }, 300);
+      }
+    }
+
+    function closeDownloadModal() {
+      const videoPreview = document.getElementById('exportedVideoPreview');
+      if (videoPreview) {
+        videoPreview.pause();
+      }
+      document.getElementById('downloadModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
