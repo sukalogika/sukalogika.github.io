@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="id" data-mode="edit">
+<head>
+<meta charset="UTF-8">
+<title id="page-title">Renungan Saya</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script id="post-data" type="application/json">{}</script>
+<style>
+  :root{
+    --bg:#14181D;
+    --panel:#1D232A;
+    --panel-2:#232A32;
+    --border:#2C343D;
+    --text:#CBD0D6;
+    --muted:#828A93;
+    --accent:#E3A857;
+    --accent-dim:#8A6A3B;
+    --paper-bg:#F5EEDD;
+    --paper-text:#2B2620;
+    --paper-accent:#8B5E3C;
+    --danger:#C77B6B;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Work Sans",sans-serif;
+    min-height:100vh;
+  }
+  .tool-shell{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+  .tool-header{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+  .tool-header .brand{font-family:"Lora",serif;font-style:italic;font-size:22px;color:#EDE6D6;}
+  .tool-header .brand b{color:var(--accent);font-style:normal;}
+  .tool-header .tagline{color:var(--muted);font-size:13px;}
+
+  .load-row{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:22px;flex-wrap:wrap;}
+  .load-row label.file-btn{font-size:13px;color:var(--accent);cursor:pointer;border:1px solid var(--accent-dim);padding:6px 12px;border-radius:7px;white-space:nowrap;}
+  .load-row label.file-btn:hover{background:rgba(227,168,87,0.1);}
+  .load-row .hint{font-size:12.5px;color:var(--muted);}
+  .load-row .status{font-size:12.5px;color:#9CC79B;}
+  input[type=file]{display:none;}
+
+  /* ---------- Editor view ---------- */
+  #editorView{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start;}
+  @media (max-width:880px){#editorView{grid-template-columns:1fr;}}
+
+  .editor-pane{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;}
+  .field{margin-bottom:18px;}
+  .field label{display:block;font-size:12.5px;letter-spacing:.2px;color:var(--muted);margin-bottom:6px;}
+  .field .desc{font-size:11.5px;color:var(--muted);margin-top:5px;opacity:.8;}
+  input[type=text],input[type=date],textarea,select{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;
+    color:var(--text);font-family:inherit;font-size:14.5px;padding:10px 12px;outline:none;
+  }
+  input[type=text]:focus,input[type=date]:focus,textarea:focus,select:focus{border-color:var(--accent-dim);}
+  textarea#f-content{min-height:280px;resize:vertical;line-height:1.55;font-family:"Lora",serif;font-size:15px;}
+  .row-split{display:flex;gap:12px;}
+  .row-split>.field{flex:1;}
+
+  .cover-box{display:flex;align-items:center;gap:12px;}
+  .cover-thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:var(--panel-2);flex-shrink:0;}
+  .cover-empty{width:64px;height:64px;border-radius:8px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:10.5px;color:var(--muted);text-align:center;flex-shrink:0;}
+  .btn{border:none;border-radius:8px;padding:9px 15px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--accent-dim);}
+  .btn-link{background:none;border:none;color:var(--danger);font-size:12.5px;cursor:pointer;padding:0;text-decoration:underline;}
+
+  .content-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .content-toolbar .fmt{display:flex;align-items:center;gap:8px;}
+  .content-toolbar select{width:auto;padding:6px 10px;font-size:13px;}
+  .content-toolbar .btn{padding:6px 12px;font-size:12.5px;}
+
+  .actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+  .btn-primary{background:var(--accent);color:#1A1406;}
+  .btn-primary:hover{background:#eab568;}
+
+  /* ---------- Paper preview ---------- */
+  .preview-pane{position:sticky;top:20px;}
+  .paper{
+    background:var(--paper-bg);color:var(--paper-text);border-radius:6px;
+    padding:44px 42px 50px;box-shadow:0 30px 70px -25px rgba(0,0,0,.65), 0 0 0 1px rgba(0,0,0,.15);
+    font-family:"Lora",serif;position:relative;overflow:hidden;
+  }
+  .paper::before{
+    content:"";position:absolute;top:-40%;left:50%;width:140%;height:90%;
+    background:radial-gradient(ellipse at center, rgba(255,224,160,.35), rgba(255,224,160,0) 70%);
+    transform:translateX(-50%);pointer-events:none;
+  }
+  .doc-cover{width:100%;max-height:260px;object-fit:cover;border-radius:4px;margin-bottom:22px;display:block;position:relative;}
+  .doc-meta{font-family:"Work Sans",sans-serif;font-size:12px;letter-spacing:.3px;color:var(--paper-accent);margin:0 0 6px;position:relative;}
+  .doc-title{font-size:30px;line-height:1.25;margin:0 0 18px;font-weight:600;position:relative;}
+  .doc-content{font-size:16.5px;line-height:1.8;max-width:66ch;position:relative;}
+  .doc-content p{margin:0 0 1.1em;}
+  .doc-content img{max-width:100%;border-radius:4px;margin:14px 0;display:block;}
+  .doc-content blockquote{margin:0 0 1.1em;padding-left:16px;border-left:3px solid var(--paper-accent);color:#5a5142;font-style:italic;}
+  .doc-content h1,.doc-content h2,.doc-content h3{font-weight:600;margin:1.2em 0 .5em;}
+  .doc-content a{color:var(--paper-accent);}
+  .doc-content code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:.9em;}
+  .doc-empty{color:#9a8f78;font-style:italic;font-size:15px;position:relative;}
+
+  /* ---------- Post (final) view ---------- */
+  #postView{display:none;max-width:760px;margin:0 auto;}
+  .edit-fab{
+    position:fixed;top:22px;right:22px;background:var(--panel);border:1px solid var(--border);
+    color:var(--accent);padding:9px 16px;border-radius:30px;font-size:13px;font-weight:600;cursor:pointer;
+    box-shadow:0 10px 30px -10px rgba(0,0,0,.6);z-index:10;
+  }
+  .edit-fab:hover{border-color:var(--accent-dim);}
+  #postArticle.paper{margin-top:60px;}
+
+  [data-mode="edit"] #postView{display:none;}
+  [data-mode="edit"] .edit-fab{display:none;}
+  [data-mode="view"] #editorView{display:none;}
+  [data-mode="view"] #postView{display:block;}
+  [data-mode="view"] .load-row{display:none;}
+</style>
+</head>
+<body>
+<div class="tool-shell">
+
+  <div class="tool-header">
+    <div>
+      <div class="brand">Penulis <b>Renungan</b></div>
+      <div class="tagline">Tulis, simpan sebagai HTML, dan buka lagi kapan pun untuk diedit.</div>
+    </div>
+  </div>
+
+  <div class="load-row">
+    <label class="file-btn">
+      Buka renungan lama untuk diedit
+      <input type="file" id="f-loadfile" accept=".html,.htm">
+    </label>
+    <span class="hint">Pilih file HTML yang pernah dihasilkan alat ini.</span>
+    <span class="status" id="loadStatus"></span>
+  </div>
+
+  <!-- ================= EDITOR VIEW ================= -->
+  <section id="editorView">
+    <div class="editor-pane">
+
+      <div class="field">
+        <label for="f-title">Judul renungan</label>
+        <input type="text" id="f-title" placeholder="Misal: Tenang di Tengah Badai">
+      </div>
+
+      <div class="row-split">
+        <div class="field">
+          <label for="f-date">Tanggal</label>
+          <input type="date" id="f-date">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Gambar sampul (opsional)</label>
+        <div class="cover-box">
+          <div id="coverThumbWrap"></div>
+          <label class="file-btn" style="margin:0;">
+            Pilih gambar
+            <input type="file" id="f-cover" accept="image/*">
+          </label>
+          <button type="button" class="btn-link" id="btn-remove-cover" style="display:none;">hapus gambar</button>
+        </div>
+        <div class="desc">Gambar diubah menjadi kode base64 dan ikut tersimpan di dalam file HTML — tidak perlu file gambar terpisah.</div>
+      </div>
+
+      <div class="field" style="margin-bottom:8px;">
+        <div class="content-toolbar">
+          <label style="margin:0;">Isi renungan</label>
+          <div class="fmt">
+            <select id="f-format">
+              <option value="markdown">Format: Markdown</option>
+              <option value="html">Format: HTML biasa</option>
+            </select>
+            <button type="button" class="btn btn-ghost" id="btn-insert-image">+ Sisipkan gambar</button>
+            <input type="file" id="f-content-image" accept="image/*">
+          </div>
+        </div>
+        <textarea id="f-content" placeholder="Tulis renungan kamu di sini...
+
+Kalau format Markdown:
+# Judul kecil
+**tebal**, _miring_
+> ayat atau kutipan
+- poin pertama
+- poin kedua"></textarea>
+        <div class="desc">Markdown cocok kalau kamu belum kenal HTML — cukup tulis biasa dengan sedikit simbol. Pilih "HTML biasa" kalau kamu mau menulis tag HTML sendiri.</div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btn-generate">Buat &amp; unduh file HTML</button>
+        <button type="button" class="btn btn-ghost" id="btn-reset">Kosongkan semua</button>
+      </div>
+    </div>
+
+    <div class="preview-pane">
+      <div class="paper" id="livePreview"></div>
+    </div>
+  </section>
+
+  <!-- ================= POST (FINAL) VIEW ================= -->
+  <section id="postView">
+    <button type="button" class="edit-fab" id="btn-edit">✏️ Edit renungan ini</button>
+    <article class="paper" id="postArticle"></article>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const titleInput = $('f-title');
+  const dateInput = $('f-date');
+  const formatSelect = $('f-format');
+  const contentTextarea = $('f-content');
+  const coverInput = $('f-cover');
+  const contentImageInput = $('f-content-image');
+  const dataScript = $('post-data');
+  let currentCover = '';
+
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+  function formatDateNice(iso){
+    if(!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function fileToBase64(file){
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function renderContentHtml(content, format){
+    if(!content) return '';
+    if(format === 'html') return content;
+    try { return marked.parse(content); } catch(e){ return '<p>' + escapeHtml(content) + '</p>'; }
+  }
+
+  function estimateReadMinutes(content){
+    const text = String(content || '').replace(/<[^>]+>/g,' ').replace(/[#>*_`\-\[\]!()]/g,' ');
+    const words = text.trim().split(/\s+/).filter(Boolean).length;
+    return Math.max(1, Math.round(words / 200));
+  }
+
+  function articleHtml(data){
+    if(!data.title && !data.content){
+      return '<p class="doc-empty">Mulai tulis di sebelah kiri — tampilannya akan muncul di sini.</p>';
+    }
+    const cover = data.cover ? '<img class="doc-cover" src="' + data.cover + '" alt="Sampul">' : '';
+    const meta = escapeHtml(formatDateNice(data.date)) + ' · ' + estimateReadMinutes(data.content) + ' menit baca';
+    return cover
+      + '<p class="doc-meta">' + meta + '</p>'
+      + '<h1 class="doc-title">' + escapeHtml(data.title || 'Tanpa judul') + '</h1>'
+      + '<div class="doc-content">' + renderContentHtml(data.content, data.format) + '</div>';
+  }
+
+  function getCurrentData(){
+    return {
+      title: titleInput.value.trim(),
+      date: dateInput.value || todayStr(),
+      format: formatSelect.value,
+      cover: currentCover,
+      content: contentTextarea.value
+    };
+  }
+
+  function updateLivePreview(){
+    $('livePreview').innerHTML = articleHtml(getCurrentData());
+  }
+
+  function updateCoverThumb(){
+    const wrap = $('coverThumbWrap');
+    if(currentCover){
+      wrap.innerHTML = '<img class="cover-thumb" src="' + currentCover + '">';
+      $('btn-remove-cover').style.display = 'inline';
+    } else {
+      wrap.innerHTML = '<div class="cover-empty">Belum ada gambar</div>';
+      $('btn-remove-cover').style.display = 'none';
+    }
+  }
+
+  function populateEditor(data){
+    titleInput.value = data.title || '';
+    dateInput.value = data.date || todayStr();
+    formatSelect.value = data.format || 'markdown';
+    contentTextarea.value = data.content || '';
+    currentCover = data.cover || '';
+    updateCoverThumb();
+    updateLivePreview();
+  }
+
+  function setMode(mode){
+    document.documentElement.setAttribute('data-mode', mode);
+  }
+
+  // --- cover image handling ---
+  coverInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    currentCover = await fileToBase64(file);
+    updateCoverThumb();
+    updateLivePreview();
+  });
+  $('btn-remove-cover').addEventListener('click', () => {
+    currentCover = '';
+    coverInput.value = '';
+    updateCoverThumb();
+    updateLivePreview();
+  });
+
+  // --- insert image into content ---
+  $('btn-insert-image').addEventListener('click', () => contentImageInput.click());
+  contentImageInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const dataUrl = await fileToBase64(file);
+    const snippet = formatSelect.value === 'html'
+      ? '\n<img src="' + dataUrl + '" alt="gambar" style="max-width:100%;height:auto;">\n'
+      : '\n\n![gambar](' + dataUrl + ')\n\n';
+    const start = contentTextarea.selectionStart || contentTextarea.value.length;
+    const end = contentTextarea.selectionEnd || contentTextarea.value.length;
+    contentTextarea.setRangeText(snippet, start, end, 'end');
+    contentImageInput.value = '';
+    updateLivePreview();
+    contentTextarea.focus();
+  });
+
+  // --- live preview on typing ---
+  [titleInput, dateInput, contentTextarea].forEach(el => el.addEventListener('input', updateLivePreview));
+  formatSelect.addEventListener('change', updateLivePreview);
+
+  // --- reset ---
+  $('btn-reset').addEventListener('click', () => {
+    if(!confirm('Kosongkan judul, isi, dan gambar sampul?')) return;
+    titleInput.value = '';
+    contentTextarea.value = '';
+    currentCover = '';
+    coverInput.value = '';
+    dateInput.value = todayStr();
+    formatSelect.value = 'markdown';
+    updateCoverThumb();
+    updateLivePreview();
+  });
+
+  // --- generate & download ---
+  $('btn-generate').addEventListener('click', () => {
+    const data = getCurrentData();
+    if(!data.title && !data.content){
+      alert('Isi judul atau konten dulu ya, sebelum diunduh.');
+      return;
+    }
+    dataScript.textContent = JSON.stringify(data);
+    $('postArticle').innerHTML = articleHtml(data);
+    $('page-title').textContent = (data.title || 'Renungan') + ' — Renungan';
+    setMode('view');
+
+    const htmlStr = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    const blob = new Blob([htmlStr], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const slug = (data.title || 'renungan').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'renungan';
+    a.href = url;
+    a.download = slug + '.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  // --- edit button (from post view back to editor) ---
+  $('btn-edit').addEventListener('click', () => {
+    try {
+      const data = JSON.parse(dataScript.textContent || '{}');
+      populateEditor(data);
+    } catch(e){}
+    setMode('edit');
+  });
+
+  // --- load an existing generated file to keep editing ---
+  $('f-loadfile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    const status = $('loadStatus');
+    if(!file) return;
+    try {
+      const text = await file.text();
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+      const script = doc.getElementById('post-data');
+      if(!script) throw new Error('no data');
+      const data = JSON.parse(script.textContent);
+      populateEditor(data);
+      setMode('edit');
+      status.textContent = 'Berhasil memuat "' + (data.title || 'renungan') + '" untuk diedit.';
+    } catch(err){
+      status.textContent = '';
+      alert('File ini sepertinya bukan hasil dari alat ini, atau formatnya rusak.');
+    } finally {
+      e.target.value = '';
+    }
+  });
+
+  // --- initial load ---
+  (function init(){
+    let initial = {};
+    try { initial = JSON.parse(dataScript.textContent || '{}'); } catch(e){ initial = {}; }
+    if(initial.title || initial.content){
+      populateEditor(initial);
+      $('postArticle').innerHTML = articleHtml(initial);
+      $('page-title').textContent = (initial.title || 'Renungan') + ' — Renungan';
+      setMode(document.documentElement.getAttribute('data-mode') === 'view' ? 'view' : 'view');
+    } else {
+      dateInput.value = todayStr();
+      updateCoverThumb();
+      updateLivePreview();
+      setMode('edit');
+    }
+  })();
+})();
+</script>
+</body>
+</html>
