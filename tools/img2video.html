@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foto ke Video — Konverter untuk TikTok</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+  .accent-grad { background: linear-gradient(90deg, #ff2d78, #7c3aed); }
+  .accent-grad-text { background: linear-gradient(90deg, #ff2d78, #7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .drop-active { border-color: #ff2d78 !important; background-color: rgba(255,45,120,0.06); }
+  .thumb { aspect-ratio: 9/16; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 9999px; background: #ff2d78; cursor: pointer; margin-top: -6px; }
+  input[type="range"] { -webkit-appearance: none; height: 4px; border-radius: 9999px; background: #3f3f46; }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  .pulse-dot { animation: pulse-dot 1.2s ease-in-out infinite; }
+</style>
+</head>
+<body class="bg-[#0b0b0c] text-zinc-200 min-h-screen">
+
+<div class="max-w-4xl mx-auto px-4 py-10 sm:py-14">
+
+  <!-- Header -->
+  <header class="mb-10">
+    <h1 class="text-2xl sm:text-3xl font-semibold text-white tracking-tight">Foto ke Video <span class="accent-grad-text">TikTok</span></h1>
+    <p class="mt-2 text-sm text-zinc-400 max-w-xl">Masukkan beberapa foto dan satu lagu. Setiap foto akan diubah jadi video vertikal terpisah dengan lagu yang sama, langsung siap diunggah ke TikTok.</p>
+  </header>
+
+  <!-- Step 1: Images -->
+  <section class="mb-6">
+    <div class="flex items-baseline justify-between mb-3">
+      <h2 class="text-sm font-medium text-white">1. Pilih foto</h2>
+      <span id="imgCount" class="text-xs text-zinc-500">0 foto</span>
+    </div>
+    <div id="imgDrop" class="border border-dashed border-zinc-700 rounded-xl p-6 text-center cursor-pointer transition-colors hover:border-zinc-500">
+      <p class="text-sm text-zinc-400">Seret &amp; lepas foto di sini, atau <span class="text-white underline">klik untuk memilih</span></p>
+      <p class="text-xs text-zinc-600 mt-1">Boleh pilih banyak sekaligus (JPG, PNG, WEBP)</p>
+      <input id="imgInput" type="file" accept="image/*" multiple class="hidden">
+    </div>
+    <div id="imgGrid" class="mt-4 grid grid-cols-3 sm:grid-cols-5 gap-2"></div>
+  </section>
+
+  <!-- Step 2: Song -->
+  <section class="mb-6">
+    <h2 class="text-sm font-medium text-white mb-3">2. Pilih lagu <span class="text-zinc-500 font-normal">(opsional)</span></h2>
+    <div id="audDrop" class="border border-dashed border-zinc-700 rounded-xl p-6 text-center cursor-pointer transition-colors hover:border-zinc-500">
+      <p id="audDropText" class="text-sm text-zinc-400">Seret &amp; lepas file audio atau video di sini, atau <span class="text-white underline">klik untuk memilih</span></p>
+      <p class="text-xs text-zinc-600 mt-1">MP3, WAV, M4A, atau file video (audionya saja yang dipakai)</p>
+      <input id="audInput" type="file" accept="audio/*,video/*" class="hidden">
+    </div>
+    <audio id="audioPreview" class="hidden"></audio>
+  </section>
+
+  <!-- Step 3: Duration -->
+  <section class="mb-6">
+    <h2 class="text-sm font-medium text-white mb-3">3. Durasi tiap video</h2>
+    <div class="flex gap-2" id="durationPicker">
+      <button data-dur="10" class="dur-btn px-4 py-2 rounded-lg text-sm border border-zinc-700 text-zinc-300 hover:border-zinc-500">10 detik</button>
+      <button data-dur="15" class="dur-btn px-4 py-2 rounded-lg text-sm border border-zinc-700 text-zinc-300 hover:border-zinc-500">15 detik</button>
+      <button data-dur="60" class="dur-btn px-4 py-2 rounded-lg text-sm border border-zinc-700 text-zinc-300 hover:border-zinc-500">60 detik</button>
+    </div>
+  </section>
+
+  <!-- Step 4: Options -->
+  <section class="mb-8">
+    <h2 class="text-sm font-medium text-white mb-3">4. Opsi tambahan</h2>
+    <label class="flex items-center gap-3 text-sm text-zinc-300 cursor-pointer">
+      <input id="kenBurnsToggle" type="checkbox" checked class="w-4 h-4 accent-[#ff2d78]">
+      Efek zoom halus (ken burns) supaya video tidak terasa diam
+    </label>
+  </section>
+
+  <!-- Generate -->
+  <section class="mb-8">
+    <button id="genBtn" class="accent-grad text-white font-medium text-sm rounded-lg px-6 py-3 w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed transition-opacity">
+      Buat &amp; unduh semua video
+    </button>
+    <p id="formatNote" class="text-xs text-zinc-600 mt-2"></p>
+  </section>
+
+  <!-- Progress -->
+  <section id="progressSection" class="hidden mb-8">
+    <div class="flex items-center justify-between text-sm mb-2">
+      <span id="progressLabel" class="text-zinc-300">Memproses...</span>
+      <span id="progressCount" class="text-zinc-500">0 / 0</span>
+    </div>
+    <div class="w-full h-2 rounded-full bg-zinc-800 overflow-hidden">
+      <div id="progressBar" class="h-full accent-grad" style="width:0%"></div>
+    </div>
+    <div id="progressStatus" class="mt-3 text-xs text-zinc-500 flex items-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-[#ff2d78] pulse-dot"></span>
+      <span id="progressStatusText">Menyiapkan...</span>
+    </div>
+  </section>
+
+  <canvas id="workCanvas" class="hidden" width="1080" height="1920"></canvas>
+
+  <footer class="text-xs text-zinc-700 pt-6 border-t border-zinc-900">
+    Semua proses berjalan langsung di browser kamu. Tidak ada foto atau lagu yang diunggah ke server mana pun.
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- State ----------
+  const state = {
+    images: [],       // { file, url, img }
+    audioFile: null,
+    duration: 15,
+    kenBurns: true,
+  };
+
+  const CANVAS_W = 1080;
+  const CANVAS_H = 1920;
+
+  // ---------- Elements ----------
+  const imgDrop = document.getElementById('imgDrop');
+  const imgInput = document.getElementById('imgInput');
+  const imgGrid = document.getElementById('imgGrid');
+  const imgCount = document.getElementById('imgCount');
+
+  const audDrop = document.getElementById('audDrop');
+  const audInput = document.getElementById('audInput');
+  const audDropText = document.getElementById('audDropText');
+  const audioPreview = document.getElementById('audioPreview');
+
+  const durButtons = Array.from(document.querySelectorAll('.dur-btn'));
+  const kenBurnsToggle = document.getElementById('kenBurnsToggle');
+
+  const genBtn = document.getElementById('genBtn');
+  const formatNote = document.getElementById('formatNote');
+
+  const progressSection = document.getElementById('progressSection');
+  const progressLabel = document.getElementById('progressLabel');
+  const progressCount = document.getElementById('progressCount');
+  const progressBar = document.getElementById('progressBar');
+  const progressStatusText = document.getElementById('progressStatusText');
+
+  const canvas = document.getElementById('workCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // ---------- Pick best supported recording mime type ----------
+  function pickMimeType() {
+    const candidates = [
+      { mime: 'video/mp4;codecs=h264,aac', ext: 'mp4' },
+      { mime: 'video/mp4', ext: 'mp4' },
+      { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+      { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+      { mime: 'video/webm', ext: 'webm' },
+    ];
+    for (const c of candidates) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported(c.mime)) return c;
+    }
+    return { mime: '', ext: 'webm' };
+  }
+  const chosenFormat = pickMimeType();
+  formatNote.textContent = chosenFormat.ext === 'mp4'
+    ? 'Video akan diunduh sebagai .mp4, siap langsung diunggah ke TikTok.'
+    : 'Browser ini merekam sebagai .webm. TikTok di HP biasanya menerima .webm, tapi jika ditolak, ubah dulu ke .mp4 lewat aplikasi konversi apa pun.';
+
+  // ---------- Duration picker ----------
+  function setDuration(d) {
+    state.duration = d;
+    durButtons.forEach(b => {
+      const active = Number(b.dataset.dur) === d;
+      b.classList.toggle('border-[#ff2d78]', active);
+      b.classList.toggle('text-white', active);
+      b.classList.toggle('bg-[#ff2d78]/10', active);
+      b.classList.toggle('border-zinc-700', !active);
+      b.classList.toggle('text-zinc-300', !active);
+    });
+  }
+  durButtons.forEach(b => b.addEventListener('click', () => setDuration(Number(b.dataset.dur))));
+  setDuration(15);
+
+  kenBurnsToggle.addEventListener('change', () => { state.kenBurns = kenBurnsToggle.checked; });
+
+  // ---------- Image handling ----------
+  function loadImageFile(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => resolve({ file, url, img });
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  async function addImages(fileList) {
+    const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    for (const f of files) {
+      try {
+        const entry = await loadImageFile(f);
+        state.images.push(entry);
+      } catch (e) { /* skip broken file */ }
+    }
+    renderImageGrid();
+  }
+
+  function renderImageGrid() {
+    imgGrid.innerHTML = '';
+    state.images.forEach((entry, idx) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'relative thumb rounded-md overflow-hidden bg-zinc-900 group';
+      wrap.innerHTML = `
+        <img src="${entry.url}" class="w-full h-full object-cover" alt="foto ${idx + 1}">
+        <span class="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">${idx + 1}</span>
+        <button data-idx="${idx}" class="removeBtn absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+      `;
+      imgGrid.appendChild(wrap);
+    });
+    imgCount.textContent = state.images.length + ' foto';
+    updateGenButtonState();
+
+    imgGrid.querySelectorAll('.removeBtn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = Number(e.currentTarget.dataset.idx);
+        URL.revokeObjectURL(state.images[idx].url);
+        state.images.splice(idx, 1);
+        renderImageGrid();
+      });
+    });
+  }
+
+  imgDrop.addEventListener('click', () => imgInput.click());
+  imgInput.addEventListener('change', (e) => addImages(e.target.files));
+  ['dragover', 'dragenter'].forEach(evt => imgDrop.addEventListener(evt, (e) => { e.preventDefault(); imgDrop.classList.add('drop-active'); }));
+  ['dragleave', 'drop'].forEach(evt => imgDrop.addEventListener(evt, (e) => { e.preventDefault(); imgDrop.classList.remove('drop-active'); }));
+  imgDrop.addEventListener('drop', (e) => { if (e.dataTransfer.files.length) addImages(e.dataTransfer.files); });
+
+  // ---------- Audio handling ----------
+  function setAudioFile(file) {
+    if (!file) return;
+    state.audioFile = file;
+    const url = URL.createObjectURL(file);
+    audioPreview.src = url;
+    audDropText.innerHTML = 'Terpilih: <span class="text-white">' + file.name + '</span> — <span class="underline cursor-pointer">ganti file</span>';
+    updateGenButtonState();
+  }
+  audDrop.addEventListener('click', () => audInput.click());
+  audInput.addEventListener('change', (e) => setAudioFile(e.target.files[0]));
+  ['dragover', 'dragenter'].forEach(evt => audDrop.addEventListener(evt, (e) => { e.preventDefault(); audDrop.classList.add('drop-active'); }));
+  ['dragleave', 'drop'].forEach(evt => audDrop.addEventListener(evt, (e) => { e.preventDefault(); audDrop.classList.remove('drop-active'); }));
+  audDrop.addEventListener('drop', (e) => { if (e.dataTransfer.files.length) setAudioFile(e.dataTransfer.files[0]); });
+
+  // ---------- Generate button state ----------
+  function updateGenButtonState() {
+    genBtn.disabled = state.images.length === 0;
+  }
+  updateGenButtonState();
+
+  // ---------- Drawing (cover fit + ken burns) ----------
+  function drawFrame(img, progress /* 0..1 */) {
+    const zoomStart = 1.0;
+    const zoomEnd = 1.15;
+    const scaleAnim = state.kenBurns ? (zoomStart + (zoomEnd - zoomStart) * progress) : 1.0;
+
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    const imgRatio = img.width / img.height;
+    const canvasRatio = CANVAS_W / CANVAS_H;
+
+    let baseW, baseH;
+    if (imgRatio > canvasRatio) {
+      baseH = CANVAS_H;
+      baseW = baseH * imgRatio;
+    } else {
+      baseW = CANVAS_W;
+      baseH = baseW / imgRatio;
+    }
+
+    const w = baseW * scaleAnim;
+    const h = baseH * scaleAnim;
+    const x = (CANVAS_W - w) / 2;
+    const y = (CANVAS_H - h) / 2;
+
+    ctx.drawImage(img, x, y, w, h);
+  }
+
+  // ---------- Recording a single image ----------
+  function recordImage({ img, durationMs, audioDestStream, formatChoice }) {
+    return new Promise((resolve, reject) => {
+      const canvasStream = canvas.captureStream(30);
+      const tracks = [...canvasStream.getVideoTracks()];
+      if (audioDestStream) tracks.push(...audioDestStream.getAudioTracks());
+      const combined = new MediaStream(tracks);
+
+      const recorderOpts = { videoBitsPerSecond: 8_000_000 };
+      if (formatChoice.mime) recorderOpts.mimeType = formatChoice.mime;
+
+      let recorder;
+      try {
+        recorder = new MediaRecorder(combined, recorderOpts);
+      } catch (err) {
+        reject(err);
+        return;
+      }
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+      recorder.onerror = (e) => reject(e.error || new Error('MediaRecorder error'));
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: formatChoice.mime || 'video/webm' });
+        resolve(blob);
+      };
+
+      recorder.start(200);
+
+      const startTime = performance.now();
+      let rafId;
+      function tick() {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(elapsed / durationMs, 1);
+        drawFrame(img, progress);
+        if (elapsed < durationMs) {
+          rafId = requestAnimationFrame(tick);
+        }
+      }
+      drawFrame(img, 0);
+      rafId = requestAnimationFrame(tick);
+
+      setTimeout(() => {
+        cancelAnimationFrame(rafId);
+        recorder.stop();
+      }, durationMs);
+    });
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // ---------- Main generate flow ----------
+  async function generateAll() {
+    if (state.images.length === 0) return;
+
+    genBtn.disabled = true;
+    progressSection.classList.remove('hidden');
+    progressBar.style.width = '0%';
+    progressCount.textContent = `0 / ${state.images.length}`;
+    progressLabel.textContent = 'Memproses...';
+
+    let audioCtx = null, mediaElSource = null, audioDest = null;
+
+    if (state.audioFile) {
+      progressStatusText.textContent = 'Menyiapkan audio...';
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      try { await audioCtx.resume(); } catch (e) {}
+      mediaElSource = audioCtx.createMediaElementSource(audioPreview);
+      audioDest = audioCtx.createMediaStreamDestination();
+      mediaElSource.connect(audioDest);
+      // not connecting to audioCtx.destination so it stays silent while generating in background
+    }
+
+    const total = state.images.length;
+    const durationMs = state.duration * 1000;
+
+    for (let i = 0; i < total; i++) {
+      const entry = state.images[i];
+      progressStatusText.textContent = `Merekam video ${i + 1} dari ${total}...`;
+
+      if (state.audioFile) {
+        audioPreview.currentTime = 0;
+        try { await audioPreview.play(); } catch (e) { /* autoplay may need interaction; already had click */ }
+      }
+
+      let blob;
+      try {
+        blob = await recordImage({
+          img: entry.img,
+          durationMs,
+          audioDestStream: state.audioFile ? audioDest.stream : null,
+          formatChoice: chosenFormat,
+        });
+      } catch (err) {
+        progressStatusText.textContent = 'Gagal merekam video ' + (i + 1) + ': ' + err.message;
+        continue;
+      }
+
+      if (state.audioFile) audioPreview.pause();
+
+      const filename = `tiktok_video_${String(i + 1).padStart(2, '0')}.${chosenFormat.ext}`;
+      downloadBlob(blob, filename);
+
+      const pct = Math.round(((i + 1) / total) * 100);
+      progressBar.style.width = pct + '%';
+      progressCount.textContent = `${i + 1} / ${total}`;
+
+      await sleep(400); // small gap so browser downloads don't collide
+    }
+
+    progressLabel.textContent = 'Selesai!';
+    progressStatusText.textContent = `${total} video berhasil dibuat dan diunduh.`;
+    genBtn.disabled = false;
+  }
+
+  genBtn.addEventListener('click', generateAll);
+
+})();
+</script>
+</body>
+</html>
