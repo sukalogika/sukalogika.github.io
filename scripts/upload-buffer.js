@@ -23,7 +23,7 @@ const TOKEN       = process.env.BUFFER_ACCESS_TOKEN;
 const CHANNEL_IDS = (process.env.BUFFER_CHANNEL_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
 const GQL_URL     = 'https://api.buffer.com';
 
-// ─── GraphQL helper ───────────────────────────────────────────────────────────
+// ─── GraphQL helper ────────────────────────────────────────────────────────
 async function gql(query, variables = {}) {
   const res = await axios.post(GQL_URL,
     { query, variables },
@@ -128,7 +128,7 @@ async function getChannelInfo(channelId, orgId) {
   return channels.find(c => c.id === channelId);
 }
 
-// ─── Post ke Buffer ───────────────────────────────────────────────────────────
+// ─── Post ke Buffer ─────────────────────────────────────────────────────────
 async function createPost(channelId, videoUrl, caption, platform) {
   const safeText  = caption.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
   const safeUrl   = videoUrl.trim();
@@ -175,7 +175,7 @@ async function createPost(channelId, videoUrl, caption, platform) {
   return result.post;
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// ─── Main ────────────────────────────────────────────────────────────────
 async function main() {
   if (!TOKEN) throw new Error('BUFFER_ACCESS_TOKEN belum di-set di GitHub Secrets!');
   if (!CHANNEL_IDS.length) throw new Error('BUFFER_CHANNEL_IDS belum di-set! Jalankan dry run dulu.');
@@ -211,6 +211,13 @@ async function main() {
       platform    = info?.service?.toLowerCase() || 'unknown';
       displayName = info?.displayName || channelId;
     } catch {}
+
+    // Skip sementara upload ke YouTube
+    if (platform === 'youtube') {
+      console.log(`⏭️  Skip YouTube: ${displayName} (${channelId}) — maintenance sementara`);
+      continue;
+    }
+
     console.log(`\n📨 Posting ke: ${displayName} (${platform}) — ${channelId}`);
 
     try {
