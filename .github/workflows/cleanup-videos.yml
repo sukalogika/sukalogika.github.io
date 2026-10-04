@@ -1,0 +1,53 @@
+name: Cleanup Old Videos
+
+on:
+  schedule:
+    # Menjalankan workflow setiap hari pada pukul 00:00 UTC
+    - cron: '0 0 * * *'
+  # Memungkinkan eksekusi manual dari tab Actions di GitHub
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Remove Videos Older Than 7 Days
+        run: |
+          # 1. Tentukan tanggal ambang batas (7 hari lalu) dalam format YYYY-MM-DD
+          THRESHOLD=$(date -d "7 days ago" +%Y-%m-%d)
+          echo "Menghapus video dengan tanggal sebelum: $THRESHOLD"
+
+          # 2. Cari semua file .mp4 yang diawali dengan vod_
+          find . -type f -name "vod_*.mp4" | while read -r filepath; do
+            # Ambil nama file saja tanpa path folder
+            filename=$(basename "$filepath")
+            
+            # Ekstrak string tanggal (YYYY-MM-DD) dari nama file vod_YYYY-MM-DD_...
+            file_date=$(echo "$filename" | cut -d'_' -f2)
+
+            # Validasi format tanggal YYYY-MM-DD menggunakan regex
+            if [[ "$file_date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+              # Jika tanggal file lebih tua dari tanggal ambang batas
+              if [[ "$file_date" < "$THRESHOLD" ]]; then
+                echo "Menghapus: $filepath (Tanggal: $file_date)"
+                git rm "$filepath"
+              fi
+            fi
+          done
+
+      - name: Commit and Push Changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Commit jika ada perubahan (file dihapus)
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: pembersihan otomatis video lebih dari 7 hari"
+            git push
+          else
+            echo "Tidak ada file tua yang perlu dihapus."
+          fi
