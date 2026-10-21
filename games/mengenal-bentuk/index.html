@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ayo Masukkan Bentuk!</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff4d6;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1a3a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1a3a;color-scheme:dark}
+html,body{height:100%;margin:0}
+body{background:var(--bg);overflow:hidden;touch-action:none;font-family:'Fredoka','Baloo 2','Comic Sans MS',sans-serif}
+#game{width:100%;height:100%}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+</head>
+<body>
+<div id="game"></div>
+<script>
+const FONT = "Fredoka, 'Baloo 2', 'Comic Sans MS', sans-serif";
+const TYPES = ['square','circle','triangle','star','oval','heart'];
+const NAMES = {square:'Kotak',circle:'Lingkaran',triangle:'Segitiga',star:'Bintang',oval:'Oval',heart:'Hati'};
+const COLORS = [0xff4d4d,0xffd93d,0x4dabf7,0x51cf66,0xff922b,0xcc5de8];
+const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+function drawShape(g,t,cx,cy,s){
+  const r=s/2;
+  if(t==='square') g.fillRoundedRect(cx-r*.9,cy-r*.9,r*1.8,r*1.8,14);
+  else if(t==='circle') g.fillCircle(cx,cy,r);
+  else if(t==='oval') g.fillEllipse(cx,cy,s*1.1,s*.7);
+  else if(t==='triangle') g.fillTriangle(cx,cy-r,cx+r*1.05,cy+r*.85,cx-r*1.05,cy+r*.85);
+  else if(t==='star'){
+    const p=[];
+    for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r*1.05;p.push({x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr+r*.05});}
+    g.fillPoints(p,true);
+  } else if(t==='heart'){
+    g.fillCircle(cx-r*.5,cy-r*.3,r*.55);g.fillCircle(cx+r*.5,cy-r*.3,r*.55);
+    g.fillTriangle(cx-r*1.0,cy-r*.05,cx+r*1.0,cy-r*.05,cx,cy+r*.95);
+  }
+}
+
+function beep(scene,notes){
+  try{
+    const ctx=scene.sound.context; if(!ctx) return;
+    notes.forEach((f,i)=>{
+      const o=ctx.createOscillator(),gn=ctx.createGain(),t=ctx.currentTime+i*.12;
+      o.type='triangle';o.frequency.value=f;gn.gain.setValueAtTime(.15,t);gn.gain.exponentialRampToValueAtTime(.001,t+.2);
+      o.connect(gn).connect(ctx.destination);o.start(t);o.stop(t+.22);
+    });
+  }catch(e){}
+}
+
+class Play extends Phaser.Scene{
+  create(){
+    const W=720;
+    this.add.rectangle(W/2,360,W,720,0x35317a);
+    this.add.rectangle(W/2,900,W,360,0xffe29a);
+    this.add.rectangle(W/2,720,W,10,0xffb703);
+
+    // tekstur: lubang & bentuk berwarna
+    TYPES.forEach(t=>{
+      if(!this.textures.exists('h_'+t)){
+        const g=this.make.graphics({add:false});
+        g.fillStyle(0x5a56a8);drawShape(g,t,90,90,152);
+        g.fillStyle(0x12102a);drawShape(g,t,90,92,138);
+        g.generateTexture('h_'+t,180,180);g.destroy();
+        COLORS.forEach((c,i)=>{
+          const p=this.make.graphics({add:false});
+          p.fillStyle(Phaser.Display.Color.IntegerToColor(c).darken(28).color);drawShape(p,t,90,93,130);
+          p.fillStyle(c);drawShape(p,t,90,89,122);
+          p.generateTexture(`p_${t}_${i}`,180,180);p.destroy();
+        });
+      }
+    });
+
+    this.add.text(W/2,48,'Ayo Masukkan Bentuk!',{fontFamily:FONT,fontStyle:'700',fontSize:'44px',color:'#fff'}).setOrigin(.5);
+    this.add.text(W/2,98,'Seret bentuk ke lubang yang pas',{fontFamily:FONT,fontStyle:'600',fontSize:'26px',color:'#ffd93d'}).setOrigin(.5);
+
+    // 6 bentuk: 5 jenis berbeda + 1 kembar (warna beda)
+    const five=shuffle(TYPES).slice(0,5);
+    const kinds=shuffle([...five,five[Math.floor(Math.random()*5)]]);
+    const cols=shuffle([0,1,2,3,4,5]);
+    const pos=[[120,300],[360,300],[600,300],[120,560],[360,560],[600,560]];
+    const slots=[[120,812],[360,812],[600,812],[120,976],[360,976],[600,976]];
+
+    this.holes=shuffle(kinds).map((t,i)=>({type:t,x:pos[i][0],y:pos[i][1],filled:false,
+      img:this.add.image(pos[i][0],pos[i][1],'h_'+t).setDepth(1)}));
+    this.left=kinds.length;
+
+    shuffle(kinds).forEach((t,i)=>{
+      const [sx,sy]=slots[i];
+      const p=this.add.image(sx,sy,`p_${t}_${cols[i]}`).setDepth(5).setInteractive({draggable:true,useHandCursor:true});
+      p.shapeType=t;p.homeX=sx;p.homeY=sy;
+      this.tweens.add({targets:p,y:sy-6,duration:900+i*90,yoyo:true,repeat:-1,ease:'Sine.inOut'});
+      this.input.setDraggable(p);
+    });
+
+    this.input.on('dragstart',(ptr,p)=>{this.tweens.killTweensOf(p);p.setDepth(20).setScale(1.12);});
+    this.input.on('drag',(ptr,p,x,y)=>{p.x=x;p.y=y;});
+    this.input.on('dragend',(ptr,p)=>this.drop(p));
+  }
+
+  drop(p){
+    const near=this.holes.filter(h=>Phaser.Math.Distance.Between(p.x,p.y,h.x,h.y)<90);
+    const ok=near.find(h=>!h.filled&&h.type===p.shapeType);
+    if(ok){
+      ok.filled=true;p.disableInteractive();p.setDepth(3);
+      this.tweens.add({targets:p,x:ok.x,y:ok.y,scale:1,duration:150,ease:'Back.out',onComplete:()=>{
+        this.tweens.add({targets:p,scale:1.12,duration:110,yoyo:true});
+      }});
+      beep(this,[660,880]);
+      const lbl=this.add.text(ok.x,ok.y-95,NAMES[p.shapeType]+'!',{fontFamily:FONT,fontStyle:'700',fontSize:'30px',color:'#fff',stroke:'#35317a',strokeThickness:6}).setOrigin(.5).setDepth(30);
+      this.tweens.add({targets:lbl,y:lbl.y-30,alpha:0,duration:900,onComplete:()=>lbl.destroy()});
+      if(--this.left===0) this.time.delayedCall(500,()=>this.win());
+    } else {
+      if(near.length){ beep(this,[220,180]);
+        this.tweens.add({targets:p,x:p.x+14,duration:50,yoyo:true,repeat:3}); }
+      this.time.delayedCall(near.length?250:0,()=>{
+        this.tweens.add({targets:p,x:p.homeX,y:p.homeY,scale:1,duration:260,ease:'Cubic.out',onComplete:()=>{
+          p.setDepth(5);this.tweens.add({targets:p,y:p.homeY-6,duration:1000,yoyo:true,repeat:-1,ease:'Sine.inOut'});}});
+      });
+    }
+  }
+
+  win(){
+    beep(this,[523,659,784,1047]);
+    this.add.rectangle(360,540,720,1080,0x000000,.45).setDepth(40);
+    for(let i=0;i<60;i++){
+      const c=this.add.rectangle(Math.random()*720,-20,14,22,Phaser.Utils.Array.GetRandom(COLORS)).setDepth(41);
+      this.tweens.add({targets:c,y:1120,angle:Math.random()*720,x:c.x+(Math.random()-.5)*200,duration:1800+Math.random()*1500,delay:Math.random()*700});
+    }
+    const t=this.add.text(360,420,'Hebat sekali!',{fontFamily:FONT,fontStyle:'700',fontSize:'76px',color:'#ffd93d',stroke:'#35317a',strokeThickness:10}).setOrigin(.5).setDepth(42).setScale(0);
+    this.tweens.add({targets:t,scale:1,duration:500,ease:'Back.out'});
+    const b=this.add.text(360,600,'  Main Lagi  ',{fontFamily:FONT,fontStyle:'700',fontSize:'48px',color:'#fff',backgroundColor:'#51cf66',padding:{x:20,y:14}}).setOrigin(.5).setDepth(42).setInteractive({useHandCursor:true});
+    this.tweens.add({targets:b,scale:1.08,duration:600,yoyo:true,repeat:-1});
+    b.on('pointerdown',()=>this.scene.restart());
+  }
+}
+
+const start=()=>new Phaser.Game({
+  type:Phaser.AUTO,parent:'game',width:720,height:1080,backgroundColor:'#35317a',
+  scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},
+  scene:Play
+});
+Promise.race([document.fonts.load("700 32px Fredoka"),new Promise(r=>setTimeout(r,1500))]).catch(()=>{}).then(start);
+</script>
+</body>
+</html>
