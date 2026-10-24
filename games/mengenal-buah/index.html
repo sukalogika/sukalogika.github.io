@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ayo Kenali Buah!</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff4d6;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1a3a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1a3a;color-scheme:dark}
+html,body{height:100%;margin:0}
+body{background:var(--bg);overflow:hidden;touch-action:none;font-family:'Fredoka','Baloo 2','Comic Sans MS',sans-serif}
+#game{width:100%;height:100%}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+</head>
+<body>
+<div id="game"></div>
+<script>
+const FONT = "Fredoka, 'Baloo 2', 'Comic Sans MS', sans-serif";
+const WORDS = ['Apel','Pisang','Anggur','Stroberi','Jeruk','Semangka','Nanas','Ceri','Persik','Mangga','Lemon','Kiwi'];
+const EMO = ['🍎','🍌','🍇','🍓','🍊','🍉','🍍','🍒','🍑','🥭','🍋','🥝'];
+const EF = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+const COLORS = [0xff4d4d,0xffd93d,0x4dabf7,0x51cf66,0xff922b,0xcc5de8];
+const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+function say(text){
+  try{
+    const u=new SpeechSynthesisUtterance(text);u.lang='id-ID';u.rate=.85;u.pitch=1.2;
+    speechSynthesis.cancel();speechSynthesis.speak(u);
+  }catch(e){}
+}
+function beep(scene,notes){
+  try{
+    const ctx=scene.sound.context; if(!ctx) return;
+    notes.forEach((f,i)=>{
+      const o=ctx.createOscillator(),gn=ctx.createGain(),t=ctx.currentTime+i*.12;
+      o.type='triangle';o.frequency.value=f;gn.gain.setValueAtTime(.15,t);gn.gain.exponentialRampToValueAtTime(.001,t+.2);
+      o.connect(gn).connect(ctx.destination);o.start(t);o.stop(t+.22);
+    });
+  }catch(e){}
+}
+
+class Play extends Phaser.Scene{
+  create(){
+    const W=720;
+    this.add.rectangle(W/2,360,W,720,0x35317a);
+    this.add.rectangle(W/2,900,W,360,0xffe29a);
+    this.add.rectangle(W/2,720,W,10,0xffb703);
+
+    if(!this.textures.exists('hole')){
+      let g=this.make.graphics({add:false});
+      g.fillStyle(0x5a56a8);g.fillRoundedRect(10,10,160,160,30);
+      g.fillStyle(0x12102a);g.fillRoundedRect(18,20,144,144,24);
+      g.generateTexture('hole',180,180);g.destroy();
+      COLORS.forEach((c,i)=>{
+        const p=this.make.graphics({add:false});
+        p.fillStyle(Phaser.Display.Color.IntegerToColor(c).darken(28).color);p.fillRoundedRect(25,32,130,130,26);
+        p.fillStyle(c);p.fillRoundedRect(25,26,130,130,26);
+        p.generateTexture('tile'+i,180,180);p.destroy();
+      });
+    }
+
+    this.add.text(W/2,48,'Ayo Kenali Buah!',{fontFamily:FONT,fontStyle:'700',fontSize:'44px',color:'#fff'}).setOrigin(.5);
+    this.add.text(W/2,98,'Seret buah ke bayangannya',{fontFamily:FONT,fontStyle:'600',fontSize:'26px',color:'#ffd93d'}).setOrigin(.5);
+
+    EMO.forEach((e,i)=>{
+      if(this.textures.exists('sil'+i)) return;
+      const c=document.createElement('canvas');c.width=c.height=140;
+      const x=c.getContext('2d');x.font='96px '+EF;x.textAlign='center';x.textBaseline='middle';x.fillText(e,70,76);
+      x.globalCompositeOperation='source-in';x.fillStyle='#3b3790';x.fillRect(0,0,140,140);
+      this.textures.addCanvas('sil'+i,c);
+    });
+    const nums=shuffle([...Array(12).keys()]).slice(0,6);
+    const cols=shuffle([0,1,2,3,4,5]);
+    const pos=[[120,300],[360,300],[600,300],[120,560],[360,560],[600,560]];
+    const slots=[[120,812],[360,812],[600,812],[120,976],[360,976],[600,976]];
+
+    this.holes=shuffle(nums).map((n,i)=>{
+      const [x,y]=pos[i];
+      this.add.image(x,y,'hole').setDepth(1);
+      this.add.image(x,y,'sil'+n).setDepth(1);
+      return {num:n,x,y,filled:false};
+    });
+    this.left=nums.length;
+
+    shuffle(nums).forEach((n,i)=>{
+      const [sx,sy]=slots[i];
+      const tile=this.add.image(0,0,'tile'+cols[i]);
+      const em=this.add.text(0,2,EMO[n],{fontFamily:EF,fontSize:'84px'}).setOrigin(.5);
+      const p=this.add.container(sx,sy,[tile,em]).setSize(140,140).setDepth(5).setInteractive({draggable:true,useHandCursor:true});
+      p.num=n;p.homeX=sx;p.homeY=sy;
+      this.tweens.add({targets:p,y:sy-6,duration:900+i*90,yoyo:true,repeat:-1,ease:'Sine.inOut'});
+      this.input.setDraggable(p);
+    });
+
+    this.input.on('dragstart',(ptr,p)=>{this.tweens.killTweensOf(p);p.setDepth(20).setScale(1.12);say(WORDS[p.num]);});
+    this.input.on('drag',(ptr,p,x,y)=>{p.x=x;p.y=y;});
+    this.input.on('dragend',(ptr,p)=>this.drop(p));
+  }
+
+  drop(p){
+    const near=this.holes.filter(h=>Phaser.Math.Distance.Between(p.x,p.y,h.x,h.y)<90);
+    const ok=near.find(h=>!h.filled&&h.num===p.num);
+    if(ok){
+      ok.filled=true;p.disableInteractive();p.setDepth(3);
+      this.tweens.add({targets:p,x:ok.x,y:ok.y,scale:1,duration:150,ease:'Back.out',onComplete:()=>{
+        this.tweens.add({targets:p,scale:1.12,duration:110,yoyo:true});
+      }});
+      beep(this,[660,880]);say(WORDS[p.num]+'!');
+      const lbl=this.add.text(ok.x,ok.y-95,WORDS[p.num]+'!',{fontFamily:FONT,fontStyle:'700',fontSize:'30px',color:'#fff',stroke:'#35317a',strokeThickness:6}).setOrigin(.5).setDepth(30);
+      this.tweens.add({targets:lbl,y:lbl.y-30,alpha:0,duration:900,onComplete:()=>lbl.destroy()});
+      if(--this.left===0) this.time.delayedCall(700,()=>this.win());
+    } else {
+      if(near.length){ beep(this,[220,180]);
+        this.tweens.add({targets:p,x:p.x+14,duration:50,yoyo:true,repeat:3}); }
+      this.time.delayedCall(near.length?250:0,()=>{
+        this.tweens.add({targets:p,x:p.homeX,y:p.homeY,scale:1,duration:260,ease:'Cubic.out',onComplete:()=>{
+          p.setDepth(5);this.tweens.add({targets:p,y:p.homeY-6,duration:1000,yoyo:true,repeat:-1,ease:'Sine.inOut'});}});
+      });
+    }
+  }
+
+  win(){
+    beep(this,[523,659,784,1047]);say('Hebat sekali!');
+    this.add.rectangle(360,540,720,1080,0x000000,.45).setDepth(40);
+    for(let i=0;i<60;i++){
+      const c=this.add.rectangle(Math.random()*720,-20,14,22,Phaser.Utils.Array.GetRandom(COLORS)).setDepth(41);
+      this.tweens.add({targets:c,y:1120,angle:Math.random()*720,x:c.x+(Math.random()-.5)*200,duration:1800+Math.random()*1500,delay:Math.random()*700});
+    }
+    const t=this.add.text(360,420,'Hebat sekali!',{fontFamily:FONT,fontStyle:'700',fontSize:'76px',color:'#ffd93d',stroke:'#35317a',strokeThickness:10}).setOrigin(.5).setDepth(42).setScale(0);
+    this.tweens.add({targets:t,scale:1,duration:500,ease:'Back.out'});
+    const b=this.add.text(360,600,'  Main Lagi  ',{fontFamily:FONT,fontStyle:'700',fontSize:'48px',color:'#fff',backgroundColor:'#51cf66',padding:{x:20,y:14}}).setOrigin(.5).setDepth(42).setInteractive({useHandCursor:true});
+    this.tweens.add({targets:b,scale:1.08,duration:600,yoyo:true,repeat:-1});
+    b.on('pointerdown',()=>this.scene.restart());
+  }
+}
+
+const start=()=>new Phaser.Game({
+  type:Phaser.AUTO,parent:'game',width:720,height:1080,backgroundColor:'#35317a',
+  scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},
+  scene:Play
+});
+Promise.race([document.fonts.load("700 32px Fredoka"),new Promise(r=>setTimeout(r,1500))]).catch(()=>{}).then(start);
+</script>
+</body>
+</html>
