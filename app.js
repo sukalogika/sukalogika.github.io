@@ -6,8 +6,8 @@
 const CONFIG = {
   // Taruh file gambar PNG/JPG Anda di folder "images/" (misal: "images/hero.png")
   // Jika dikosongkan "", website otomatis memakai gambar garis bawaan.
-  heroImage: "image/birth-of-jesus-coloring-page.jpg",
-  coloringPreviewImage: "image/jesus-calms-the-storm-coloring-page.jpg",
+  heroImage: "image/jesus-calms-the-storm-coloring-page.jpg",
+  coloringPreviewImage: "image/birth-of-jesus-coloring-page.jpg",
   amazonCoverImage: "image/church-volunteer-coloring-page.jpg", // Contoh: "images/cover-buku-gereja.jpg"
 };
 
