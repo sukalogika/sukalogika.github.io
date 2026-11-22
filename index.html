@@ -1,270 +1,573 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>sukalogika — Ayat Harian, Game &amp; Cerita Alkitab</title>
-<meta name="description" content="sukalogika menghadirkan ayat harian, permainan Alkitab untuk anak seperti Noah's Animal Pairs dan Manna Daily Bread, renungan pribadi, dan cerita bergaya pixel art — untuk mengenal Firman Tuhan lebih dalam.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --cream:#FAF6EF;
-    --cream-2:#F2EBDD;
-    --navy:#26344A;
-    --navy-2:#3B4E6B;
-    --gold:#B8863B;
-    --gold-2:#D9A85C;
-    --ink:#2B2B28;
-    --muted:#6B6459;
-    --line:#E4DBC8;
-  }
-  *{ box-sizing:border-box; }
-  html{ scroll-behavior:smooth; }
-  body{
-    margin:0;
-    background:var(--cream);
-    color:var(--ink);
-    font-family:'Source Sans 3', sans-serif;
-    line-height:1.6;
-  }
-  h1,h2,h3,.serif{ font-family:'Lora', serif; }
-  a{ color:inherit; }
-  img{ max-width:100%; display:block; }
-  .wrap{ max-width:920px; margin:0 auto; padding:0 24px; }
-
-  /* Nav */
-  header{
-    position:sticky; top:0; z-index:10;
-    background:rgba(250,246,239,.92);
-    backdrop-filter:blur(6px);
-    border-bottom:1px solid var(--line);
-  }
-  nav.wrap{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:16px 24px;
-  }
-  .logo{ font-family:'Lora',serif; font-weight:600; font-size:20px; color:var(--navy); text-decoration:none; letter-spacing:.01em; }
-  .navlinks{ display:flex; gap:22px; list-style:none; margin:0; padding:0; }
-  .navlinks a{ text-decoration:none; font-size:14.5px; color:var(--navy-2); font-weight:500; }
-  .navlinks a:hover{ color:var(--gold); }
-  .navtoggle{ display:none; }
-
-  /* Hero */
-  .hero{
-    padding:64px 24px 56px;
-    text-align:center;
-    background:
-      radial-gradient(ellipse at top, var(--cream-2) 0%, var(--cream) 65%);
-  }
-  .hero .eyebrow{
-    font-size:13px; letter-spacing:.12em; text-transform:uppercase;
-    color:var(--gold); font-weight:600; margin-bottom:18px;
-  }
-  .hero blockquote{
-    font-family:'Lora',serif; font-style:italic; font-weight:500;
-    font-size:clamp(22px,4vw,32px);
-    color:var(--navy); margin:0 auto 14px; max-width:680px;
-  }
-  .hero cite{ font-style:normal; color:var(--muted); font-size:15px; }
-  .hero p.tagline{
-    margin:26px auto 0; max-width:560px; color:var(--muted); font-size:16px;
-  }
-
-  /* Sections */
-  section{ padding:60px 24px; border-top:1px solid var(--line); }
-  section .wrap{ }
-  .section-head{ text-align:center; max-width:640px; margin:0 auto 40px; }
-  .section-head h2{ color:var(--navy); font-size:clamp(24px,3.4vw,30px); margin:0 0 12px; }
-  .section-head p{ color:var(--muted); margin:0; font-size:15.5px; }
-
-  /* Games */
-  .games-grid{
-    display:grid; grid-template-columns:repeat(2, 1fr);
-    gap:18px; margin-top:8px;
-  }
-  .game-card{
-    background:#fff; border:1px solid var(--line); border-radius:10px;
-    padding:20px; text-align:left; position:relative;
-    display:flex; flex-direction:column;
-  }
-  .game-card h3{ margin:0 0 6px; font-size:17px; color:var(--navy); }
-  .game-card p{ margin:0 0 14px; font-size:14px; color:var(--muted); flex-grow:1; }
-  .game-card .fav{
-    position:absolute; top:14px; right:14px;
-    font-size:11px; font-weight:600; color:var(--gold);
-    letter-spacing:.03em;
-  }
-  .game-card a.play{
-    align-self:flex-start;
-    font-size:13.5px; font-weight:600; color:var(--navy);
-    text-decoration:none; border-bottom:1px solid var(--gold-2);
-  }
-  .game-card a.play:hover{ color:var(--gold); }
-  .subgroup-label{
-    font-size:13px; color:var(--muted); text-align:center; margin:36px 0 14px;
-    text-transform:uppercase; letter-spacing:.06em;
-  }
-  .cta{
-    display:inline-block; margin-top:32px; text-align:center;
-    background:var(--navy); color:#fff !important; text-decoration:none;
-    padding:13px 28px; border-radius:6px; font-weight:600; font-size:15px;
-  }
-  .cta:hover{ background:var(--navy-2); }
-  .cta-wrap{ text-align:center; }
-
-  /* Renungan / Pixel */
-  .card-simple{
-    background:#fff; border:1px solid var(--line); border-radius:10px;
-    padding:32px; max-width:640px; margin:0 auto; text-align:center;
-  }
-  .badge{
-    display:inline-block; font-size:12px; font-weight:600; letter-spacing:.04em;
-    text-transform:uppercase; color:var(--gold); border:1px solid var(--gold-2);
-    padding:4px 10px; border-radius:999px; margin-bottom:14px;
-  }
-  .card-simple p{ color:var(--muted); margin:0; }
-
-  /* Socials */
-  .social-row{
-    display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:8px;
-  }
-  .social-row a{
-    text-decoration:none; border:1px solid var(--line); background:#fff;
-    padding:11px 20px; border-radius:8px; font-size:14.5px; font-weight:500;
-    color:var(--navy);
-  }
-  .social-row a:hover{ border-color:var(--gold-2); color:var(--gold); }
-  .social-row a.ig{ background:var(--navy); color:#fff !important; border-color:var(--navy); }
-  .social-row a.ig:hover{ background:var(--navy-2); }
-
-  footer{
-    padding:28px 24px; text-align:center; color:var(--muted); font-size:13px;
-    border-top:1px solid var(--line);
-  }
-  footer .foundation{
-    display:block; margin-top:8px; font-family:'Lora',serif; font-style:italic;
-    color:#A9A296; font-size:12.5px; letter-spacing:.01em;
-  }
-
-  @media (max-width:640px){
-    .navlinks{ display:none; }
-    .games-grid{ grid-template-columns:1fr; }
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Karya Kreatif & Edukasi Kristiani | sukalogika</title>
+  <meta name="description" content="sukalogika menghadirkan Coloring Books di Trakteer, Buku Multimedia Gereja di Amazon, serta game Alkitab dan konten kreatif harian @sukalogika." />
+  <meta property="og:title" content="sukalogika — Coloring Books, Buku Gereja &amp; Games" />
+  <meta property="og:description" content="sukalogika menghadirkan Coloring Books di Trakteer, Buku Multimedia Gereja di Amazon, serta game Alkitab dan konten kreatif harian @sukalogika." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            display: ['"Fredoka"', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+      background-color: #FAF6EF;
+      color: #18181B;
+    }
+    body {
+      background-color: #FAF6EF;
+      color: #18181B;
+    }
+    .colorable-glyph {
+      font-family: "Fredoka", system-ui, sans-serif;
+      font-weight: 700;
+      paint-order: stroke fill;
+      -webkit-text-stroke: 5px #18181B;
+      text-shadow: 0 3px 0 #18181B;
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), color 150ms ease;
+    }
+    .colorable-glyph-sm {
+      font-family: "Fredoka", system-ui, sans-serif;
+      font-weight: 700;
+      paint-order: stroke fill;
+      -webkit-text-stroke: 3.5px #18181B;
+      text-shadow: 0 2px 0 #18181B;
+      transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), color 150ms ease;
+    }
+    @media (max-width: 640px) {
+      .colorable-glyph {
+        -webkit-text-stroke: 4px #18181B;
+        text-shadow: 0 2px 0 #18181B;
+      }
+    }
+    .ink-card {
+      background-color: #FFFFFF;
+      border: 2px solid #18181B;
+      box-shadow: 4px 4px 0 #18181B;
+    }
+    .ink-button {
+      border: 2px solid #18181B;
+      box-shadow: 3px 3px 0 #18181B;
+      transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease;
+    }
+    .ink-button:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 #18181B;
+    }
+    .ink-button:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 #18181B;
+    }
+    @keyframes pop-fill {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.16) rotate(-3deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .animate-pop-fill {
+      animation: pop-fill 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .colorable-glyph, .colorable-glyph-sm, .ink-button, .animate-pop-fill {
+        transition: none;
+        animation: none;
+      }
+    }
+  </style>
+  <script src="app.js" defer></script>
 </head>
-<body>
+<body class="min-h-screen bg-[#FAF6EF] text-zinc-900 pb-28 sm:pb-32 antialiased">
 
-<header>
-  <nav class="wrap">
-    <a href="#top" class="logo">sukalogika</a>
-    <ul class="navlinks">
-      <li><a href="#ayat">Ayat Harian</a></li>
-      <li><a href="games">Games</a></li>
-      <li><a href="blog">Blog</a></li>
-      <li><a href="#kanal">Kanal</a></li>
-    </ul>
-  </nav>
-</header>
-
-<main id="top">
-
-  <!-- HERO / AYAT HARIAN -->
-  <section class="hero" id="ayat" style="border-top:none;">
-    <div class="eyebrow">Ayat Hari Ini</div>
-    <blockquote id="verseText">
-      "Aku berkata kepadamu: Demikian juga akan ada sukacita pada malaikat-malaikat Allah karena satu orang berdosa yang bertobat."
-    </blockquote>
-    <cite id="verseRef">— Luk 15:10</cite>
-    <p class="tagline">
-      Setiap hari pukul 11.30, sukalogika membagikan satu ayat Firman Tuhan —
-      lewat TikTok, YouTube, dan halaman ini. Sederhana, tapi konsisten.
-    </p>
-  </section>
-
-  <!-- GAMES -->
-  <section id="games">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Belajar Sambil Bermain</h2>
-        <p>Enam permainan berbasis Alkitab, dibuat khusus untuk anak-anak — cukup dibuka lewat browser, tanpa perlu instal apa pun.</p>
+  <!-- Top Bar: 3 zones -->
+  <header class="sticky top-0 z-30 bg-[#FAF6EF]/95 backdrop-blur-sm border-b-2 border-zinc-900">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 sm:gap-8">
+      <div class="shrink-0">
+        <span class="colorable-word" data-text="sukalogika" data-size="brand"></span>
       </div>
 
-      <div class="games-grid">
-        <div class="game-card">
-          <span class="fav">★ favorit</span>
-          <h3>Noah's Animal Pairs</h3>
-          <p>Temukan pasangan hewan yang sama! Buka kartu satu per satu dan ingat posisinya. Jika cocok, mereka akan tetap terbuka. Ayo kumpulkan semua pasangan dan menangkan permainan — terinspirasi dari kisah Nuh.</p>
-          <a class="play" href="https://sukalogika.com/games/noah-animal-pairs/" target="_blank" rel="noopener">Mainkan →</a>
-        </div>
-        <div class="game-card">
-          <h3>Manna — Daily Bread</h3>
-          <p>Kumpulkan manna setiap hari dan belajar merasa cukup! Ambil sesuai kebutuhanmu dan hargai setiap pemberian. Terinspirasi dari Keluaran 16, game ini mengajarkan percaya pada Tuhan dan hidup dengan rasa syukur.</p>
-          <a class="play" href="https://sukalogika.com/games/manna/" target="_blank" rel="noopener">Mainkan →</a>
-        </div>
-        <div class="game-card">
-          <h3>The Good Shepherd</h3>
-          <p>Kumpulkan domba yang tercerai dan jaga kawanan tetap bersama! Terinspirasi dari Yohanes 10:11, "Akulah gembala yang baik." Cari domba yang hilang dan hindari serigala yang bisa mencerai-beraikan kawananmu.</p>
-          <a class="play" href="https://sukalogika.com/games/the-good-shepherd/" target="_blank" rel="noopener">Mainkan →</a>
-        </div>
-        <div class="game-card">
-          <h3>Bible Word Search</h3>
-          <p>Temukan kata-kata tersembunyi dari Alkitab dalam kotak huruf! Cari kata secara horizontal, vertikal, atau diagonal. Asah ketelitian dan ingatan lewat permainan kata yang seru ini.</p>
-          <a class="play" href="https://sukalogika.com/games/bible-word-hunt/" target="_blank" rel="noopener">Mainkan →</a>
-        </div>
-      </div>
+      <nav aria-label="Navigasi utama" class="hidden md:flex items-center gap-6 text-sm font-semibold text-zinc-800">
+        <a href="#coloring-books" class="hover:underline underline-offset-4 decoration-2 whitespace-nowrap shrink-0">Coloring Books</a>
+        <a href="#buku-gereja" class="hover:underline underline-offset-4 decoration-2 whitespace-nowrap shrink-0">Buku Gereja</a>
+        <a href="#games" class="hover:underline underline-offset-4 decoration-2 whitespace-nowrap shrink-0">Games</a>
+        <a href="#kanal" class="hover:underline underline-offset-4 decoration-2 whitespace-nowrap shrink-0">Kanal</a>
+      </nav>
 
-      <div class="subgroup-label">Seru juga, di luar tema Alkitab</div>
-      <div class="games-grid">
-        <div class="game-card">
-          <h3>Bible Tic-Tac-Toe</h3>
-          <p>Main tic-tac-toe dengan nuansa Alkitab! Pilih tingkat kesulitan easy, medium, atau hard, dan gunakan marker unik dari simbol hewan seperti singa, domba, ular, elang, atau rubah.</p>
-          <a class="play" href="https://sukalogika.com/games/bible-tic-tac-toe/" target="_blank" rel="noopener">Mainkan →</a>
-        </div>
-        <div class="game-card">
-          <h3>Puzzle Insect</h3>
-          <p>Susun potongan puzzle serangga lucu dan warna-warni! Belajar mengenal berbagai serangga sambil bermain, sekaligus mengagumi keindahan ciptaan Tuhan.</p>
-          <a class="play" href="https://sukalogika.com/games/puzzle-insect/" target="_blank" rel="noopener">Mainkan →</a>
-        </div>
-      </div>
-
-      <div class="cta-wrap">
-        <a class="cta" href="https://sukalogika.com/games" target="_blank" rel="noopener">Lihat Semua Game →</a>
+      <div class="shrink-0">
+        <a
+          href="https://trakteer.id/sukalogika"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="ink-button inline-flex items-center gap-1.5 bg-white text-zinc-900 text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2 rounded-xl whitespace-nowrap shrink-0"
+        >
+          Trakteer &#8599;
+        </a>
       </div>
     </div>
-  </section>
+  </header>
+
+  <main>
+    <!-- HERO SECTION -->
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-12 sm:pb-16">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
+        <div class="lg:col-span-6 flex flex-col justify-between gap-6">
+          <div>
+            <p class="text-xs sm:text-sm font-semibold text-zinc-600 mb-3">
+              sukalogika · Karya Kreatif &amp; Edukasi Kristiani
+            </p>
+
+            <h1 class="flex flex-col items-start gap-1 max-w-xl" style="text-wrap: balance;">
+              <span class="colorable-word" data-text="WARNAI" data-size="hero"></span>
+              <span class="colorable-word" data-text="KARYA" data-size="hero"></span>
+              <span class="colorable-word" data-text="FIRMAN" data-size="hero"></span>
+            </h1>
 
 
-  <!-- SOCIALS -->
-  <section id="kanal">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Ikuti sukalogika</h2>
-        <p>Ayat harian, cuplikan game, dan kabar terbaru — tersedia di semua kanal berikut.</p>
+
+<p class="mt-5 text-base sm:text-lg text-zinc-700 leading-relaxed max-w-xl">
+  Klik huruf mana saja di judul atau bidang gambar untuk mewarnainya langsung dengan ember cat di bawah.
+  Selain bisa mewarnai langsung di sini, kamu juga bisa menemukan <strong class="font-semibold text-zinc-900">Buku Mewarnai Cerita Alkitab</strong> dalam format PDF siap cetak di Trakteer, <strong class="font-semibold text-zinc-900">Buku Multimedia Gereja</strong> di Amazon, dan berbagai game Alkitab gratis dari <span class="font-semibold text-zinc-900">@sukalogika</span>.
+</p>
+
+
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex flex-wrap items-center gap-3">
+              <a
+                href="https://trakteer.id/sukalogika"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ink-button inline-flex items-center gap-2 bg-zinc-900 text-white font-bold text-sm sm:text-base px-5 py-3 rounded-xl whitespace-nowrap"
+              >
+                Buka Trakteer &#8599;
+              </a>
+              <a
+                href="https://sukalogika.com/games/mewarnai-yesus/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ink-button inline-flex items-center gap-2 bg-white text-zinc-900 font-bold text-sm sm:text-base px-5 py-3 rounded-xl whitespace-nowrap"
+              >
+                Main Ember Warna
+              </a>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 pt-2">
+              <button type="button" id="btn-auto" class="ink-button inline-flex items-center gap-1.5 bg-white text-zinc-900 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg cursor-pointer whitespace-nowrap">
+                Warnai Otomatis
+              </button>
+              <button type="button" id="btn-reset" class="ink-button inline-flex items-center gap-1.5 bg-white text-zinc-900 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg cursor-pointer whitespace-nowrap">
+                Reset Putih
+              </button>
+			  <!-- 
+              <button type="button" id="btn-upload" class="ink-button inline-flex items-center gap-1.5 bg-white text-zinc-900 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg cursor-pointer whitespace-nowrap">
+                Coba Gambar Sendiri
+              </button>
+              <input type="file" id="file-picker" accept="image/*" class="hidden" />
+              <button type="button" id="btn-sound" class="ink-button inline-flex items-center gap-1.5 bg-white text-zinc-900 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg cursor-pointer whitespace-nowrap">
+                Suara Nyala
+              </button>
+			  -->
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 flex">
+          <div class="ink-card rounded-2xl p-4 sm:p-5 w-full flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-2 pb-3 mb-3 border-b-2 border-zinc-900/10">
+              <span class="text-xs sm:text-sm font-semibold text-zinc-700">
+                Kanvas Ember Warna · Ketuk bidang putih untuk mengisi cat
+              </span>
+              <span id="paint-counter" class="text-xs font-bold text-zinc-900 tabular-nums whitespace-nowrap">
+                0 aksi
+              </span>
+            </div>
+            <div class="w-full my-auto">
+              <canvas
+                id="cv-hero"
+                width="800"
+                height="560"
+                aria-label="Kanvas mewarnai interaktif sukalogika"
+                class="w-full h-auto block rounded-xl border-2 border-zinc-900 bg-white cursor-crosshair touch-manipulation transition-transform duration-150"
+              ></canvas>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="social-row">
-        <a href="https://tiktok.com/@sukalogika" target="_blank" rel="noopener">TikTok</a>
-        <a href="https://youtube.com/@sukalogika" target="_blank" rel="noopener">YouTube*</a>
-        <a class="ig" href="https://instagram.com/sukalogika" target="_blank" rel="noopener">Instagram (DM)</a>
-        <a href="https://twitter.com/sukalogika" target="_blank" rel="noopener">Twitter</a>
-        <a href="https://facebook.com/sukalogika" target="_blank" rel="noopener">Facebook</a>
+    </section>
+
+    <!-- SECTION 1: COLORING BOOKS (TRAKTEER) -->
+    <section id="coloring-books" class="border-t-2 border-zinc-900 py-12 sm:py-16">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="mb-8">
+          <p class="text-xs sm:text-sm font-semibold text-zinc-600 mb-2">
+            01. Produk Utama Keluarga &amp; Sekolah Minggu
+          </p>
+          <h2>
+            <span class="colorable-word" data-text="COLORING BOOKS" data-size="section"></span>
+          </h2>
+        </div>
+
+        <div class="ink-card rounded-2xl p-5 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
+          <div class="lg:col-span-5 flex flex-col justify-center">
+            <canvas
+              id="cv-ark"
+              width="640"
+              height="480"
+              aria-label="Pratinjau halaman buku mewarnai Bahtera Nuh"
+              class="w-full h-auto block rounded-xl border-2 border-zinc-900 bg-white cursor-crosshair touch-manipulation transition-transform duration-150"
+            ></canvas>
+          </div>
+
+          <div class="lg:col-span-7 flex flex-col justify-between gap-5">
+            <div class="space-y-3">
+              <p class="text-xs font-semibold text-zinc-600">
+                Trakteer · Paket Lembar Mewarnai PDF · Segera Rilis
+              </p>
+              <h3 class="font-display text-2xl sm:text-3xl font-bold text-zinc-900 leading-tight">
+                Seri Buku Mewarnai Cerita Alkitab (PDF Siap Cetak)
+              </h3>
+              <p class="text-sm sm:text-base text-zinc-700 leading-relaxed">
+                Koleksi halaman mewarnai bergaris tebal yang dirancang khusus untuk anak-anak, keluarga, dan kelas Sekolah Minggu.
+                Setiap ilustrasi dibuat bersih agar mudah dicetak di kertas A4 maupun diwarnai lewat tablet.
+              </p>
+              <p class="text-sm text-zinc-700 leading-relaxed">
+                Saat ini edisi PDF siap cetak sedang dirampungkan dan akan tersedia langsung di halaman Trakteer kami.
+                Sambil menunggu, Anda dapat mencoba sensasi mewarnai digitalnya gratis lewat game
+                <strong class="font-semibold text-zinc-900">Ember Warna — Mewarnai Yesus</strong>
+                atau mencoret-coret pratinjau Bahtera Nuh di sebelah kiri.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 pt-2">
+              <a
+                href="https://trakteer.id/sukalogika"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ink-button inline-flex items-center gap-2 bg-zinc-900 text-white font-bold text-sm px-5 py-3 rounded-xl whitespace-nowrap"
+              >
+                Dukung &amp; Cek Trakteer &#8599;
+              </a>
+              <a
+                href="https://sukalogika.com/games/mewarnai-yesus/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ink-button inline-flex items-center gap-2 bg-white text-zinc-900 font-bold text-sm px-5 py-3 rounded-xl whitespace-nowrap"
+              >
+                Coba Ember Warna Gratis &#8599;
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: BUKU MULTIMEDIA GEREJA (AMAZON) -->
+    <section id="buku-gereja" class="border-t-2 border-zinc-900 py-12 sm:py-16">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="mb-8">
+          <p class="text-xs sm:text-sm font-semibold text-zinc-600 mb-2">
+            02. Karya Untuk Tim Pelayanan &amp; Operator Ibadah
+          </p>
+          <h2>
+            <span class="colorable-word" data-text="BUKU GEREJA" data-size="section"></span>
+          </h2>
+        </div>
+
+        <div class="ink-card rounded-2xl p-5 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch">
+          <div class="lg:col-span-4 flex items-center justify-center">
+            <div id="amazon-cover-slot" class="w-full max-w-[260px]"></div>
+          </div>
+
+          <div class="lg:col-span-8 flex flex-col justify-between gap-5">
+            <div class="space-y-3">
+              <p class="text-xs font-semibold text-zinc-600">
+                Amazon · Buku Pelayanan Gereja · ASIN B0HQVQT3J4
+              </p>
+              <h3 class="font-display text-2xl sm:text-3xl font-bold text-zinc-900 leading-tight">
+                Buku Multimedia Gereja — Panduan Pelayanan Visual &amp; Teknis
+              </h3>
+              <p class="text-sm sm:text-base text-zinc-700 leading-relaxed">
+                Selain berkarya untuk anak-anak lewat game dan buku mewarnai, sukalogika juga menulis buku khusus bagi pelayan multimedia gereja—mulai
+                dari tata alur tampilan layar ibadah, koordinasi tim audio-visual, hingga kesiapan teknis saat ibadah berlangsung.
+              </p>
+              <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-sm text-zinc-800">
+                <li class="border-2 border-zinc-900 rounded-xl p-3 bg-[#FAF6EF]">
+                  <span class="font-bold block text-zinc-900">Untuk Relawan &amp; Tim Multimedia</span>
+                  Membantu pelayan baru cepat memahami ritme ibadah dan alur slide/audio.
+                </li>
+                <li class="border-2 border-zinc-900 rounded-xl p-3 bg-[#FAF6EF]">
+                  <span class="font-bold block text-zinc-900">Tersedia di Amazon</span>
+                  Dapat diakses secara global melalui katalog resmi Amazon.
+                </li>
+              </ul>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 pt-2">
+              <a
+                href="https://www.amazon.com/dp/B0HQVQT3J4"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ink-button inline-flex items-center gap-2 bg-zinc-900 text-white font-bold text-sm px-5 py-3 rounded-xl whitespace-nowrap"
+              >
+                Lihat Buku di Amazon &#8599;
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: GAMES & AYAT HARIAN -->
+    <section id="games" class="border-t-2 border-zinc-900 py-12 sm:py-16">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <p class="text-xs sm:text-sm font-semibold text-zinc-600 mb-2">
+              03. Belajar Sambil Bermain di Browser
+            </p>
+            <h2>
+              <span class="colorable-word" data-text="GAMES & AYAT" data-size="section"></span>
+            </h2>
+          </div>
+          <a
+            href="https://sukalogika.com/games/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-sm font-bold text-zinc-900 underline underline-offset-4 decoration-2 whitespace-nowrap self-start sm:self-auto"
+          >
+            Lihat Semua Game &#8594;
+          </a>
+        </div>
+
+        <!-- Daily Verse Strip -->
+        <div class="ink-card rounded-2xl p-5 sm:p-7 mb-8">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-2 max-w-3xl">
+              <p class="text-xs font-semibold text-zinc-600">
+                Ayat Harian · Dibagikan setiap pukul 11.30 di TikTok &amp; YouTube @sukalogika
+              </p>
+              <blockquote id="verseText" class="font-display text-lg sm:text-xl font-bold text-zinc-900 leading-snug">
+                &ldquo;Aku berkata kepadamu: Demikian juga akan ada sukacita pada malaikat-malaikat Allah karena satu orang berdosa yang bertobat.&rdquo;
+              </blockquote>
+              <cite id="verseRef" class="block not-italic text-sm font-semibold text-zinc-600">
+                — Lukas 15:10
+              </cite>
+            </div>
+
+            <button
+              type="button"
+              title="Klik stempel bintang untuk mewarnainya"
+              aria-label="Warnai stempel bintang ayat harian"
+              class="colorable-box shrink-0 self-start md:self-center w-16 h-16 rounded-2xl border-2 border-zinc-900 bg-white flex items-center justify-center cursor-pointer transition-transform hover:scale-105"
+            >
+              <svg viewBox="0 0 32 32" class="w-9 h-9 pointer-events-none" aria-hidden="true">
+                <polygon
+                  points="16,3 20,11.5 29,12.8 22.5,19 24,28 16,23.6 8,28 9.5,19 3,12.8 12,11.5"
+                  fill="#FFFFFF"
+                  stroke="#18181B"
+                  stroke-width="2.5"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Featured Game -->
+        <div class="ink-card rounded-2xl p-5 sm:p-7 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div class="space-y-2 max-w-2xl">
+            <p class="text-xs font-semibold text-zinc-600">Game Mewarnai · Unggulan</p>
+            <h3 class="font-display text-2xl font-bold text-zinc-900">Ember Warna — Mewarnai Yesus</h3>
+            <p class="text-sm sm:text-base text-zinc-700 leading-relaxed">
+              Inspirasi utama halaman ini. Pilih ember cat, geser atau ketuk langsung bidang gambar Yesus, lengkap dengan mode sniper presisi dan simpan hasil gambarmu.
+            </p>
+          </div>
+          <div class="shrink-0">
+            <a
+              href="https://sukalogika.com/games/mewarnai-yesus/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="ink-button inline-flex items-center gap-2 bg-zinc-900 text-white font-bold text-sm px-5 py-3 rounded-xl whitespace-nowrap"
+            >
+              Mainkan Sekarang &#8599;
+            </a>
+          </div>
+        </div>
+
+        <!-- 6 Games Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <article class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+            <div>
+              <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-xs font-semibold text-zinc-600">Memori · Kisah Nuh</p>
+                <button type="button" class="colorable-box w-7 h-7 rounded-lg border-2 border-zinc-900 bg-white shrink-0 cursor-pointer transition-transform hover:scale-110" aria-label="Warnai kotak Noah's Animal Pairs"></button>
+              </div>
+              <h3 class="font-display text-xl font-bold text-zinc-900 mb-2">Noah's Animal Pairs</h3>
+              <p class="text-sm text-zinc-700 leading-relaxed">Buka kartu satu per satu dan temukan pasangan hewan yang sama sebelum waktu habis, terinspirasi dari kisah bahtera Nuh.</p>
+            </div>
+            <a href="https://sukalogika.com/games/noah-animal-pairs/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm font-bold text-zinc-900 hover:underline underline-offset-4 decoration-2 self-start">Mainkan &#8599;</a>
+          </article>
+
+          <article class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+            <div>
+              <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-xs font-semibold text-zinc-600">Arkade · Keluaran 16</p>
+                <button type="button" class="colorable-box w-7 h-7 rounded-lg border-2 border-zinc-900 bg-white shrink-0 cursor-pointer transition-transform hover:scale-110" aria-label="Warnai kotak Manna"></button>
+              </div>
+              <h3 class="font-display text-xl font-bold text-zinc-900 mb-2">Manna — Daily Bread</h3>
+              <p class="text-sm text-zinc-700 leading-relaxed">Kumpulkan manna setiap hari secukupnya dan belajar hidup penuh rasa syukur serta percaya pada pemeliharaan Tuhan.</p>
+            </div>
+            <a href="https://sukalogika.com/games/manna/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm font-bold text-zinc-900 hover:underline underline-offset-4 decoration-2 self-start">Mainkan &#8599;</a>
+          </article>
+
+          <article class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+            <div>
+              <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-xs font-semibold text-zinc-600">Petualangan · Yohanes 10:11</p>
+                <button type="button" class="colorable-box w-7 h-7 rounded-lg border-2 border-zinc-900 bg-white shrink-0 cursor-pointer transition-transform hover:scale-110" aria-label="Warnai kotak The Good Shepherd"></button>
+              </div>
+              <h3 class="font-display text-xl font-bold text-zinc-900 mb-2">The Good Shepherd</h3>
+              <p class="text-sm text-zinc-700 leading-relaxed">Temukan domba-domba yang tercerai dan jaga kawanan tetap bersama sambil menghindari gangguan serigala.</p>
+            </div>
+            <a href="https://sukalogika.com/games/the-good-shepherd/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm font-bold text-zinc-900 hover:underline underline-offset-4 decoration-2 self-start">Mainkan &#8599;</a>
+          </article>
+
+          <article class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+            <div>
+              <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-xs font-semibold text-zinc-600">Teka-teki Kata</p>
+                <button type="button" class="colorable-box w-7 h-7 rounded-lg border-2 border-zinc-900 bg-white shrink-0 cursor-pointer transition-transform hover:scale-110" aria-label="Warnai kotak Bible Word Search"></button>
+              </div>
+              <h3 class="font-display text-xl font-bold text-zinc-900 mb-2">Bible Word Search</h3>
+              <p class="text-sm text-zinc-700 leading-relaxed">Temukan kata-kata tersembunyi dari Alkitab secara horizontal, vertikal, maupun diagonal untuk melatih ketelitian.</p>
+            </div>
+            <a href="https://sukalogika.com/games/bible-word-hunt/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm font-bold text-zinc-900 hover:underline underline-offset-4 decoration-2 self-start">Mainkan &#8599;</a>
+          </article>
+
+          <article class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+            <div>
+              <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-xs font-semibold text-zinc-600">Strategi · Simbol Hewan</p>
+                <button type="button" class="colorable-box w-7 h-7 rounded-lg border-2 border-zinc-900 bg-white shrink-0 cursor-pointer transition-transform hover:scale-110" aria-label="Warnai kotak Bible Tic-Tac-Toe"></button>
+              </div>
+              <h3 class="font-display text-xl font-bold text-zinc-900 mb-2">Bible Tic-Tac-Toe</h3>
+              <p class="text-sm text-zinc-700 leading-relaxed">Mainkan tic-tac-toe dengan pilihan tingkat kesulitan dan ikon hewan khas seperti singa, domba, elang, atau rubah.</p>
+            </div>
+            <a href="https://sukalogika.com/games/bible-tic-tac-toe/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm font-bold text-zinc-900 hover:underline underline-offset-4 decoration-2 self-start">Mainkan &#8599;</a>
+          </article>
+
+          <article class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+            <div>
+              <div class="flex items-start justify-between gap-3 mb-2">
+                <p class="text-xs font-semibold text-zinc-600">Puzzle Anak</p>
+                <button type="button" class="colorable-box w-7 h-7 rounded-lg border-2 border-zinc-900 bg-white shrink-0 cursor-pointer transition-transform hover:scale-110" aria-label="Warnai kotak Puzzle Insect"></button>
+              </div>
+              <h3 class="font-display text-xl font-bold text-zinc-900 mb-2">Puzzle Insect</h3>
+              <p class="text-sm text-zinc-700 leading-relaxed">Susun potongan puzzle serangga warna-warni sambil mengenal keanekaragaman ciptaan Tuhan.</p>
+            </div>
+            <a href="https://sukalogika.com/games/puzzle-insect/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm font-bold text-zinc-900 hover:underline underline-offset-4 decoration-2 self-start">Mainkan &#8599;</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: KANAL SOSIAL -->
+    <section id="kanal" class="border-t-2 border-zinc-900 py-12 sm:py-16">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="mb-8">
+          <p class="text-xs sm:text-sm font-semibold text-zinc-600 mb-2">
+            04. Terhubung Bersama @sukalogika
+          </p>
+          <h2>
+            <span class="colorable-word" data-text="KANAL RESMI" data-size="section"></span>
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a href="https://tiktok.com/@sukalogika" target="_blank" rel="noopener noreferrer" class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4 hover:-translate-y-0.5 transition-transform">
+            <div>
+              <p class="font-display text-xl font-bold text-zinc-900 mb-1">TikTok</p>
+              <p class="text-sm font-semibold text-zinc-900 mb-1">@sukalogika</p>
+              <p class="text-xs text-zinc-600 leading-relaxed">Ayat harian pukul 11.30 &amp; cuplikan game</p>
+            </div>
+            <span class="inline-flex items-center gap-1 text-xs font-bold text-zinc-900">Kunjungi &#8599;</span>
+          </a>
+
+          <a href="https://youtube.com/@sukalogika" target="_blank" rel="noopener noreferrer" class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4 hover:-translate-y-0.5 transition-transform">
+            <div>
+              <p class="font-display text-xl font-bold text-zinc-900 mb-1">YouTube</p>
+              <p class="text-sm font-semibold text-zinc-900 mb-1">@sukalogika</p>
+              <p class="text-xs text-zinc-600 leading-relaxed">Video pendek ayat Firman &amp; demo karya</p>
+            </div>
+            <span class="inline-flex items-center gap-1 text-xs font-bold text-zinc-900">Kunjungi &#8599;</span>
+          </a>
+
+          <a href="https://instagram.com/sukalogika" target="_blank" rel="noopener noreferrer" class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4 hover:-translate-y-0.5 transition-transform">
+            <div>
+              <p class="font-display text-xl font-bold text-zinc-900 mb-1">Instagram</p>
+              <p class="text-sm font-semibold text-zinc-900 mb-1">@sukalogika</p>
+              <p class="text-xs text-zinc-600 leading-relaxed">DM, pembaruan produk &amp; cerita visual</p>
+            </div>
+            <span class="inline-flex items-center gap-1 text-xs font-bold text-zinc-900">Kunjungi &#8599;</span>
+          </a>
+
+          <a href="https://facebook.com/sukalogika" target="_blank" rel="noopener noreferrer" class="ink-card rounded-2xl p-5 flex flex-col justify-between gap-4 hover:-translate-y-0.5 transition-transform">
+            <div>
+              <p class="font-display text-xl font-bold text-zinc-900 mb-1">Facebook</p>
+              <p class="text-sm font-semibold text-zinc-900 mb-1">sukalogika</p>
+              <p class="text-xs text-zinc-600 leading-relaxed">Berbagi renungan &amp; tautan game keluarga</p>
+            </div>
+            <span class="inline-flex items-center gap-1 text-xs font-bold text-zinc-900">Kunjungi &#8599;</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t-2 border-zinc-900 py-8 px-4 sm:px-6 text-center text-sm text-zinc-700">
+    <div class="max-w-6xl mx-auto space-y-1.5">
+      <p class="font-semibold text-zinc-900">&copy; 2026 sukalogika · Henky Adlin Shan</p>
+      <p class="text-xs text-zinc-600 italic">&ldquo;Pada mulanya adalah Firman...&rdquo; — Yohanes 1:1</p>
+    </div>
+  </footer>
+
+  <!-- Floating Paint Bucket Palette Dock -->
+  <aside aria-label="Palet ember warna" class="fixed bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-16px)] max-w-3xl pointer-events-none">
+    <div class="pointer-events-auto bg-[#FFFDF8]/95 backdrop-blur-sm border-2 border-zinc-900 rounded-2xl shadow-[4px_4px_0_#18181B] px-2.5 py-1.5 sm:px-4 sm:py-2.5">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="hidden md:flex items-center gap-2 pr-3 border-r-2 border-zinc-900/15 shrink-0">
+          <span id="active-swatch" class="w-4 h-4 rounded-md border-2 border-zinc-900 shrink-0" style="background-color:#ef4444;" aria-hidden="true"></span>
+          <span id="active-name" class="text-xs font-semibold text-zinc-900 whitespace-nowrap">Merah</span>
+        </div>
+
+        <div id="buckets" role="radiogroup" aria-label="Pilih warna ember" class="flex items-center justify-between sm:justify-center gap-1 sm:gap-1.5 overflow-x-auto w-full py-0.5"></div>
       </div>
     </div>
-  </section>
+  </aside>
 
-</main>
-
-<footer>
-  © 2026 sukalogika. Dibuat untuk memperkenalkan Firman lebih dalam.
-  <span class="foundation">"Pada mulanya adalah Firman..." — Yohanes 1:1</span>
-</footer>
 
 <script>
   // Ayat statis di atas (Luk 15:10) jadi fallback SEO — kalau fetch berhasil, akan ditimpa dengan ayat terbaru.
   async function loadLatestVerse(){
     try{
-      const res = await fetch('/vod-image/latest-meta.json', { cache: 'no-store' });
+      const res = await fetch('https://sukalogika.com/vod-image/latest-meta.json', { cache: 'no-store' });
       if(!res.ok) throw new Error('respons tidak OK: ' + res.status);
       const data = await res.json();
       if(data.text && data.passage){
@@ -279,6 +582,5 @@
   }
   loadLatestVerse();
 </script>
-
 </body>
 </html>
