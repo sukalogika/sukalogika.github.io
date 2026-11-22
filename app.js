@@ -513,28 +513,21 @@ function initAmazonCoverSlot() {
 
   function renderFallback() {
     amzSlot.innerHTML = `
-      <svg viewBox="0 0 320 380" class="w-full h-auto block select-none" role="img" aria-label="Ilustrasi buku multimedia gereja yang dapat diklik untuk diwarnai">
-        <rect x="24" y="18" width="32" height="344" rx="6" fill="#FFFFFF" stroke="#18181B" stroke-width="4" />
+      <svg viewBox="0 0 320 380" class="w-full h-auto block select-none" role="img" aria-label="Sampul Buku Multimedia Gereja">
+        <rect x="24" y="18" width="32" height="344" rx="6" fill="#F4F4F5" stroke="#18181B" stroke-width="4" />
         <rect x="52" y="18" width="244" height="344" rx="10" fill="#FFFFFF" stroke="#18181B" stroke-width="4" />
-        <polygon points="116,44 76,170 156,170" fill="#FFFFFF" stroke="#18181B" stroke-width="3" stroke-linejoin="round" />
-        <polygon points="232,44 192,170 272,170" fill="#FFFFFF" stroke="#18181B" stroke-width="3" stroke-linejoin="round" />
+        <polygon points="116,44 76,170 156,170" fill="#FEF08A" stroke="#18181B" stroke-width="3" stroke-linejoin="round" />
+        <polygon points="232,44 192,170 272,170" fill="#93C5FD" stroke="#18181B" stroke-width="3" stroke-linejoin="round" />
         <rect x="82" y="86" width="184" height="112" rx="8" fill="#FFFFFF" stroke="#18181B" stroke-width="4" />
-        <path d="M 169 106 H 179 V 126 H 197 V 136 H 179 V 178 H 169 V 136 H 151 V 126 H 169 Z" fill="#FFFFFF" stroke="#18181B" stroke-width="3.5" stroke-linejoin="round" />
-        <rect x="82" y="222" width="184" height="72" rx="8" fill="#FFFFFF" stroke="#18181B" stroke-width="4" />
-        <rect x="104" y="238" width="24" height="40" rx="4" fill="#FFFFFF" stroke="#18181B" stroke-width="3" />
-        <rect x="162" y="238" width="24" height="40" rx="4" fill="#FFFFFF" stroke="#18181B" stroke-width="3" />
-        <rect x="220" y="238" width="24" height="40" rx="4" fill="#FFFFFF" stroke="#18181B" stroke-width="3" />
+        <path d="M 169 106 H 179 V 126 H 197 V 136 H 179 V 178 H 169 V 136 H 151 V 126 H 169 Z" fill="#18181B" stroke="#18181B" stroke-width="1.5" stroke-linejoin="round" />
+        <rect x="82" y="222" width="184" height="72" rx="8" fill="#F4F4F5" stroke="#18181B" stroke-width="4" />
+        <rect x="104" y="238" width="24" height="40" rx="4" fill="#C4B5FD" stroke="#18181B" stroke-width="3" />
+        <rect x="162" y="238" width="24" height="40" rx="4" fill="#86EFAC" stroke="#18181B" stroke-width="3" />
+        <rect x="220" y="238" width="24" height="40" rx="4" fill="#FCA5A5" stroke="#18181B" stroke-width="3" />
         <text x="174" y="330" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="16" fill="#18181B" pointer-events="none">MULTIMEDIA GEREJA</text>
       </svg>
     `;
-    amzSlot.querySelectorAll("rect, polygon, path").forEach((el) => {
-      el.classList.add("cursor-pointer");
-      el.addEventListener("click", () => {
-        el.setAttribute("fill", selectedColor);
-        bumpCount();
-        blip();
-      });
-    });
+    // Fitur coloring dihilangkan karena ini buku yang sudah jadi (bukan lembar mewarnai)
   }
 
   if (CONFIG.amazonCoverImage) {
@@ -547,6 +540,24 @@ function initAmazonCoverSlot() {
     amzSlot.appendChild(img);
   } else {
     renderFallback();
+  }
+}
+
+function saveCanvasAsPNG(canvasId, filename = "mewarnai.png") {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  try {
+    const dataUrl = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    blip();
+  } catch (err) {
+    console.error("Gagal mendownload gambar:", err);
+    alert("Gagal mengunduh gambar canvas.");
   }
 }
 
@@ -626,8 +637,21 @@ document.addEventListener("DOMContentLoaded", () => {
       paintCount = 0;
       const counterEl = document.getElementById("paint-counter");
       if (counterEl) counterEl.textContent = "0 aksi";
-      initAmazonCoverSlot();
       blip();
+    });
+  }
+
+  const btnSaveHero = document.getElementById("btn-save-hero");
+  if (btnSaveHero) {
+    btnSaveHero.addEventListener("click", () => {
+      saveCanvasAsPNG("cv-hero", "mewarnai-yesus-meredakan-badai.png");
+    });
+  }
+
+  const btnSaveArk = document.getElementById("btn-save-ark");
+  if (btnSaveArk) {
+    btnSaveArk.addEventListener("click", () => {
+      saveCanvasAsPNG("cv-ark", "mewarnai-halaman-buku.png");
     });
   }
 
